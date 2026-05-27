@@ -4,7 +4,7 @@
 Magic Cards is a spaced repetition learning platform focused on programming and technology education, with a Duolingo-inspired UI. It uses an SM-2 algorithm for intelligent card scheduling.
 
 ## Tech Stack
-- **Frontend**: React + TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, react-i18next
+- **Frontend**: React + TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Router + Query, react-i18next
 - **Backend**: Fastify + tRPC + Drizzle ORM, SQLite
 - **Validation**: Zod (shared between tRPC and Drizzle)
 - **Monorepo**: pnpm workspaces
@@ -117,3 +117,6 @@ See `docs/architecture.md` section 13 for detailed phases:
 - Subject card count is computed on demand, never stored
 - Mobile-first responsive design is non-negotiable
 - Dark mode should be implemented early (ThemeContext + Tailwind)
+
+## Commit Convention
+- Do NOT use `Co-Authored-By` in commit messages

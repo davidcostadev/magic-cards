@@ -24,6 +24,7 @@ Magic Cards is a spaced repetition learning platform designed primarily for prog
 - **Framework**: React with TypeScript
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Class Merge**: `cn()` utility from clsx/tailwind-merge
+- **Routing**: TanStack Router (type-safe, integrated with TanStack Query)
 - **Server State**: TanStack Query via `@trpc/react-query`
 - **Client State**: React Context (AuthContext, ThemeContext)
 - **Markdown Rendering**: react-markdown with syntax highlighting (e.g., rehype-highlight or shiki)
@@ -626,6 +627,7 @@ See `docs/adr/` for detailed records. Summary:
 | **Hint usage caps quality at 3** | Ensures cards needing hints are scheduled sooner |
 | **i18n frontend-only** | Backend returns error codes, frontend translates |
 | **Tailwind + shadcn/ui** | Fast development, consistent design system |
+| **TanStack Router** | Type-safe routing, integrates with TanStack Query ecosystem already in use |
 | **Biome for linting** | Fast, zero-config, built-in formatter |
 | **SM-2 Algorithm** | Proven spaced repetition method, balances simplicity and effectiveness |
 
