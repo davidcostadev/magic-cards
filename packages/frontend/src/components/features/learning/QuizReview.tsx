@@ -38,11 +38,20 @@ export function QuizReview({
   const [usedHint, setUsedHint] = useState(false);
   const startTime = useRef(Date.now());
 
-  const correctChoice = card.choices.find((c) => c.isCorrect);
+  const shuffledChoices = useMemo(() => {
+    const choices = [...card.choices];
+    for (let i = choices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [choices[i], choices[j]] = [choices[j], choices[i]];
+    }
+    return choices;
+  }, [card.choices]);
+
+  const correctChoice = shuffledChoices.find((c) => c.isCorrect);
   const isCorrect = selectedId === correctChoice?.id;
 
   const wrongChoices = useMemo(
-    () => card.choices.filter((c) => !c.isCorrect),
+    () => shuffledChoices.filter((c) => !c.isCorrect),
     [card.choices]
   );
 
@@ -129,7 +138,7 @@ export function QuizReview({
       )}
 
       <div className="space-y-3">
-        {card.choices.map((choice) => (
+        {shuffledChoices.map((choice) => (
           <button
             key={choice.id}
             onClick={() => handleSelect(choice)}

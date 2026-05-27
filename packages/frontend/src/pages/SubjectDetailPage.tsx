@@ -64,35 +64,36 @@ export function SubjectDetailPage() {
           <ArrowLeft className="h-5 w-5" />
           {t("common.back")}
         </Link>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div
-              className="flex h-14 w-14 items-center justify-center rounded-xl"
-              style={{ backgroundColor: `${subject.color}20`, color: subject.color }}
+        <div className="flex items-center gap-4 mb-5">
+          <div
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
+            style={{ backgroundColor: `${subject.color}20`, color: subject.color }}
+          >
+            <Icon className="h-7 w-7" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold truncate sm:text-3xl">{subject.title}</h1>
+            <p className="text-sm text-muted-foreground line-clamp-2 sm:text-base">{subject.description}</p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          {cards.length > 0 && (
+            <Link
+              to="/learn/$subjectId"
+              params={{ subjectId }}
+              className={buttonVariants({ variant: "outline", className: "flex-1 sm:flex-none" })}
             >
-              <Icon className="h-7 w-7" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">{subject.title}</h1>
-              <p className="text-base text-muted-foreground">{subject.description}</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            {cards.length > 0 && (
-              <Link
-                to="/learn/$subjectId"
-                params={{ subjectId }}
-                className={buttonVariants({ variant: "outline" })}
-              >
-                <GraduationCap className="mr-2 h-5 w-5" />
-                {t("cards.startStudying")}
-              </Link>
-            )}
-            <Button onClick={() => { setEditingCard(null); setFormOpen(true); }}>
-              <Plus className="mr-2 h-5 w-5" />
-              {t("cards.createCard")}
-            </Button>
-          </div>
+              <GraduationCap className="mr-2 h-5 w-5" />
+              {t("cards.startStudying")}
+            </Link>
+          )}
+          <Button
+            className="flex-1 sm:flex-none"
+            onClick={() => { setEditingCard(null); setFormOpen(true); }}
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            {t("cards.createCard")}
+          </Button>
         </div>
       </div>
 

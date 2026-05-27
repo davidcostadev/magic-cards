@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { Header } from "@/components/common/Header";
 import { Sidebar } from "@/components/common/Sidebar";
 import { BottomBar } from "@/components/common/BottomBar";
 import { useAuth } from "@/context/AuthContext";
+import { useLearningSessions } from "@/context/LearningContext";
 import { cn } from "@/utils/cn";
 
 const PUBLIC_PATHS = ["/login", "/signup"];
@@ -10,8 +12,15 @@ const PUBLIC_PATHS = ["/login", "/signup"];
 export function AppLayout() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
+  const { setInSession } = useLearningSessions();
   const isPublicPage = PUBLIC_PATHS.includes(location.pathname);
   const showNav = isAuthenticated && !isPublicPage;
+
+  useEffect(() => {
+    if (!location.pathname.startsWith("/learn")) {
+      setInSession(false);
+    }
+  }, [location.pathname, setInSession]);
 
   return (
     <div className="min-h-screen bg-background">

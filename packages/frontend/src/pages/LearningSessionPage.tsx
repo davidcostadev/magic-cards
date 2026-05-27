@@ -35,10 +35,17 @@ export function LearningSessionPage() {
   const startTime = useRef(Date.now());
 
   const sessionCards = useMemo(() => {
+    let cards;
     if (!mode) return [];
-    if (mode === "flashcards") return allCards.filter((c) => c.type === "open");
-    if (mode === "quizzes") return allCards.filter((c) => c.type === "quiz");
-    return allCards;
+    if (mode === "flashcards") cards = allCards.filter((c) => c.type === "open");
+    else if (mode === "quizzes") cards = allCards.filter((c) => c.type === "quiz");
+    else cards = [...allCards];
+
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    return cards;
   }, [allCards, mode]);
 
   const activeSession = !!mode && !completed;
@@ -129,6 +136,7 @@ export function LearningSessionPage() {
             <Button
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
+                setInSession(false);
                 cancelExit();
                 navigate({ to: "/dashboard" });
               }}
