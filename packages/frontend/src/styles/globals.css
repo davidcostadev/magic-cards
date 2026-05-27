@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@import "highlight.js/styles/github-dark.min.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(240 10% 3.9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(240 10% 3.9%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(240 10% 3.9%);
+  --color-primary: hsl(262 83% 58%);
+  --color-primary-foreground: hsl(0 0% 98%);
+  --color-secondary: hsl(240 4.8% 95.9%);
+  --color-secondary-foreground: hsl(240 5.9% 10%);
+  --color-muted: hsl(240 4.8% 95.9%);
+  --color-muted-foreground: hsl(240 3.8% 46.1%);
+  --color-accent: hsl(240 4.8% 95.9%);
+  --color-accent-foreground: hsl(240 5.9% 10%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+  --color-border: hsl(240 5.9% 90%);
+  --color-input: hsl(240 5.9% 90%);
+  --color-ring: hsl(262 83% 58%);
+  --color-success: hsl(142 76% 36%);
+  --color-warning: hsl(38 92% 50%);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+.dark {
+  --color-background: hsl(234 15% 13%);
+  --color-foreground: hsl(0 0% 95%);
+  --color-card: hsl(234 15% 17%);
+  --color-card-foreground: hsl(0 0% 95%);
+  --color-popover: hsl(234 15% 17%);
+  --color-popover-foreground: hsl(0 0% 95%);
+  --color-primary: hsl(262 83% 68%);
+  --color-primary-foreground: hsl(0 0% 98%);
+  --color-secondary: hsl(234 12% 23%);
+  --color-secondary-foreground: hsl(0 0% 95%);
+  --color-muted: hsl(234 12% 23%);
+  --color-muted-foreground: hsl(234 8% 62%);
+  --color-accent: hsl(234 12% 23%);
+  --color-accent-foreground: hsl(0 0% 95%);
+  --color-destructive: hsl(0 55% 42%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+  --color-border: hsl(234 12% 27%);
+  --color-input: hsl(234 12% 27%);
+  --color-ring: hsl(262 83% 68%);
+  --color-success: hsl(145 50% 38%);
+  --color-warning: hsl(38 70% 50%);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+}
+
+.learn-markdown > :not(pre) {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.learn-markdown > :first-child {
+  padding-top: 1.25rem;
+}
+
+.learn-markdown > :last-child {
+  padding-bottom: 1.25rem;
+}
+
+.learn-markdown pre {
+  margin: 0;
+  border-radius: 0;
+}

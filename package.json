@@ -1,0 +1,11 @@
+{
+  "name": "magic-cards",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter frontend dev",
+    "build": "pnpm --filter frontend build",
+    "lint": "pnpm --filter frontend lint",
+    "type:check": "pnpm --filter frontend type:check",
+    "test": "pnpm --filter frontend test"
+  }
+}

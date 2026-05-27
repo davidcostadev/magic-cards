@@ -1,0 +1,127 @@
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Code, Database, Component, GitBranch } from "lucide-react";
+import { cn } from "@/utils/cn";
+import type { Subject } from "@/mocks/types";
+
+const COLORS = ["#3178C6", "#E48E00", "#61DAFB", "#F05032", "#68A063", "#DD4B25", "#764ABC", "#FF6F61"];
+
+const ICONS = [
+  { id: "code", icon: Code },
+  { id: "database", icon: Database },
+  { id: "component", icon: Component },
+  { id: "git-branch", icon: GitBranch },
+];
+
+interface CreateSubjectModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  subject?: Subject | null;
+  onSave: (data: { title: string; description: string; color: string; icon: string }) => void;
+}
+
+export function CreateSubjectModal({ open, onOpenChange, subject, onSave }: CreateSubjectModalProps) {
+  const { t } = useTranslation();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [color, setColor] = useState(COLORS[0]);
+  const [icon, setIcon] = useState("code");
+
+  useEffect(() => {
+    if (subject) {
+      setTitle(subject.title);
+      setDescription(subject.description);
+      setColor(subject.color);
+      setIcon(subject.icon);
+    } else {
+      setTitle("");
+      setDescription("");
+      setColor(COLORS[0]);
+      setIcon("code");
+    }
+  }, [subject, open]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({ title, description, color, icon });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {subject ? t("subjects.editSubject") : t("subjects.createSubject")}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2.5">
+            <Label htmlFor="title">{t("subjects.subjectTitle")}</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2.5">
+            <Label htmlFor="description">{t("subjects.description")}</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2.5">
+            <Label>{t("subjects.color")}</Label>
+            <div className="flex flex-wrap gap-3">
+              {COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={cn(
+                    "h-10 w-10 rounded-full border-2 transition-transform",
+                    color === c ? "scale-110 border-foreground" : "border-transparent"
+                  )}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setColor(c)}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2.5">
+            <Label>{t("subjects.icon")}</Label>
+            <div className="flex gap-3">
+              {ICONS.map(({ id, icon: IconComponent }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={cn(
+                    "flex h-12 w-12 items-center justify-center rounded-xl border-2 transition-colors",
+                    icon === id
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:bg-accent"
+                  )}
+                  onClick={() => setIcon(id)}
+                >
+                  <IconComponent className="h-6 w-6" />
+                </button>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="submit">{t("common.save")}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
