@@ -9,12 +9,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/utils/cn";
 import type { Card, CardType, Choice } from "@/mocks/types";
 
+const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "pt", label: "Português" },
+];
+
 interface CardFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   card?: Card | null;
   onSave: (data: {
     type: CardType;
+    language: string;
     question: string;
     answer: string;
     hints: string[];
@@ -26,6 +32,7 @@ interface CardFormProps {
 export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
   const { t } = useTranslation();
   const [cardType, setCardType] = useState<CardType>("open");
+  const [language, setLanguage] = useState("en");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [hints, setHints] = useState<string[]>([]);
@@ -36,6 +43,7 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
   useEffect(() => {
     if (card) {
       setCardType(card.type);
+      setLanguage(card.language);
       setQuestion(card.question);
       setAnswer(card.answer);
       setHints([...card.hints]);
@@ -43,6 +51,7 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
       setChoices([...card.choices]);
     } else {
       setCardType("open");
+      setLanguage("en");
       setQuestion("");
       setAnswer("");
       setHints([]);
@@ -56,6 +65,7 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
     e.preventDefault();
     onSave({
       type: cardType,
+      language,
       question,
       answer,
       hints: cardType === "open" ? hints.filter(Boolean) : [],
@@ -97,28 +107,48 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{card ? t("cards.editCard") : t("cards.createCard")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2.5">
-            <Label>{t("cards.cardType")}</Label>
-            <div className="flex gap-3">
-              {([
-                { value: "open" as const, label: t("cards.typeOpen") },
-                { value: "quiz" as const, label: t("cards.typeQuiz") },
-              ]).map(({ value, label }) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant={cardType === value ? "default" : "outline"}
-                  onClick={() => setCardType(value)}
-                  className="flex-1"
-                >
-                  {label}
-                </Button>
-              ))}
+          <div className="flex gap-3">
+            <div className="flex-1 space-y-2.5">
+              <Label>{t("cards.cardType")}</Label>
+              <div className="flex gap-2">
+                {([
+                  { value: "open" as const, label: t("cards.typeOpen") },
+                  { value: "quiz" as const, label: t("cards.typeQuiz") },
+                ] as const).map(({ value, label }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={cardType === value ? "default" : "outline"}
+                    onClick={() => setCardType(value)}
+                    className="flex-1"
+                    size="sm"
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="flex-1 space-y-2.5">
+              <Label>{t("cards.language")}</Label>
+              <div className="flex gap-2">
+                {LANGUAGES.map(({ code, label }) => (
+                  <Button
+                    key={code}
+                    type="button"
+                    variant={language === code ? "default" : "outline"}
+                    onClick={() => setLanguage(code)}
+                    className="flex-1"
+                    size="sm"
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
 

@@ -96,7 +96,8 @@
     "choice": "Choice",
     "choicesHelp": "Click the circle to mark the correct answer",
     "explanation": "Explanation",
-    "explanationPlaceholder": "Shown when the answer is wrong (optional)"
+    "explanationPlaceholder": "Shown when the answer is wrong (optional)",
+    "language": "Language"
   },
   "learn": {
     "title": "Learning Session",

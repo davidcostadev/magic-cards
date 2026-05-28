@@ -35,7 +35,7 @@ export function SubjectDetailPage() {
 
   const Icon = iconMap[subject.icon] ?? Code;
 
-  const handleSave = (data: Pick<Card, "type" | "question" | "answer" | "hints" | "tags" | "choices">) => {
+  const handleSave = (data: Pick<Card, "type" | "language" | "question" | "answer" | "hints" | "tags" | "choices">) => {
     if (editingCard) {
       setCards((prev) =>
         prev.map((c) =>
@@ -49,7 +49,6 @@ export function SubjectDetailPage() {
         id: `card-${Date.now()}`,
         subjectId,
         ...data,
-        language: "en",
         shortAnswer: "",
         matchPairs: [],
         createdAt: new Date().toISOString(),

@@ -96,7 +96,8 @@
     "choice": "Alternativa",
     "choicesHelp": "Clique no círculo para marcar a resposta correta",
     "explanation": "Explicação",
-    "explanationPlaceholder": "Exibida quando a resposta é errada (opcional)"
+    "explanationPlaceholder": "Exibida quando a resposta é errada (opcional)",
+    "language": "Idioma"
   },
   "learn": {
     "title": "Sessão de Estudo",
