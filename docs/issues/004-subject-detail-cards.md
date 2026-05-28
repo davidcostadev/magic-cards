@@ -2,7 +2,7 @@
 
 **Type**: AFK
 **Phase**: FRD-001 (UI Prototype)
-**Label**: ready-for-agent
+**Label**: done
 
 ---
 
