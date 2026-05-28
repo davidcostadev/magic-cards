@@ -22,9 +22,21 @@ export function LearningSessionPage() {
   const { t } = useTranslation();
   const { setInSession, exitRequested, cancelExit } = useLearningSessions();
 
-  const allCards = useMemo(
+  const allCardsUnfiltered = useMemo(
     () => (subjectId ? mockCards.filter((c) => c.subjectId === subjectId) : mockCards),
     [subjectId]
+  );
+
+  const availableLanguages = useMemo(() => {
+    const langs = new Set(allCardsUnfiltered.map((c) => c.language));
+    return [...langs].sort();
+  }, [allCardsUnfiltered]);
+
+  const [languageFilter, setLanguageFilter] = useState<string | null>(null);
+
+  const allCards = useMemo(
+    () => languageFilter ? allCardsUnfiltered.filter((c) => c.language === languageFilter) : allCardsUnfiltered,
+    [allCardsUnfiltered, languageFilter]
   );
 
   const flashcardCount = allCards.filter((c) => c.type === "open").length;
@@ -61,7 +73,7 @@ export function LearningSessionPage() {
     return () => setInSession(false);
   }, [activeSession, setInSession]);
 
-  if (allCards.length === 0) {
+  if (allCardsUnfiltered.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center p-5">
         <GraduationCap className="h-16 w-16 text-muted-foreground" />
@@ -86,6 +98,9 @@ export function LearningSessionPage() {
         quizCount={quizCount}
         typeAnswerCount={typeAnswerCount}
         matchCount={matchCount}
+        availableLanguages={availableLanguages}
+        selectedLanguage={languageFilter}
+        onLanguageChange={setLanguageFilter}
       />
     );
   }

@@ -131,6 +131,7 @@
     "matchPairsFound": "pairs matched",
     "allMatched": "All matched!",
     "perfectMatch": "Perfect — no mistakes!",
+    "allLanguages": "All",
     "exitTitle": "Leave session?",
     "exitMessage": "Your progress in this session will be lost.",
     "exitCancel": "Keep studying",

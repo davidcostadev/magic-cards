@@ -28,7 +28,10 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
         onClick={() => onOpenChange(false)}
         onKeyDown={(e) => e.key === "Escape" && onOpenChange(false)}
       />
-      <div className="fixed inset-0 flex items-center justify-center p-5">
+      <div
+        className="fixed inset-0 flex items-center justify-center p-5"
+        onClick={() => onOpenChange(false)}
+      >
         {children}
       </div>
     </div>

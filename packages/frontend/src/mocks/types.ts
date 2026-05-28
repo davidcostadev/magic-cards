@@ -37,6 +37,7 @@ export interface Card {
   id: string;
   subjectId: string;
   type: CardType;
+  language: string;
   question: string;
   answer: string;
   hints: string[];

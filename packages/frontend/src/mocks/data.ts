@@ -65,6 +65,7 @@ export const mockCards: Card[] = [
     id: "card-1",
     subjectId: "sub-1",
     type: "open",
+    language: "en",
     question:
       "What is the difference between `type` and `interface` in TypeScript?\n\n```typescript\ntype Point = { x: number; y: number };\ninterface IPoint { x: number; y: number; }\n```",
     answer:
@@ -84,6 +85,7 @@ export const mockCards: Card[] = [
     id: "card-2",
     subjectId: "sub-1",
     type: "open",
+    language: "en",
     question:
       "What does the `keyof` operator do in TypeScript?\n\n```typescript\ninterface User {\n  id: number;\n  name: string;\n  email: string;\n}\n\ntype UserKeys = keyof User;\n```",
     answer:
@@ -103,6 +105,7 @@ export const mockCards: Card[] = [
     id: "card-3",
     subjectId: "sub-1",
     type: "open",
+    language: "en",
     question:
       "Explain the `infer` keyword in TypeScript conditional types.\n\n```typescript\ntype ReturnType<T> = T extends (...args: any[]) => infer R ? R : never;\n```",
     answer:
@@ -122,6 +125,7 @@ export const mockCards: Card[] = [
     id: "card-4",
     subjectId: "sub-2",
     type: "open",
+    language: "en",
     question:
       "What is the difference between `INNER JOIN` and `LEFT JOIN`?\n\n```sql\nSELECT u.name, o.total\nFROM users u\nINNER JOIN orders o ON u.id = o.user_id;\n```",
     answer:
@@ -141,6 +145,7 @@ export const mockCards: Card[] = [
     id: "card-5",
     subjectId: "sub-2",
     type: "open",
+    language: "en",
     question:
       "What does `GROUP BY` do and when must you use it?\n\n```sql\nSELECT department, COUNT(*) as employee_count\nFROM employees\nGROUP BY department;\n```",
     answer:
@@ -160,6 +165,7 @@ export const mockCards: Card[] = [
     id: "card-6",
     subjectId: "sub-3",
     type: "open",
+    language: "en",
     question:
       "What is the difference between `useMemo` and `useCallback` in React?\n\n```tsx\nconst memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);\nconst memoizedFn = useCallback(() => doSomething(a, b), [a, b]);\n```",
     answer:
@@ -179,6 +185,7 @@ export const mockCards: Card[] = [
     id: "card-7",
     subjectId: "sub-3",
     type: "open",
+    language: "en",
     question:
       "Explain React's `useEffect` cleanup function.\n\n```tsx\nuseEffect(() => {\n  const subscription = api.subscribe(id);\n  return () => {\n    subscription.unsubscribe();\n  };\n}, [id]);\n```",
     answer:
@@ -198,6 +205,7 @@ export const mockCards: Card[] = [
     id: "card-8",
     subjectId: "sub-4",
     type: "open",
+    language: "en",
     question:
       "What does `git rebase` do and how is it different from `git merge`?\n\n```bash\ngit checkout feature\ngit rebase main\n```",
     answer:
@@ -217,6 +225,7 @@ export const mockCards: Card[] = [
     id: "card-9",
     subjectId: "sub-1",
     type: "quiz",
+    language: "en",
     question: "What does the `readonly` modifier do in TypeScript?\n\n```typescript\ninterface Config {\n  readonly host: string;\n  readonly port: number;\n}\n```",
     answer: "It prevents reassignment of the property after initialization.",
     hints: [],
@@ -236,6 +245,7 @@ export const mockCards: Card[] = [
     id: "card-10",
     subjectId: "sub-2",
     type: "quiz",
+    language: "en",
     question: "Which SQL clause is used to filter results **after** a `GROUP BY`?",
     answer: "HAVING filters groups after aggregation, while WHERE filters rows before grouping.",
     hints: [],
@@ -254,6 +264,7 @@ export const mockCards: Card[] = [
     id: "card-11",
     subjectId: "sub-3",
     type: "quiz",
+    language: "en",
     question: "What hook would you use to access the **current value** of a ref without causing a re-render?\n\n```tsx\nconst inputRef = ???<HTMLInputElement>(null);\n```",
     answer: "useRef stores a mutable value that persists across renders without triggering re-renders.",
     hints: [],
@@ -273,6 +284,7 @@ export const mockCards: Card[] = [
     id: "card-12",
     subjectId: "sub-4",
     type: "quiz",
+    language: "en",
     question: "Which git command shows the commit history of a single file?",
     answer: "git log -- <file> shows the commit history filtered to changes that affected that file.",
     hints: [],
@@ -291,6 +303,7 @@ export const mockCards: Card[] = [
     id: "card-13",
     subjectId: "sub-1",
     type: "type-answer",
+    language: "en",
     question: "Which TypeScript utility type makes all properties optional?\n\n```typescript\ntype User = { name: string; age: number };\ntype OptionalUser = ???<User>;\n```",
     answer: "Partial wraps each property with optional modifier using mapped types.",
     hints: ["It starts with P"],
@@ -305,6 +318,7 @@ export const mockCards: Card[] = [
     id: "card-14",
     subjectId: "sub-2",
     type: "type-answer",
+    language: "en",
     question: "Which SQL keyword removes duplicate rows from the result set?\n\n```sql\nSELECT ??? department FROM employees;\n```",
     answer: "DISTINCT eliminates duplicate rows in the result set.",
     hints: [],
@@ -319,6 +333,7 @@ export const mockCards: Card[] = [
     id: "card-15",
     subjectId: "sub-3",
     type: "type-answer",
+    language: "en",
     question: "Which React hook lets you run side effects after render?\n\n```tsx\n???(()=> { document.title = count }, [count]);\n```",
     answer: "useEffect runs side effects after the component renders.",
     hints: ["It starts with 'use'"],
@@ -333,6 +348,7 @@ export const mockCards: Card[] = [
     id: "card-16",
     subjectId: "sub-4",
     type: "type-answer",
+    language: "en",
     question: "Which git command creates a new branch and switches to it in one step?",
     answer: "git checkout -b creates and switches to a new branch.",
     hints: [],
@@ -347,6 +363,7 @@ export const mockCards: Card[] = [
     id: "card-17",
     subjectId: "sub-1",
     type: "match",
+    language: "en",
     question: "Match the TypeScript utility type to its description",
     answer: "",
     hints: [],
@@ -368,6 +385,7 @@ export const mockCards: Card[] = [
     id: "card-18",
     subjectId: "sub-3",
     type: "match",
+    language: "en",
     question: "Match the React hook to its purpose",
     answer: "",
     hints: [],
@@ -384,6 +402,82 @@ export const mockCards: Card[] = [
     ],
     createdAt: "2026-05-15T00:00:00.000Z",
     updatedAt: "2026-05-15T00:00:00.000Z",
+  },
+  {
+    id: "card-19",
+    subjectId: "sub-1",
+    type: "open",
+    language: "pt",
+    question:
+      "Qual a diferença entre `type` e `interface` no TypeScript?\n\n```typescript\ntype Ponto = { x: number; y: number };\ninterface IPonto { x: number; y: number; }\n```",
+    answer:
+      "Ambos descrevem formas de objetos, mas diferem em pontos-chave:\n\n- **`interface`** suporta declaration merging (reabertura)\n- **`type`** suporta unions, intersections, mapped types e conditional types\n- **`interface`** pode `extends` outras interfaces\n- **`type`** usa `&` para intersecção\n\n**Regra geral**: Use `interface` para APIs públicas, `type` para o resto.",
+    hints: [
+      "Pense em qual pode ser reaberta após a declaração",
+      "Considere qual suporta tipos union",
+    ],
+    tags: ["types", "fundamentals"],
+    choices: [],
+    shortAnswer: "",
+    matchPairs: [],
+    createdAt: "2026-05-16T00:00:00.000Z",
+    updatedAt: "2026-05-16T00:00:00.000Z",
+  },
+  {
+    id: "card-20",
+    subjectId: "sub-3",
+    type: "type-answer",
+    language: "pt",
+    question: "Qual hook do React permite gerenciar estado local em um componente funcional?\n\n```tsx\nconst [count, setCount] = ???(0);\n```",
+    answer: "useState permite declarar variáveis de estado em componentes funcionais.",
+    hints: ["Começa com 'use'"],
+    tags: ["hooks", "fundamentals"],
+    choices: [],
+    shortAnswer: "useState",
+    matchPairs: [],
+    createdAt: "2026-05-17T00:00:00.000Z",
+    updatedAt: "2026-05-17T00:00:00.000Z",
+  },
+  {
+    id: "card-21",
+    subjectId: "sub-2",
+    type: "quiz",
+    language: "pt",
+    question: "Qual cláusula SQL é usada para ordenar os resultados?",
+    answer: "ORDER BY ordena os resultados por uma ou mais colunas.",
+    hints: [],
+    tags: ["queries", "fundamentals"],
+    choices: [
+      { id: "c21-1", text: "GROUP BY", isCorrect: false },
+      { id: "c21-2", text: "SORT BY", isCorrect: false },
+      { id: "c21-3", text: "ORDER BY", isCorrect: true },
+    ],
+    shortAnswer: "",
+    matchPairs: [],
+    createdAt: "2026-05-18T00:00:00.000Z",
+    updatedAt: "2026-05-18T00:00:00.000Z",
+  },
+  {
+    id: "card-22",
+    subjectId: "sub-3",
+    type: "match",
+    language: "pt",
+    question: "Combine o hook do React com sua função",
+    answer: "",
+    hints: [],
+    tags: ["hooks", "fundamentals"],
+    choices: [],
+    shortAnswer: "",
+    matchPairs: [
+      { left: "useState", right: "Estado local do componente" },
+      { left: "useEffect", right: "Efeitos colaterais após render" },
+      { left: "useRef", right: "Valor mutável sem re-render" },
+      { left: "useMemo", right: "Cachear valor computado" },
+      { left: "useCallback", right: "Cachear referência de função" },
+      { left: "useContext", right: "Acessar valor do contexto" },
+    ],
+    createdAt: "2026-05-19T00:00:00.000Z",
+    updatedAt: "2026-05-19T00:00:00.000Z",
   },
 ];
 
