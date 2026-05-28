@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { BookOpen, ListChecks, Layers } from "lucide-react";
+import { BookOpen, ListChecks, Layers, Keyboard, Link2 } from "lucide-react";
 import { cn } from "@/utils/cn";
 
-export type StudyMode = "all" | "flashcards" | "quizzes";
+export type StudyMode = "all" | "flashcards" | "quizzes" | "type-answer" | "match";
 
 interface StudyModeModalProps {
   open: boolean;
@@ -10,6 +10,8 @@ interface StudyModeModalProps {
   onSelect: (mode: StudyMode) => void;
   flashcardCount: number;
   quizCount: number;
+  typeAnswerCount: number;
+  matchCount: number;
 }
 
 export function StudyModeModal({
@@ -17,10 +19,14 @@ export function StudyModeModal({
   onSelect,
   flashcardCount,
   quizCount,
+  typeAnswerCount,
+  matchCount,
 }: StudyModeModalProps) {
   const { t } = useTranslation();
 
   if (!open) return null;
+
+  const totalCount = flashcardCount + quizCount + typeAnswerCount + matchCount;
 
   const modes = [
     {
@@ -28,7 +34,6 @@ export function StudyModeModal({
       icon: BookOpen,
       label: t("learn.modeFlashcards"),
       count: flashcardCount,
-      color: "text-white",
       bgColor: "bg-blue-500",
       cardBg: "bg-blue-500/15 hover:bg-blue-500/25",
       borderColor: "border-blue-500/30 hover:border-blue-500",
@@ -38,17 +43,33 @@ export function StudyModeModal({
       icon: ListChecks,
       label: t("learn.modeQuizzes"),
       count: quizCount,
-      color: "text-white",
       bgColor: "bg-purple-500",
       cardBg: "bg-purple-500/15 hover:bg-purple-500/25",
       borderColor: "border-purple-500/30 hover:border-purple-500",
     },
     {
+      mode: "type-answer" as const,
+      icon: Keyboard,
+      label: t("learn.modeTypeAnswer"),
+      count: typeAnswerCount,
+      bgColor: "bg-emerald-500",
+      cardBg: "bg-emerald-500/15 hover:bg-emerald-500/25",
+      borderColor: "border-emerald-500/30 hover:border-emerald-500",
+    },
+    {
+      mode: "match" as const,
+      icon: Link2,
+      label: t("learn.modeMatch"),
+      count: matchCount,
+      bgColor: "bg-amber-500",
+      cardBg: "bg-amber-500/15 hover:bg-amber-500/25",
+      borderColor: "border-amber-500/30 hover:border-amber-500",
+    },
+    {
       mode: "all" as const,
       icon: Layers,
-      label: t("learn.modeAll", { count: flashcardCount + quizCount }),
-      count: flashcardCount + quizCount,
-      color: "text-white",
+      label: t("learn.modeAll", { count: totalCount }),
+      count: totalCount,
       bgColor: "bg-primary",
       cardBg: "bg-primary/15 hover:bg-primary/25",
       borderColor: "border-primary/30 hover:border-primary",
@@ -59,10 +80,10 @@ export function StudyModeModal({
     <div className="flex min-h-[60vh] flex-col items-center justify-center p-6">
       <h2 className="mb-2 text-3xl font-bold text-center">{t("learn.chooseMode")}</h2>
       <p className="mb-8 text-lg text-muted-foreground text-center">
-        {t("learn.modeCardCount", { count: flashcardCount + quizCount })}
+        {t("learn.modeCardCount", { count: totalCount })}
       </p>
       <div className="grid w-full max-w-md gap-4">
-        {modes.map(({ mode, icon: Icon, label, count, color, bgColor, cardBg, borderColor }) => (
+        {modes.map(({ mode, icon: Icon, label, count, bgColor, cardBg, borderColor }) => (
           <button
             key={mode}
             onClick={() => onSelect(mode)}
@@ -73,8 +94,8 @@ export function StudyModeModal({
               borderColor
             )}
           >
-            <div className={cn("flex h-14 w-14 items-center justify-center rounded-xl shrink-0", bgColor)}>
-              <Icon className={cn("h-7 w-7", color)} />
+            <div className={cn("flex h-14 w-14 items-center justify-center rounded-xl shrink-0 text-white", bgColor)}>
+              <Icon className="h-7 w-7" />
             </div>
             <div>
               <span className="text-lg font-bold">{label}</span>

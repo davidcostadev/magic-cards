@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { CardReview } from "@/components/features/learning/CardReview";
 import { QuizReview } from "@/components/features/learning/QuizReview";
+import { TypeAnswerReview } from "@/components/features/learning/TypeAnswerReview";
+import { MatchReview } from "@/components/features/learning/MatchReview";
 import { SessionSummary } from "@/components/features/learning/SessionSummary";
 import { StudyModeModal, type StudyMode } from "@/components/features/learning/StudyModeModal";
 import { useLearningSessions } from "@/context/LearningContext";
@@ -27,6 +29,8 @@ export function LearningSessionPage() {
 
   const flashcardCount = allCards.filter((c) => c.type === "open").length;
   const quizCount = allCards.filter((c) => c.type === "quiz").length;
+  const typeAnswerCount = allCards.filter((c) => c.type === "type-answer").length;
+  const matchCount = allCards.filter((c) => c.type === "match").length;
 
   const [mode, setMode] = useState<StudyMode | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -39,6 +43,8 @@ export function LearningSessionPage() {
     if (!mode) return [];
     if (mode === "flashcards") cards = allCards.filter((c) => c.type === "open");
     else if (mode === "quizzes") cards = allCards.filter((c) => c.type === "quiz");
+    else if (mode === "type-answer") cards = allCards.filter((c) => c.type === "type-answer");
+    else if (mode === "match") cards = allCards.filter((c) => c.type === "match");
     else cards = [...allCards];
 
     for (let i = cards.length - 1; i > 0; i--) {
@@ -78,6 +84,8 @@ export function LearningSessionPage() {
         }}
         flashcardCount={flashcardCount}
         quizCount={quizCount}
+        typeAnswerCount={typeAnswerCount}
+        matchCount={matchCount}
       />
     );
   }
@@ -113,13 +121,22 @@ export function LearningSessionPage() {
     onRate: handleRate,
   };
 
+  const renderCard = () => {
+    switch (currentCard.type) {
+      case "quiz":
+        return <QuizReview key={currentCard.id} {...commonProps} />;
+      case "type-answer":
+        return <TypeAnswerReview key={currentCard.id} {...commonProps} />;
+      case "match":
+        return <MatchReview key={currentCard.id} {...commonProps} />;
+      default:
+        return <CardReview key={currentCard.id} {...commonProps} />;
+    }
+  };
+
   return (
     <>
-      {currentCard.type === "quiz" ? (
-        <QuizReview key={currentCard.id} {...commonProps} />
-      ) : (
-        <CardReview key={currentCard.id} {...commonProps} />
-      )}
+      {renderCard()}
 
       <Dialog open={exitRequested} onOpenChange={(open) => { if (!open) cancelExit(); }}>
         <DialogContent className="max-w-sm text-center">

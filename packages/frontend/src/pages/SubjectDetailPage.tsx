@@ -49,6 +49,8 @@ export function SubjectDetailPage() {
         id: `card-${Date.now()}`,
         subjectId,
         ...data,
+        shortAnswer: "",
+        matchPairs: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

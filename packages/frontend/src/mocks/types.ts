@@ -20,12 +20,17 @@ export interface Subject {
   updatedAt: string;
 }
 
-export type CardType = "open" | "quiz";
+export type CardType = "open" | "quiz" | "type-answer" | "match";
 
 export interface Choice {
   id: string;
   text: string;
   isCorrect: boolean;
+}
+
+export interface MatchPair {
+  left: string;
+  right: string;
 }
 
 export interface Card {
@@ -37,6 +42,8 @@ export interface Card {
   hints: string[];
   tags: string[];
   choices: Choice[];
+  shortAnswer: string;
+  matchPairs: MatchPair[];
   createdAt: string;
   updatedAt: string;
 }
