@@ -8,7 +8,7 @@
       "color": "#3178C6",
       "icon": "code",
       "createdAt": "2026-01-15T00:00:00.000Z",
-      "updatedAt": "2026-05-20T00:00:00.000Z"
+      "updatedAt": "2026-05-29T00:00:00.000Z"
     },
     {
       "id": "sub-2",
@@ -28,7 +28,7 @@
       "color": "#61DAFB",
       "icon": "component",
       "createdAt": "2026-03-10T00:00:00.000Z",
-      "updatedAt": "2026-05-22T00:00:00.000Z"
+      "updatedAt": "2026-05-29T00:00:00.000Z"
     },
     {
       "id": "sub-4",
@@ -48,7 +48,7 @@
       "color": "#EAB308",
       "icon": "javascript",
       "createdAt": "2026-05-26T00:00:00.000Z",
-      "updatedAt": "2026-05-26T00:00:00.000Z"
+      "updatedAt": "2026-05-29T00:00:00.000Z"
     },
     {
       "id": "sub-6",
@@ -98,7 +98,7 @@
       "color": "#8B5CF6",
       "icon": "algorithms",
       "createdAt": "2026-05-26T00:00:00.000Z",
-      "updatedAt": "2026-05-26T00:00:00.000Z"
+      "updatedAt": "2026-05-29T00:00:00.000Z"
     }
   ],
   "cards": [
@@ -1288,6 +1288,904 @@
       ],
       "createdAt": "2026-05-26T00:00:00.000Z",
       "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-46",
+      "subjectId": "sub-1",
+      "type": "open",
+      "language": "en",
+      "question": "What is the difference between `unknown` and `any` in TypeScript?\n\n```typescript\nlet a: any = JSON.parse(input);\nlet u: unknown = JSON.parse(input);\n```",
+      "answer": "Both accept any value, but they behave oppositely with type checking:\n\n- **`any`** turns *off* type checking — you can call, index, or assign it anywhere with no errors (and no safety).\n- **`unknown`** is the type-safe top type — it holds any value, but you must **narrow** it (via `typeof`, `instanceof`, or a type guard) before using it.\n\n```typescript\nlet u: unknown = JSON.parse(input);\n// u.trim();            // ❌ Error: 'u' is of type 'unknown'\nif (typeof u === 'string') {\n  u.trim();             // ✅ narrowed to string\n}\n\nlet a: any = JSON.parse(input);\na.trim();               // ✅ compiles, may crash at runtime\n```\n\n**Rule of thumb**: prefer `unknown` at trust boundaries (parsed JSON, API responses) and narrow it; avoid `any`.",
+      "hints": [
+        "Both can hold any value — but only one keeps type checking on",
+        "Think about which one forces you to narrow before use"
+      ],
+      "tags": [
+        "types",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-47",
+      "subjectId": "sub-1",
+      "type": "open",
+      "language": "en",
+      "question": "What are generics, and what does the `extends` constraint do here?\n\n```typescript\nfunction getProp<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key];\n}\n```",
+      "answer": "**Generics** parameterize code by type, so one definition works for many types while staying type-safe.\n\nHere:\n- `T` is the object type, inferred from the argument.\n- `K extends keyof T` **constrains** `K` to only the keys that actually exist on `T`.\n- The return type `T[K]` is the precise type of that property.\n\n```typescript\nconst user = { name: 'Ada', age: 36 };\ngetProp(user, 'name');  // string\ngetProp(user, 'age');   // number\ngetProp(user, 'email'); // ❌ Error: 'email' is not a key of user\n```\n\nWithout the constraint, `key` could be any string and the return type would widen to `any`, losing safety.",
+      "hints": [
+        "Generics are like parameters, but for types",
+        "`extends` here limits which values K is allowed to be"
+      ],
+      "tags": [
+        "types",
+        "advanced"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-48",
+      "subjectId": "sub-1",
+      "type": "open",
+      "language": "pt",
+      "question": "Em TypeScript, qual a diferença entre um `enum` e uma união de literais com `as const`?\n\n```typescript\nenum Status { Active, Inactive }\nconst STATUS = ['active', 'inactive'] as const;\ntype Status2 = typeof STATUS[number];\n```",
+      "answer": "Ambos modelam um conjunto fechado de valores, mas têm trade-offs diferentes:\n\n- **`enum`** gera código JavaScript em tempo de execução (um objeto). Enums numéricos têm mapeamento reverso e podem surpreender.\n- **União de literais com `as const`** existe só em tempo de tipo — desaparece na compilação (zero custo em runtime) e funciona naturalmente com strings.\n\n```typescript\nconst STATUS = ['active', 'inactive'] as const;\ntype Status = typeof STATUS[number]; // 'active' | 'inactive'\n\nfunction setStatus(s: Status) {}\nsetStatus('active'); // ✅\nsetStatus('paused'); // ❌ erro de tipo\n```\n\n**Recomendação atual**: prefira uniões de literais (`as const`) na maioria dos casos; use `enum` quando precisar de um valor real em runtime.",
+      "hints": [
+        "Pense no que cada um gera no JavaScript compilado",
+        "Um existe em tempo de execução; o outro some na compilação"
+      ],
+      "tags": [
+        "types",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-49",
+      "subjectId": "sub-1",
+      "type": "quiz",
+      "language": "en",
+      "question": "What does the `satisfies` operator do?\n\n```typescript\nconst config = {\n  port: 3000,\n  host: 'localhost',\n} satisfies Record<string, string | number>;\n```",
+      "answer": "It checks the value conforms to a type while preserving the value's narrow inferred type.",
+      "hints": [],
+      "tags": [
+        "types",
+        "advanced"
+      ],
+      "choices": [
+        {
+          "id": "c49-1",
+          "text": "Checks the value conforms to a type while keeping its narrow inferred type",
+          "isCorrect": true
+        },
+        {
+          "id": "c49-2",
+          "text": "Casts the value to the type, overriding inference",
+          "isCorrect": false
+        },
+        {
+          "id": "c49-3",
+          "text": "Throws a runtime error if the value doesn't match",
+          "isCorrect": false
+        },
+        {
+          "id": "c49-4",
+          "text": "Makes all properties of the value readonly",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-50",
+      "subjectId": "sub-1",
+      "type": "quiz",
+      "language": "en",
+      "question": "What does the non-null assertion operator `!` do here?\n\n```typescript\nconst el = document.getElementById('app')!;\nel.classList.add('ready');\n```",
+      "answer": "It tells the compiler the value is not null or undefined — a compile-time assertion with no runtime check.",
+      "hints": [],
+      "tags": [
+        "operators",
+        "advanced"
+      ],
+      "choices": [
+        {
+          "id": "c50-1",
+          "text": "Tells the compiler the value is not null or undefined (no runtime check)",
+          "isCorrect": true
+        },
+        {
+          "id": "c50-2",
+          "text": "Throws an error if the value is null at runtime",
+          "isCorrect": false
+        },
+        {
+          "id": "c50-3",
+          "text": "Converts the value to a boolean",
+          "isCorrect": false
+        },
+        {
+          "id": "c50-4",
+          "text": "Provides a default value when the value is null",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-51",
+      "subjectId": "sub-1",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which TypeScript type represents a value that can never occur (e.g. a function that always throws, or an exhausted union)?\n\n```typescript\nfunction fail(msg: string): ??? {\n  throw new Error(msg);\n}\n```",
+      "answer": "`never` is the empty/bottom type — assignable to every type, but nothing is assignable to it. It is used for functions that never return and for exhaustiveness checks.",
+      "hints": [
+        "It's the bottom type",
+        "Five letters — the opposite of `unknown`"
+      ],
+      "tags": [
+        "types",
+        "advanced"
+      ],
+      "choices": [],
+      "shortAnswer": "never",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-52",
+      "subjectId": "sub-1",
+      "type": "type-answer",
+      "language": "pt",
+      "question": "Qual tipo do TypeScript aceita qualquer valor, mas obriga você a fazer uma checagem (narrowing) antes de usá-lo?\n\n```typescript\nlet data: ??? = JSON.parse(payload);\nif (typeof data === 'string') data.trim();\n```",
+      "answer": "`unknown` é o top type seguro: pode receber qualquer valor, mas o compilador exige narrowing (typeof, instanceof, type guard) antes de operar sobre ele — ao contrário de `any`.",
+      "hints": [
+        "É o equivalente seguro de `any`",
+        "Sete letras, em inglês"
+      ],
+      "tags": [
+        "types",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "unknown",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-53",
+      "subjectId": "sub-1",
+      "type": "match",
+      "language": "en",
+      "question": "Match the TypeScript type or construct to its meaning",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "types",
+        "advanced"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "void",
+          "right": "Function returns nothing useful"
+        },
+        {
+          "left": "never",
+          "right": "Value that can never occur"
+        },
+        {
+          "left": "unknown",
+          "right": "Any value, must narrow before use"
+        },
+        {
+          "left": "any",
+          "right": "Opts out of type checking"
+        },
+        {
+          "left": "[string, number]",
+          "right": "Tuple: fixed length, typed positions"
+        },
+        {
+          "left": "keyof T",
+          "right": "Union of a type's property keys"
+        }
+      ],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-54",
+      "subjectId": "sub-3",
+      "type": "open",
+      "language": "en",
+      "question": "Why does React need a `key` prop when rendering lists, and what makes a good key?\n\n```tsx\n{items.map((item) => (\n  <Row key={item.id} data={item} />\n))}\n```",
+      "answer": "Keys give each list item a **stable identity** so React's reconciler can tell which items were added, removed, or reordered between renders — instead of re-creating DOM nodes unnecessarily.\n\nA good key is:\n- **Unique** among its siblings\n- **Stable** across renders (same item → same key)\n\n```tsx\n// ✅ stable id\n{items.map((item) => <Row key={item.id} data={item} />)}\n\n// ⚠️ index breaks on reorder/insert/delete — state can\n// stick to the wrong row\n{items.map((item, i) => <Row key={i} data={item} />)}\n```\n\nUsing the array index as a key is only safe for a static, never-reordered list.",
+      "hints": [
+        "It's about how React matches elements between renders",
+        "Why is the array index often a bad choice?"
+      ],
+      "tags": [
+        "fundamentals",
+        "performance"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-55",
+      "subjectId": "sub-3",
+      "type": "open",
+      "language": "en",
+      "question": "What is the difference between a controlled and an uncontrolled component in React?\n\n```tsx\n// A\n<input value={value} onChange={(e) => setValue(e.target.value)} />\n// B\n<input defaultValue=\"hi\" ref={inputRef} />\n```",
+      "answer": "It's about **where the form value lives**:\n\n- **Controlled** (A): React state is the single source of truth. The input shows `value` and every keystroke updates state via `onChange`. Easy to validate, transform, or reset.\n- **Uncontrolled** (B): the DOM node holds the value. You set an initial `defaultValue` and read the current value imperatively through a `ref`.\n\n```tsx\n// Controlled\nconst [name, setName] = useState('');\n<input value={name} onChange={(e) => setName(e.target.value)} />\n\n// Uncontrolled\nconst ref = useRef<HTMLInputElement>(null);\n<input defaultValue=\"\" ref={ref} />\n// later: ref.current?.value\n```\n\n**Prefer controlled** for most forms; uncontrolled suits simple cases or integrating non-React code.",
+      "hints": [
+        "Where does the input's value actually live?",
+        "One reads from state every render, the other from the DOM"
+      ],
+      "tags": [
+        "fundamentals",
+        "hooks"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-56",
+      "subjectId": "sub-3",
+      "type": "open",
+      "language": "pt",
+      "question": "O que é a Context API do React e quando você deve usá-la?",
+      "answer": "A **Context API** permite compartilhar dados entre componentes sem passar props manualmente por cada nível da árvore (o chamado *prop drilling*).\n\n```tsx\nconst ThemeContext = createContext<'light' | 'dark'>('light');\n\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <Toolbar />\n    </ThemeContext.Provider>\n  );\n}\n\nfunction Toolbar() {\n  const theme = useContext(ThemeContext); // 'dark'\n}\n```\n\n**Quando usar**: dados globais e que mudam pouco — tema, usuário autenticado, idioma.\n\n**Cuidado**: todo consumidor re-renderiza quando o `value` muda. Para estado que muda muito, divida em contexts menores ou use uma biblioteca de estado dedicada. Context, por si só, não é um gerenciador de estado.",
+      "hints": [
+        "Pense em \"prop drilling\"",
+        "Ideal para tema, usuário autenticado, idioma"
+      ],
+      "tags": [
+        "fundamentals",
+        "performance"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-57",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "language": "en",
+      "question": "What does wrapping a component in `React.memo` do?\n\n```tsx\nconst Row = React.memo(function Row({ data }) {\n  return <li>{data.name}</li>;\n});\n```",
+      "answer": "It memoizes the component, skipping re-render when its props are shallowly unchanged.",
+      "hints": [],
+      "tags": [
+        "performance",
+        "hooks"
+      ],
+      "choices": [
+        {
+          "id": "c57-1",
+          "text": "Skips re-rendering when its props are shallowly equal to the previous render",
+          "isCorrect": true
+        },
+        {
+          "id": "c57-2",
+          "text": "Caches the component's return value forever",
+          "isCorrect": false
+        },
+        {
+          "id": "c57-3",
+          "text": "Memoizes expensive calculations inside the component",
+          "isCorrect": false
+        },
+        {
+          "id": "c57-4",
+          "text": "Prevents the component's state from changing",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-58",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "language": "en",
+      "question": "Which statement about the Rules of Hooks is correct?\n\n```tsx\nfunction Component({ show }) {\n  if (show) {\n    const [x, setX] = useState(0); // ?\n  }\n}\n```",
+      "answer": "Hooks must run in the same order every render, so they must be called only at the top level of the component.",
+      "hints": [],
+      "tags": [
+        "hooks",
+        "fundamentals"
+      ],
+      "choices": [
+        {
+          "id": "c58-1",
+          "text": "Hooks must be called at the top level, not inside conditions, loops, or nested functions",
+          "isCorrect": true
+        },
+        {
+          "id": "c58-2",
+          "text": "Hooks can be called anywhere as long as the component is a function",
+          "isCorrect": false
+        },
+        {
+          "id": "c58-3",
+          "text": "Hooks may be called conditionally if wrapped in useEffect",
+          "isCorrect": false
+        },
+        {
+          "id": "c58-4",
+          "text": "Hooks must be called inside a try/catch block",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-59",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which React hook memoizes the result of an expensive calculation so it is only recomputed when its dependencies change?\n\n```tsx\nconst sorted = ???(() => heavySort(items), [items]);\n```",
+      "answer": "`useMemo` caches a computed value between renders and recomputes it only when a dependency changes. (Its sibling `useCallback` memoizes a function instead.)",
+      "hints": [
+        "It caches a value, not a function — that's useCallback"
+      ],
+      "tags": [
+        "hooks",
+        "performance"
+      ],
+      "choices": [],
+      "shortAnswer": "useMemo",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-60",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "language": "pt",
+      "question": "Qual hook do React é indicado para gerenciar estado complexo com múltiplas transições, no estilo reducer (estado + ação)?\n\n```tsx\nconst [state, dispatch] = ???(reducer, initialState);\n```",
+      "answer": "`useReducer` centraliza atualizações de estado complexas em uma função reducer pura `(state, action) => newState`, retornando o estado atual e uma função `dispatch`.",
+      "hints": [
+        "É uma alternativa ao useState para lógica de estado mais complexa",
+        "O nome contém \"reducer\""
+      ],
+      "tags": [
+        "hooks",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "useReducer",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-61",
+      "subjectId": "sub-3",
+      "type": "match",
+      "language": "en",
+      "question": "Match the React concept to its description",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "fundamentals",
+        "hooks"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "JSX",
+          "right": "Syntax that compiles to createElement calls"
+        },
+        {
+          "left": "Props",
+          "right": "Read-only inputs passed from a parent"
+        },
+        {
+          "left": "State",
+          "right": "Data owned by a component that can change"
+        },
+        {
+          "left": "Fragment",
+          "right": "Groups children without adding a DOM node"
+        },
+        {
+          "left": "Portal",
+          "right": "Renders children into a different DOM subtree"
+        },
+        {
+          "left": "Key",
+          "right": "Stable identity for items in a list"
+        }
+      ],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-62",
+      "subjectId": "sub-5",
+      "type": "open",
+      "language": "en",
+      "question": "What is a closure in JavaScript?\n\n```javascript\nfunction counter() {\n  let count = 0;\n  return () => ++count;\n}\nconst next = counter();\nnext(); // 1\nnext(); // 2\n```",
+      "answer": "A **closure** is a function together with references to the variables from the scope where it was *defined* (its lexical scope). The inner function keeps access to those variables even after the outer function has returned.\n\n```javascript\nfunction counter() {\n  let count = 0;          // captured by the closure\n  return () => ++count;\n}\nconst next = counter();\nnext(); // 1\nnext(); // 2  — same `count` persists\n```\n\nEach call to `counter()` creates a **fresh** `count`. Closures power data privacy, function factories, memoization, and stateful callbacks.",
+      "hints": [
+        "Notice that `count` survives after `counter()` returns",
+        "It's about a function 'remembering' the scope it was created in"
+      ],
+      "tags": [
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-63",
+      "subjectId": "sub-5",
+      "type": "open",
+      "language": "en",
+      "question": "What is hoisting, and how do `var`, `let`, and function declarations differ?\n\n```javascript\nconsole.log(a); // ?\nvar a = 1;\nconsole.log(b); // ?\nlet b = 2;\n```",
+      "answer": "**Hoisting** is JavaScript processing *declarations* before executing code. What's available early differs by kind:\n\n- **`var`**: declaration hoisted and initialized to `undefined` — reading it early gives `undefined`, not an error.\n- **`let` / `const`**: hoisted but **not initialized**; accessing them before their line throws `ReferenceError` (the *temporal dead zone*).\n- **Function declarations**: fully hoisted — you can call them before they appear.\n\n```javascript\nconsole.log(a); // undefined\nvar a = 1;\nconsole.log(b); // ❌ ReferenceError\nlet b = 2;\n```",
+      "hints": [
+        "What value does a `var` have before its assignment line runs?",
+        "`let` and `const` have a 'temporal dead zone'"
+      ],
+      "tags": [
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-64",
+      "subjectId": "sub-5",
+      "type": "open",
+      "language": "pt",
+      "question": "Como o valor de `this` é determinado em JavaScript, e por que arrow functions são diferentes?\n\n```javascript\nconst obj = {\n  name: 'Ada',\n  regular() { return this.name; },\n  arrow: () => this.name,\n};\n```",
+      "answer": "O valor de `this` é definido por **como** a função é chamada (o *call-site*), não por onde foi escrita:\n\n- **Método** (`obj.fn()`): `this` é o objeto antes do ponto.\n- **Função solta** (`fn()`): `this` é `undefined` em modo estrito (ou o objeto global fora dele).\n- **`call` / `apply` / `bind`**: você define `this` explicitamente.\n- **Arrow function**: **não tem `this` próprio** — herda do escopo onde foi definida (lexical).\n\n```javascript\nconst obj = {\n  name: 'Ada',\n  regular() { return this.name; }, // 'Ada'\n  arrow: () => this.name,          // herda do escopo externo\n};\nconst f = obj.regular;\nf(); // ❌ this é undefined — perdeu o contexto\n```",
+      "hints": [
+        "`this` depende de COMO a função é chamada, não de onde foi definida",
+        "Arrow functions não têm `this` próprio"
+      ],
+      "tags": [
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-65",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "language": "en",
+      "question": "What does `0.1 + 0.2 === 0.3` evaluate to in JavaScript?\n\n```javascript\nconsole.log(0.1 + 0.2);\n```",
+      "answer": "`false`. IEEE-754 floating point can't represent 0.1 and 0.2 exactly, so the sum is 0.30000000000000004.",
+      "hints": [],
+      "tags": [
+        "operators",
+        "fundamentals"
+      ],
+      "choices": [
+        {
+          "id": "c65-1",
+          "text": "false — floating-point rounding makes the sum 0.30000000000000004",
+          "isCorrect": true
+        },
+        {
+          "id": "c65-2",
+          "text": "true",
+          "isCorrect": false
+        },
+        {
+          "id": "c65-3",
+          "text": "It throws a precision error",
+          "isCorrect": false
+        },
+        {
+          "id": "c65-4",
+          "text": "NaN",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-66",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "language": "en",
+      "question": "What does the spread syntax produce here?\n\n```javascript\nconst a = [1, 2];\nconst b = [...a, 3];\nconst o = { ...{ x: 1 }, y: 2 };\n```",
+      "answer": "A new array `[1, 2, 3]` and a new object `{ x: 1, y: 2 }` — both shallow copies.",
+      "hints": [],
+      "tags": [
+        "operators",
+        "arrays"
+      ],
+      "choices": [
+        {
+          "id": "c66-1",
+          "text": "A new array [1,2,3] and a new object {x:1,y:2} (shallow copies)",
+          "isCorrect": true
+        },
+        {
+          "id": "c66-2",
+          "text": "References to the same array and object",
+          "isCorrect": false
+        },
+        {
+          "id": "c66-3",
+          "text": "A deep clone of nested values",
+          "isCorrect": false
+        },
+        {
+          "id": "c66-4",
+          "text": "A syntax error outside function arguments",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-67",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which array method returns `true` only if **all** elements pass the provided test function?\n\n```javascript\n[2, 4, 6].???((n) => n % 2 === 0); // true\n```",
+      "answer": "`Array.prototype.every` tests whether all elements satisfy the predicate, short-circuiting on the first failure. Its counterpart is `some`.",
+      "hints": [
+        "Its counterpart, which checks if AT LEAST ONE passes, is `some`"
+      ],
+      "tags": [
+        "arrays",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "every",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-68",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "language": "pt",
+      "question": "Qual método converte um valor JavaScript em uma string no formato JSON?\n\n```javascript\nconst s = ???({ id: 1, ok: true }); // '{\"id\":1,\"ok\":true}'\n```",
+      "answer": "`JSON.stringify` serializa um valor JS em uma string JSON. A operação inversa é `JSON.parse`.",
+      "hints": [
+        "É o oposto de JSON.parse",
+        "Começa com JSON."
+      ],
+      "tags": [
+        "json",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "JSON.stringify",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-69",
+      "subjectId": "sub-5",
+      "type": "match",
+      "language": "en",
+      "question": "Match the JavaScript concept to its description",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "Closure",
+          "right": "Function that remembers its lexical scope"
+        },
+        {
+          "left": "Promise",
+          "right": "Object representing a future async value"
+        },
+        {
+          "left": "NaN",
+          "right": "Result of an invalid numeric operation"
+        },
+        {
+          "left": "Hoisting",
+          "right": "Declarations processed before execution"
+        },
+        {
+          "left": "Destructuring",
+          "right": "Unpacking values from arrays or objects"
+        },
+        {
+          "left": "Symbol",
+          "right": "Unique, immutable primitive identifier"
+        }
+      ],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-70",
+      "subjectId": "sub-10",
+      "type": "open",
+      "language": "en",
+      "question": "What is recursion, and why does every recursive function need a base case?\n\n```javascript\nfunction factorial(n) {\n  if (n <= 1) return 1;          // base case\n  return n * factorial(n - 1);   // recursive case\n}\n```",
+      "answer": "**Recursion** is when a function solves a problem by calling itself on a smaller version of the same problem, then combines the results.\n\nEvery recursive function needs:\n- A **base case** — a condition that returns directly without recursing.\n- A **recursive case** — that moves toward the base case.\n\n```javascript\nfunction factorial(n) {\n  if (n <= 1) return 1;          // base case\n  return n * factorial(n - 1);   // recursive case → smaller n\n}\n```\n\nWithout a reachable base case, the calls never stop and the **call stack** overflows (`RangeError: Maximum call stack size exceeded`).",
+      "hints": [
+        "What stops the function from calling itself forever?",
+        "Think about the call stack"
+      ],
+      "tags": [
+        "fundamentals",
+        "complexity"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-71",
+      "subjectId": "sub-10",
+      "type": "open",
+      "language": "en",
+      "question": "What is the difference between a stack and a queue?",
+      "answer": "Both are linear collections; they differ in **which element comes out next**:\n\n- **Stack — LIFO** (last-in, first-out). You `push` and `pop` from the *same* end (the top). Like a stack of plates.\n- **Queue — FIFO** (first-in, first-out). You `enqueue` at the back and `dequeue` from the front. Like a line at a store.\n\n```text\nStack:  push 1,2,3 → pop → 3, 2, 1\nQueue:  enqueue 1,2,3 → dequeue → 1, 2, 3\n```\n\nStacks back call stacks, undo history, and DFS; queues back schedulers, buffers, and BFS. Both offer O(1) insert and remove.",
+      "hints": [
+        "LIFO vs FIFO",
+        "Think 'stack of plates' vs 'line at a store'"
+      ],
+      "tags": [
+        "data-structures",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-72",
+      "subjectId": "sub-10",
+      "type": "open",
+      "language": "pt",
+      "question": "O que é uma tabela hash (hash table) e qual a complexidade média de busca, inserção e remoção?",
+      "answer": "Uma **tabela hash** armazena pares chave→valor usando uma **função de hash** que converte a chave em um índice de um array (bucket).\n\n- **Caso médio**: busca, inserção e remoção em **O(1)**.\n- **Pior caso**: **O(n)**, quando muitas chaves colidem no mesmo bucket.\n\n```text\nhash('email') → 4 → bucket[4] = valor\n```\n\nDepende de uma boa função de hash e de uma estratégia de tratamento de colisões (encadeamento ou endereçamento aberto). É a estrutura por trás de `Map`/objetos em JS, `dict` em Python e `HashMap` em Java.",
+      "hints": [
+        "Usa uma função de hash para mapear chaves a posições",
+        "No caso médio a busca é O(1)"
+      ],
+      "tags": [
+        "data-structures",
+        "complexity"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-73",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "language": "en",
+      "question": "What is the time complexity of accessing an element by index in an array, like `arr[5]`?",
+      "answer": "O(1) — constant time. The memory address is computed directly from the index, regardless of array size.",
+      "hints": [],
+      "tags": [
+        "complexity",
+        "data-structures"
+      ],
+      "choices": [
+        {
+          "id": "c73-1",
+          "text": "O(1) — constant time",
+          "isCorrect": true
+        },
+        {
+          "id": "c73-2",
+          "text": "O(n) — linear time",
+          "isCorrect": false
+        },
+        {
+          "id": "c73-3",
+          "text": "O(log n) — logarithmic time",
+          "isCorrect": false
+        },
+        {
+          "id": "c73-4",
+          "text": "O(n²) — quadratic time",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-74",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "language": "en",
+      "question": "What is the average and worst-case time complexity of merge sort?",
+      "answer": "O(n log n) in all cases — it splits the array into halves (log n levels) and merges in linear time per level.",
+      "hints": [],
+      "tags": [
+        "complexity",
+        "sorting"
+      ],
+      "choices": [
+        {
+          "id": "c74-1",
+          "text": "O(n log n)",
+          "isCorrect": true
+        },
+        {
+          "id": "c74-2",
+          "text": "O(n²)",
+          "isCorrect": false
+        },
+        {
+          "id": "c74-3",
+          "text": "O(n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c74-4",
+          "text": "O(log n)",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-75",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which linear data structure follows LIFO (last-in, first-out) order, supporting push and pop at one end?",
+      "answer": "A **stack** is LIFO: the most recently pushed element is the first popped. It backs function call stacks, undo history, and depth-first search.",
+      "hints": [
+        "Think of a stack of plates",
+        "Its FIFO counterpart is the queue"
+      ],
+      "tags": [
+        "data-structures",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "stack",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-76",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "language": "pt",
+      "question": "Qual estrutura de dados (em forma de árvore) mantém sempre o maior ou o menor elemento na raiz e é a base das filas de prioridade?\n\n```text\n      1\n     / \\\n    3   5    (min-heap: pai <= filhos)\n```",
+      "answer": "Um *heap* é uma árvore binária quase completa onde cada pai respeita uma ordem em relação aos filhos (min-heap: pai ≤ filhos; max-heap: pai ≥ filhos). Inserção e remoção do topo são O(log n). É a estrutura por trás das filas de prioridade.",
+      "hints": [
+        "É usada em filas de prioridade (priority queue)",
+        "Quatro letras, em inglês"
+      ],
+      "tags": [
+        "data-structures",
+        "complexity"
+      ],
+      "choices": [],
+      "shortAnswer": "heap",
+      "matchPairs": [],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
+    },
+    {
+      "id": "card-77",
+      "subjectId": "sub-10",
+      "type": "match",
+      "language": "en",
+      "question": "Match the data structure to a defining property",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "data-structures",
+        "complexity"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "Hash table",
+          "right": "Average O(1) lookup by key"
+        },
+        {
+          "left": "Binary search tree",
+          "right": "Ordered, O(log n) search when balanced"
+        },
+        {
+          "left": "Stack",
+          "right": "LIFO — push/pop at one end"
+        },
+        {
+          "left": "Queue",
+          "right": "FIFO — enqueue back, dequeue front"
+        },
+        {
+          "left": "Array",
+          "right": "O(1) access by index, contiguous memory"
+        },
+        {
+          "left": "Linked list",
+          "right": "O(1) insert/delete given a node"
+        }
+      ],
+      "createdAt": "2026-05-29T00:00:00.000Z",
+      "updatedAt": "2026-05-29T00:00:00.000Z"
     }
   ]
 }
