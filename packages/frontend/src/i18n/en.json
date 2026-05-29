@@ -179,6 +179,7 @@
     "theme": "Theme",
     "chooseSubjects": "Choose subjects to study",
     "chooseSubjectsHint": "You can change these anytime",
+    "selectAtLeastOne": "Select at least one subject to continue.",
     "next": "Next",
     "getStarted": "Get started"
   },

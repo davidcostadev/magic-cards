@@ -1,21 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Sparkles, Check, Sun, Moon, Code, Database, Component, GitBranch } from "lucide-react";
+import { Sparkles, Check, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
+import { getSubjectIcon } from "@/components/features/subjects/subjectIcons";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import { mockSubjects } from "@/mocks/data";
-
-const iconMap: Record<string, React.ElementType> = {
-  code: Code,
-  database: Database,
-  component: Component,
-  "git-branch": GitBranch,
-};
 
 interface Option {
   value: string;
@@ -34,7 +28,7 @@ export function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [language, setLanguage] = useState(initialLang);
   const [cardLanguage, setCardLanguage] = useState(initialLang);
-  const [selected, setSelected] = useState<string[]>(() => mockSubjects.map((s) => s.id));
+  const [selected, setSelected] = useState<string[]>(() => mockSubjects.slice(0, 4).map((s) => s.id));
 
   const handleLanguage = (lang: string) => {
     setLanguage(lang);
@@ -45,9 +39,9 @@ export function OnboardingPage() {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const finish = () => {
+    if (selected.length === 0) return;
     updatePreferences({ language, cardLanguage, theme });
-    const subjects = selected.length > 0 ? selected : mockSubjects.map((s) => s.id);
-    completeOnboarding(subjects);
+    completeOnboarding(selected);
     navigate({ to: "/dashboard" });
   };
 
@@ -132,9 +126,12 @@ export function OnboardingPage() {
             <div className="space-y-2.5">
               <Label>{t("onboarding.chooseSubjects")}</Label>
               <p className="text-sm text-muted-foreground">{t("onboarding.chooseSubjectsHint")}</p>
+              {selected.length === 0 && (
+                <p className="text-sm text-destructive">{t("onboarding.selectAtLeastOne")}</p>
+              )}
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {mockSubjects.map((subject) => {
-                  const Icon = iconMap[subject.icon] ?? Code;
+                  const Icon = getSubjectIcon(subject.icon);
                   const active = selected.includes(subject.id);
                   return (
                     <button
@@ -181,7 +178,7 @@ export function OnboardingPage() {
               {t("onboarding.next")}
             </Button>
           ) : (
-            <Button size="lg" className="flex-1" onClick={finish}>
+            <Button size="lg" className="flex-1" onClick={finish} disabled={selected.length === 0}>
               {t("onboarding.getStarted")}
             </Button>
           )}

@@ -1,19 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { MoreVertical, Pencil, Trash2, Code, Database, Component, GitBranch, GraduationCap } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/utils/cn";
+import { getSubjectIcon } from "@/components/features/subjects/subjectIcons";
 import type { Subject } from "@/mocks/types";
 import { useState, useRef, useEffect } from "react";
-
-const iconMap: Record<string, React.ElementType> = {
-  code: Code,
-  database: Database,
-  component: Component,
-  "git-branch": GitBranch,
-};
 
 interface SubjectCardProps {
   subject: Subject;
@@ -25,7 +19,7 @@ interface SubjectCardProps {
 export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCardProps) {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const Icon = iconMap[subject.icon] ?? Code;
+  const Icon = getSubjectIcon(subject.icon);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstItemRef = useRef<HTMLButtonElement>(null);
 

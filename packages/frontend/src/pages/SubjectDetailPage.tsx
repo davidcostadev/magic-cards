@@ -1,20 +1,14 @@
 import { useState } from "react";
 import { useParams, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Plus, GraduationCap, Code, Database, Component, GitBranch } from "lucide-react";
+import { ArrowLeft, Plus, GraduationCap } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
 import { CardList } from "@/components/features/cards/CardList";
 import { CardForm } from "@/components/features/cards/CardForm";
+import { getSubjectIcon } from "@/components/features/subjects/subjectIcons";
 import { mockSubjects, mockCards as initialCards } from "@/mocks/data";
 import type { Card } from "@/mocks/types";
-
-const iconMap: Record<string, React.ElementType> = {
-  code: Code,
-  database: Database,
-  component: Component,
-  "git-branch": GitBranch,
-};
 
 export function SubjectDetailPage() {
   const { subjectId } = useParams({ from: "/subjects/$subjectId" });
@@ -34,7 +28,7 @@ export function SubjectDetailPage() {
     );
   }
 
-  const Icon = iconMap[subject.icon] ?? Code;
+  const Icon = getSubjectIcon(subject.icon);
 
   const handleSave = (data: Pick<Card, "type" | "language" | "question" | "answer" | "hints" | "tags" | "choices">) => {
     if (editingCard) {

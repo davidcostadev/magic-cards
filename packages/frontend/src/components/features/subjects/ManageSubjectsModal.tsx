@@ -1,17 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { Check, Code, Database, Component, GitBranch } from "lucide-react";
+import { Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
+import { getSubjectIcon } from "@/components/features/subjects/subjectIcons";
 import { usePreferences } from "@/context/PreferencesContext";
 import type { Subject } from "@/mocks/types";
-
-const iconMap: Record<string, React.ElementType> = {
-  code: Code,
-  database: Database,
-  component: Component,
-  "git-branch": GitBranch,
-};
 
 interface ManageSubjectsModalProps {
   open: boolean;
@@ -32,7 +26,7 @@ export function ManageSubjectsModal({ open, onOpenChange, subjects }: ManageSubj
         <p className="text-sm text-muted-foreground">{t("subjects.manageHint")}</p>
         <div className="mt-4 space-y-2.5">
           {subjects.map((subject) => {
-            const Icon = iconMap[subject.icon] ?? Code;
+            const Icon = getSubjectIcon(subject.icon);
             const active = isSubjectActive(subject.id);
             return (
               <button

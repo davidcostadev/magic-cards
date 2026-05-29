@@ -39,6 +39,66 @@
       "icon": "git-branch",
       "createdAt": "2026-04-05T00:00:00.000Z",
       "updatedAt": "2026-05-15T00:00:00.000Z"
+    },
+    {
+      "id": "sub-5",
+      "userId": "user-1",
+      "title": "JavaScript",
+      "description": "Core JavaScript language features and runtime behavior",
+      "color": "#EAB308",
+      "icon": "javascript",
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "sub-6",
+      "userId": "user-1",
+      "title": "CSS",
+      "description": "Layout, the box model, flexbox and modern styling",
+      "color": "#2563EB",
+      "icon": "css",
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "sub-7",
+      "userId": "user-1",
+      "title": "Node.js",
+      "description": "Server-side JavaScript, the event loop and core modules",
+      "color": "#16A34A",
+      "icon": "node",
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "sub-8",
+      "userId": "user-1",
+      "title": "Docker",
+      "description": "Containers, images and everyday Docker workflows",
+      "color": "#0EA5E9",
+      "icon": "docker",
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "sub-9",
+      "userId": "user-1",
+      "title": "Python",
+      "description": "Pythonic idioms, data structures and the standard library",
+      "color": "#3776AB",
+      "icon": "python",
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "sub-10",
+      "userId": "user-1",
+      "title": "Algorithms",
+      "description": "Complexity analysis, classic algorithms and data structures",
+      "color": "#8B5CF6",
+      "icon": "algorithms",
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
     }
   ],
   "cards": [
@@ -635,6 +695,599 @@
       ],
       "createdAt": "2026-05-19T00:00:00.000Z",
       "updatedAt": "2026-05-19T00:00:00.000Z"
+    },
+    {
+      "id": "card-23",
+      "subjectId": "sub-5",
+      "type": "open",
+      "language": "en",
+      "question": "What is the difference between `==` and `===` in JavaScript?",
+      "answer": "`==` is loose equality and performs type coercion before comparing.\n`===` is strict equality and compares value **and** type with no coercion.\n\n```js\n0 == \"0\"   // true  (coerced)\n0 === \"0\"  // false (different types)\n```\n\n**Rule of thumb:** prefer `===`.",
+      "hints": [
+        "One of them converts types before comparing"
+      ],
+      "tags": [
+        "fundamentals",
+        "operators"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-24",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "language": "en",
+      "question": "What does `typeof null` return?",
+      "answer": "A long-standing language quirk: `typeof null` is `\"object\"`.",
+      "hints": [],
+      "tags": [
+        "fundamentals"
+      ],
+      "choices": [
+        {
+          "id": "c23-1",
+          "text": "\"object\"",
+          "isCorrect": true
+        },
+        {
+          "id": "c23-2",
+          "text": "\"null\"",
+          "isCorrect": false
+        },
+        {
+          "id": "c23-3",
+          "text": "\"undefined\"",
+          "isCorrect": false
+        },
+        {
+          "id": "c23-4",
+          "text": "\"number\"",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-25",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which method parses a JSON string into a JavaScript value?",
+      "answer": "`JSON.parse` turns a JSON string into a JS value.",
+      "hints": [
+        "It lives on the JSON global"
+      ],
+      "tags": [
+        "json"
+      ],
+      "choices": [],
+      "shortAnswer": "JSON.parse",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-26",
+      "subjectId": "sub-5",
+      "type": "match",
+      "language": "en",
+      "question": "Match the array method to what it does",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "arrays"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "map",
+          "right": "Transforms each element"
+        },
+        {
+          "left": "filter",
+          "right": "Keeps elements that pass a test"
+        },
+        {
+          "left": "reduce",
+          "right": "Accumulates to a single value"
+        },
+        {
+          "left": "forEach",
+          "right": "Runs a side effect per element"
+        }
+      ],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-27",
+      "subjectId": "sub-5",
+      "type": "open",
+      "language": "pt",
+      "question": "Qual a diferença entre `let`, `const` e `var`?",
+      "answer": "- `var`: escopo de função, sofre hoisting e pode ser redeclarada.\n- `let`: escopo de bloco, não pode ser redeclarada no mesmo escopo.\n- `const`: escopo de bloco e não permite reatribuição (mas objetos continuam mutáveis).",
+      "hints": [],
+      "tags": [
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-28",
+      "subjectId": "sub-6",
+      "type": "open",
+      "language": "en",
+      "question": "Explain the CSS box model.",
+      "answer": "Every element is a box made of four layers, from inside out:\n\n1. **content** — text/image\n2. **padding** — space inside the border\n3. **border**\n4. **margin** — space outside the border\n\n`box-sizing: border-box` makes width include padding and border.",
+      "hints": [],
+      "tags": [
+        "layout",
+        "box-model"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-29",
+      "subjectId": "sub-6",
+      "type": "quiz",
+      "language": "en",
+      "question": "Which property sets the space **inside** an element's border?",
+      "answer": "`padding` is the space between the content and the border.",
+      "hints": [],
+      "tags": [
+        "box-model"
+      ],
+      "choices": [
+        {
+          "id": "c28-1",
+          "text": "padding",
+          "isCorrect": true
+        },
+        {
+          "id": "c28-2",
+          "text": "margin",
+          "isCorrect": false
+        },
+        {
+          "id": "c28-3",
+          "text": "gap",
+          "isCorrect": false
+        },
+        {
+          "id": "c28-4",
+          "text": "inset",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-30",
+      "subjectId": "sub-6",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which `display` value turns an element into a flex container?",
+      "answer": "`display: flex` creates a flex formatting context.",
+      "hints": [],
+      "tags": [
+        "flexbox"
+      ],
+      "choices": [],
+      "shortAnswer": "flex",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-31",
+      "subjectId": "sub-6",
+      "type": "match",
+      "language": "en",
+      "question": "Match the CSS unit to its meaning",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "units"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "px",
+          "right": "Absolute pixels"
+        },
+        {
+          "left": "rem",
+          "right": "Relative to root font size"
+        },
+        {
+          "left": "em",
+          "right": "Relative to parent font size"
+        },
+        {
+          "left": "vh",
+          "right": "1% of viewport height"
+        }
+      ],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-32",
+      "subjectId": "sub-7",
+      "type": "open",
+      "language": "en",
+      "question": "What is the Node.js event loop?",
+      "answer": "A single-threaded loop that lets Node perform non-blocking I/O by offloading operations to the system and running their callbacks in phases (timers, pending callbacks, poll, check, close). It's why Node handles many concurrent connections without threads per request.",
+      "hints": [],
+      "tags": [
+        "runtime"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-33",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "language": "en",
+      "question": "Which core module provides file system access?",
+      "answer": "The `fs` module exposes file system operations.",
+      "hints": [],
+      "tags": [
+        "modules"
+      ],
+      "choices": [
+        {
+          "id": "c32-1",
+          "text": "fs",
+          "isCorrect": true
+        },
+        {
+          "id": "c32-2",
+          "text": "http",
+          "isCorrect": false
+        },
+        {
+          "id": "c32-3",
+          "text": "path",
+          "isCorrect": false
+        },
+        {
+          "id": "c32-4",
+          "text": "url",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-34",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which object exposes environment variables in Node.js?",
+      "answer": "`process.env` holds the environment variables.",
+      "hints": [
+        "It's a property of the process global"
+      ],
+      "tags": [
+        "process"
+      ],
+      "choices": [],
+      "shortAnswer": "process.env",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-35",
+      "subjectId": "sub-8",
+      "type": "open",
+      "language": "en",
+      "question": "What is the difference between a Docker image and a container?",
+      "answer": "An **image** is an immutable, layered template (a snapshot of a filesystem + metadata). A **container** is a running (or stopped) instance of an image with its own writable layer. One image → many containers.",
+      "hints": [],
+      "tags": [
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-36",
+      "subjectId": "sub-8",
+      "type": "quiz",
+      "language": "en",
+      "question": "Which command builds an image from a Dockerfile?",
+      "answer": "`docker build` reads the Dockerfile and produces an image.",
+      "hints": [],
+      "tags": [
+        "cli"
+      ],
+      "choices": [
+        {
+          "id": "c35-1",
+          "text": "docker build",
+          "isCorrect": true
+        },
+        {
+          "id": "c35-2",
+          "text": "docker run",
+          "isCorrect": false
+        },
+        {
+          "id": "c35-3",
+          "text": "docker pull",
+          "isCorrect": false
+        },
+        {
+          "id": "c35-4",
+          "text": "docker commit",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-37",
+      "subjectId": "sub-8",
+      "type": "type-answer",
+      "language": "en",
+      "question": "What file defines the steps used to build an image?",
+      "answer": "A `Dockerfile` lists the build instructions.",
+      "hints": [],
+      "tags": [
+        "images"
+      ],
+      "choices": [],
+      "shortAnswer": "Dockerfile",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-38",
+      "subjectId": "sub-8",
+      "type": "match",
+      "language": "en",
+      "question": "Match the Docker command to its action",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "cli"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "docker build",
+          "right": "Build an image"
+        },
+        {
+          "left": "docker run",
+          "right": "Start a container"
+        },
+        {
+          "left": "docker pull",
+          "right": "Download an image"
+        },
+        {
+          "left": "docker ps",
+          "right": "List running containers"
+        }
+      ],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-39",
+      "subjectId": "sub-9",
+      "type": "open",
+      "language": "pt",
+      "question": "O que é uma list comprehension em Python?",
+      "answer": "Uma forma concisa de criar listas a partir de um iterável.\n\n```python\nquadrados = [x*x for x in range(5)]\n# [0, 1, 4, 9, 16]\n```\n\nPode incluir filtros: `[x for x in nums if x > 0]`.",
+      "hints": [],
+      "tags": [
+        "syntax"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-40",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "language": "en",
+      "question": "Which keyword defines a function in Python?",
+      "answer": "`def` introduces a function definition.",
+      "hints": [],
+      "tags": [
+        "functions"
+      ],
+      "choices": [
+        {
+          "id": "c39-1",
+          "text": "def",
+          "isCorrect": true
+        },
+        {
+          "id": "c39-2",
+          "text": "function",
+          "isCorrect": false
+        },
+        {
+          "id": "c39-3",
+          "text": "func",
+          "isCorrect": false
+        },
+        {
+          "id": "c39-4",
+          "text": "fn",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-41",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which built-in returns the number of items in a list?",
+      "answer": "`len()` returns the length of a sequence.",
+      "hints": [],
+      "tags": [
+        "builtins"
+      ],
+      "choices": [],
+      "shortAnswer": "len",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-42",
+      "subjectId": "sub-10",
+      "type": "open",
+      "language": "en",
+      "question": "What does Big-O notation describe?",
+      "answer": "It describes the **upper bound** on how an algorithm's running time (or space) grows relative to input size *n*, ignoring constants and lower-order terms. It captures worst-case scaling behavior, e.g. `O(1)`, `O(log n)`, `O(n)`, `O(n log n)`, `O(n²)`.",
+      "hints": [],
+      "tags": [
+        "complexity"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-43",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "language": "en",
+      "question": "What is the average time complexity of binary search?",
+      "answer": "Binary search halves the search space each step → `O(log n)`.",
+      "hints": [],
+      "tags": [
+        "search"
+      ],
+      "choices": [
+        {
+          "id": "c43-1",
+          "text": "O(log n)",
+          "isCorrect": true
+        },
+        {
+          "id": "c43-2",
+          "text": "O(n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c43-3",
+          "text": "O(n log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c43-4",
+          "text": "O(1)",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-44",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which linear data structure follows FIFO (first-in, first-out) order?",
+      "answer": "A Queue removes items in the order they were added.",
+      "hints": [],
+      "tags": [
+        "data-structures"
+      ],
+      "choices": [],
+      "shortAnswer": "Queue",
+      "matchPairs": [],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
+    },
+    {
+      "id": "card-45",
+      "subjectId": "sub-10",
+      "type": "match",
+      "language": "en",
+      "question": "Match the algorithm to its average time complexity",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "complexity"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "Binary search",
+          "right": "O(log n)"
+        },
+        {
+          "left": "Bubble sort",
+          "right": "O(n²)"
+        },
+        {
+          "left": "Merge sort",
+          "right": "O(n log n)"
+        },
+        {
+          "left": "Hash lookup",
+          "right": "O(1)"
+        }
+      ],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "updatedAt": "2026-05-26T00:00:00.000Z"
     }
   ]
 }
