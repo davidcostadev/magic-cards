@@ -11,6 +11,7 @@ export const mockUser: User = {
   email: "learner@example.com",
   username: "learner",
   language: "en",
+  cardLanguage: "all",
   theme: "light",
   dailyGoal: 20,
   createdAt: "2026-01-01T00:00:00.000Z",

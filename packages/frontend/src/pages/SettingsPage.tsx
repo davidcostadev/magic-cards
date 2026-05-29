@@ -13,10 +13,15 @@ export function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const [dailyGoal, setDailyGoal] = useState(user?.dailyGoal ?? 20);
   const [saved, setSaved] = useState(false);
+  const cardLanguage = user?.cardLanguage ?? "all";
 
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
     updatePreferences({ language: lang });
+  };
+
+  const handleCardLanguageChange = (lang: string) => {
+    updatePreferences({ cardLanguage: lang });
   };
 
   const handleThemeChange = (newTheme: "light" | "dark") => {
@@ -48,6 +53,32 @@ export function SettingsPage() {
                 key={code}
                 variant={i18n.language === code ? "default" : "outline"}
                 onClick={() => handleLanguageChange(code)}
+                className="flex-1"
+                size="lg"
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">{t("settings.cardLanguage")}</CardTitle>
+          <CardDescription>{t("settings.cardLanguageDescription")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            {[
+              { code: "all", label: t("settings.allLanguages") },
+              { code: "en", label: t("settings.english") },
+              { code: "pt", label: t("settings.portuguese") },
+            ].map(({ code, label }) => (
+              <Button
+                key={code}
+                variant={cardLanguage === code ? "default" : "outline"}
+                onClick={() => handleCardLanguageChange(code)}
                 className="flex-1"
                 size="lg"
               >

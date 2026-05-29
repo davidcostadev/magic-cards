@@ -3,6 +3,7 @@ export interface User {
   email: string;
   username: string;
   language: string;
+  cardLanguage: string;
   theme: string;
   dailyGoal: number;
   createdAt: string;

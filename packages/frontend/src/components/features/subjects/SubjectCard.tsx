@@ -62,24 +62,24 @@ export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCar
         </div>
       </div>
       <Link to="/subjects/$subjectId" params={{ subjectId: subject.id }}>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-4">
+        <CardHeader className="p-5 pb-2.5">
+          <div className="flex items-center gap-3.5">
             <div
-              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
               style={{ backgroundColor: `${subject.color}20`, color: subject.color }}
             >
-              <Icon className="h-6 w-6" />
+              <Icon className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-bold truncate">{subject.title}</h3>
-              <Badge variant="secondary" className="mt-1.5">
+              <h3 className="text-base font-bold truncate">{subject.title}</h3>
+              <Badge variant="secondary" className="mt-1">
                 {t("subjects.cardCount", { count: cardCount })}
               </Badge>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-base text-muted-foreground line-clamp-2">{subject.description}</p>
+        <CardContent className="px-5 pb-5 pt-0">
+          <p className="text-sm text-muted-foreground line-clamp-2">{subject.description}</p>
         </CardContent>
       </Link>
     </Card>

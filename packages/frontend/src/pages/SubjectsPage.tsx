@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, BookOpen } from "lucide-react";
+import { Plus, BookOpen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SubjectCard } from "@/components/features/subjects/SubjectCard";
 import { CreateSubjectModal } from "@/components/features/subjects/CreateSubjectModal";
 import { mockSubjects as initialSubjects, mockCards } from "@/mocks/data";
@@ -12,9 +13,20 @@ export function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [query, setQuery] = useState("");
 
   const getCardCount = (subjectId: string) =>
     mockCards.filter((c) => c.subjectId === subjectId).length;
+
+  const filteredSubjects = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return subjects;
+    return subjects.filter(
+      (s) =>
+        s.title.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q)
+    );
+  }, [subjects, query]);
 
   const handleSave = (data: { title: string; description: string; color: string; icon: string }) => {
     if (editingSubject) {
@@ -67,17 +79,35 @@ export function SubjectsPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {subjects.map((subject) => (
-            <SubjectCard
-              key={subject.id}
-              subject={subject}
-              cardCount={getCardCount(subject.id)}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+        <>
+          <div className="relative mb-5 max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("subjects.search")}
+              className="pl-11"
             />
-          ))}
-        </div>
+          </div>
+          {filteredSubjects.length === 0 ? (
+            <p className="py-16 text-center text-lg text-muted-foreground">
+              {t("subjects.noResults")}
+            </p>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredSubjects.map((subject) => (
+                <SubjectCard
+                  key={subject.id}
+                  subject={subject}
+                  cardCount={getCardCount(subject.id)}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <CreateSubjectModal

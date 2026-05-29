@@ -61,6 +61,8 @@
   },
   "subjects": {
     "title": "Subjects",
+    "search": "Search subjects...",
+    "noResults": "No subjects match your search.",
     "createSubject": "New Subject",
     "editSubject": "Edit Subject",
     "deleteSubject": "Delete Subject",
@@ -132,7 +134,6 @@
     "matchPairsFound": "pairs matched",
     "allMatched": "All matched!",
     "perfectMatch": "Perfect — no mistakes!",
-    "allLanguages": "All",
     "exitTitle": "Leave session?",
     "exitMessage": "Your progress in this session will be lost.",
     "exitCancel": "Keep studying",
@@ -141,6 +142,9 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
+    "cardLanguage": "Card Language",
+    "cardLanguageDescription": "Which language of cards to study",
+    "allLanguages": "All",
     "theme": "Theme",
     "darkMode": "Dark",
     "lightMode": "Light",

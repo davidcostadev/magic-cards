@@ -1,14 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { BookOpen, ListChecks, Layers, Keyboard, Link2, Globe } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BookOpen, ListChecks, Layers, Keyboard, Link2 } from "lucide-react";
 import { cn } from "@/utils/cn";
 
 export type StudyMode = "all" | "flashcards" | "quizzes" | "type-answer" | "match";
-
-const LANG_LABELS: Record<string, string> = {
-  en: "English",
-  pt: "Português",
-};
 
 interface StudyModeModalProps {
   open: boolean;
@@ -18,9 +12,6 @@ interface StudyModeModalProps {
   quizCount: number;
   typeAnswerCount: number;
   matchCount: number;
-  availableLanguages: string[];
-  selectedLanguage: string | null;
-  onLanguageChange: (lang: string | null) => void;
 }
 
 export function StudyModeModal({
@@ -30,9 +21,6 @@ export function StudyModeModal({
   quizCount,
   typeAnswerCount,
   matchCount,
-  availableLanguages,
-  selectedLanguage,
-  onLanguageChange,
 }: StudyModeModalProps) {
   const { t } = useTranslation();
 
@@ -94,31 +82,6 @@ export function StudyModeModal({
       <p className="mb-6 text-lg text-muted-foreground text-center">
         {t("learn.modeCardCount", { count: totalCount })}
       </p>
-
-      {availableLanguages.length > 1 && (
-        <div className="flex items-center gap-2 mb-6">
-          <Globe className="h-5 w-5 text-muted-foreground shrink-0" />
-          <div className="flex gap-2">
-            <Button
-              variant={selectedLanguage === null ? "default" : "outline"}
-              size="sm"
-              onClick={() => onLanguageChange(null)}
-            >
-              {t("learn.allLanguages")}
-            </Button>
-            {availableLanguages.map((lang) => (
-              <Button
-                key={lang}
-                variant={selectedLanguage === lang ? "default" : "outline"}
-                size="sm"
-                onClick={() => onLanguageChange(lang)}
-              >
-                {LANG_LABELS[lang] ?? lang}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="grid w-full max-w-md gap-4">
         {modes.map(({ mode, icon: Icon, label, count, bgColor, cardBg, borderColor }) => (

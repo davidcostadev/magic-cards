@@ -11,6 +11,7 @@ import { MatchReview } from "@/components/features/learning/MatchReview";
 import { SessionSummary } from "@/components/features/learning/SessionSummary";
 import { StudyModeModal, type StudyMode } from "@/components/features/learning/StudyModeModal";
 import { useLearningSessions } from "@/context/LearningContext";
+import { useAuth } from "@/context/AuthContext";
 import { mockCards, mockUser } from "@/mocks/data";
 
 type Quality = 1 | 3 | 4 | 5;
@@ -21,22 +22,17 @@ export function LearningSessionPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { setInSession, exitRequested, cancelExit } = useLearningSessions();
+  const { user } = useAuth();
+  const cardLanguage = user?.cardLanguage ?? "all";
 
   const allCardsUnfiltered = useMemo(
     () => (subjectId ? mockCards.filter((c) => c.subjectId === subjectId) : mockCards),
     [subjectId]
   );
 
-  const availableLanguages = useMemo(() => {
-    const langs = new Set(allCardsUnfiltered.map((c) => c.language));
-    return [...langs].sort();
-  }, [allCardsUnfiltered]);
-
-  const [languageFilter, setLanguageFilter] = useState<string | null>(null);
-
   const allCards = useMemo(
-    () => languageFilter ? allCardsUnfiltered.filter((c) => c.language === languageFilter) : allCardsUnfiltered,
-    [allCardsUnfiltered, languageFilter]
+    () => cardLanguage !== "all" ? allCardsUnfiltered.filter((c) => c.language === cardLanguage) : allCardsUnfiltered,
+    [allCardsUnfiltered, cardLanguage]
   );
 
   const flashcardCount = allCards.filter((c) => c.type === "open").length;
@@ -98,9 +94,6 @@ export function LearningSessionPage() {
         quizCount={quizCount}
         typeAnswerCount={typeAnswerCount}
         matchCount={matchCount}
-        availableLanguages={availableLanguages}
-        selectedLanguage={languageFilter}
-        onLanguageChange={setLanguageFilter}
       />
     );
   }

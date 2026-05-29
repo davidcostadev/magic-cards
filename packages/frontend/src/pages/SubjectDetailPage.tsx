@@ -3,6 +3,7 @@ import { useParams, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Plus, GraduationCap, Code, Database, Component, GitBranch } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/utils/cn";
 import { CardList } from "@/components/features/cards/CardList";
 import { CardForm } from "@/components/features/cards/CardForm";
 import { mockSubjects, mockCards as initialCards } from "@/mocks/data";
@@ -79,23 +80,24 @@ export function SubjectDetailPage() {
           </div>
         </div>
         <div className="flex gap-3">
-          {cards.length > 0 && (
-            <Link
-              to="/learn/$subjectId"
-              params={{ subjectId }}
-              className={buttonVariants({ variant: "outline", className: "flex-1 sm:flex-none" })}
-            >
-              <GraduationCap className="mr-2 h-5 w-5" />
-              {t("cards.startStudying")}
-            </Link>
-          )}
           <Button
+            variant="outline"
             className="flex-1 sm:flex-none"
             onClick={() => { setEditingCard(null); setFormOpen(true); }}
           >
             <Plus className="mr-2 h-5 w-5" />
             {t("cards.createCard")}
           </Button>
+          {cards.length > 0 && (
+            <Link
+              to="/learn/$subjectId"
+              params={{ subjectId }}
+              className={cn(buttonVariants(), "hidden sm:inline-flex")}
+            >
+              <GraduationCap className="mr-2 h-5 w-5" />
+              {t("cards.startStudying")}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -111,6 +113,20 @@ export function SubjectDetailPage() {
         card={editingCard}
         onSave={handleSave}
       />
+
+      {cards.length > 0 && (
+        <Link
+          to="/learn/$subjectId"
+          params={{ subjectId }}
+          className={cn(
+            buttonVariants({ size: "sm" }),
+            "fixed bottom-20 right-5 z-40 shadow-lg sm:hidden"
+          )}
+        >
+          <GraduationCap className="mr-2 h-5 w-5" />
+          {t("cards.startStudying")}
+        </Link>
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ interface AuthContextType {
   login: (email: string, password: string) => void;
   signup: (email: string, password: string, username: string) => void;
   logout: () => void;
-  updatePreferences: (prefs: Partial<Pick<User, "language" | "theme" | "dailyGoal">>) => void;
+  updatePreferences: (prefs: Partial<Pick<User, "language" | "cardLanguage" | "theme" | "dailyGoal">>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const updatePreferences = (prefs: Partial<Pick<User, "language" | "theme" | "dailyGoal">>) => {
+  const updatePreferences = (prefs: Partial<Pick<User, "language" | "cardLanguage" | "theme" | "dailyGoal">>) => {
     setUser((prev) => (prev ? { ...prev, ...prefs } : null));
   };
 
