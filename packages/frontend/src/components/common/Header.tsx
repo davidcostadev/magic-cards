@@ -29,7 +29,7 @@ export function Header() {
                 {t("learn.progress", { current: sessionInfo.currentCard, total: sessionInfo.totalCards })}
               </span>
               <span className="text-sm text-muted-foreground hidden sm:block">
-                {t("learn.dailyGoalProgress")}: {sessionInfo.dailyGoalProgress}/{sessionInfo.dailyGoal}
+                {t("learn.dailyGoalProgress")}: {Math.min(sessionInfo.dailyGoalProgress, sessionInfo.dailyGoal)}/{sessionInfo.dailyGoal}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -51,7 +51,7 @@ export function Header() {
               <LanguageSelector />
               <ThemeToggle />
               {isAuthenticated && (
-                <Button variant="ghost" size="icon" onClick={logout}>
+                <Button variant="outlinePrimary" size="icon" onClick={logout}>
                   <LogOut className="h-6 w-6" />
                 </Button>
               )}

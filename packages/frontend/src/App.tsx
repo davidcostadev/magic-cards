@@ -12,9 +12,10 @@ const PUBLIC_PATHS = ["/login", "/signup"];
 export function AppLayout() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
-  const { setInSession } = useLearningSessions();
+  const { setInSession, inSession } = useLearningSessions();
   const isPublicPage = PUBLIC_PATHS.includes(location.pathname);
-  const showNav = isAuthenticated && !isPublicPage;
+  const isOnboardingPage = location.pathname === "/onboarding";
+  const showNav = isAuthenticated && !isPublicPage && !isOnboardingPage && !inSession;
 
   useEffect(() => {
     if (!location.pathname.startsWith("/learn")) {
@@ -22,14 +23,22 @@ export function AppLayout() {
     }
   }, [location.pathname, setInSession]);
 
+  if (isOnboardingPage) {
+    return (
+      <div className="min-h-dvh bg-background">
+        <Outlet />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <Header />
       {showNav && <Sidebar />}
       {showNav && <BottomBar />}
       <main
         className={cn(
-          "min-h-[calc(100vh-4rem)] transition-[margin] duration-200",
+          "min-h-[calc(100dvh-4rem)] transition-[margin] duration-200",
           showNav && "lg:ml-72",
           showNav && "pb-20 lg:pb-0"
         )}

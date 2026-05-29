@@ -13,9 +13,16 @@ export function LoginForm() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const next: { email?: string; password?: string } = {};
+    if (!email.trim()) next.email = t("validation.required");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = t("validation.email");
+    if (!password) next.password = t("validation.required");
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
     login(email, password);
     navigate({ to: "/dashboard" });
   };
@@ -36,7 +43,12 @@ export function LoginForm() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "login-email-error" : undefined}
             />
+            {errors.email && (
+              <p id="login-email-error" className="text-sm text-destructive">{errors.email}</p>
+            )}
           </div>
           <div className="space-y-2.5">
             <Label htmlFor="password">{t("auth.password")}</Label>
@@ -45,7 +57,12 @@ export function LoginForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "login-password-error" : undefined}
             />
+            {errors.password && (
+              <p id="login-password-error" className="text-sm text-destructive">{errors.password}</p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-5">

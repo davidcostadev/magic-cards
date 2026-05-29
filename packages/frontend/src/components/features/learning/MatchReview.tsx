@@ -170,7 +170,7 @@ export function MatchReview({
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>{matchedCount}/{allPairs.length} {t("learn.matchPairsFound")}</span>
         {errorCount > 0 && (
-          <span className="text-destructive">{errorCount} {errorCount === 1 ? "erro" : "erros"}</span>
+          <span className="text-destructive">{t("learn.errorCount", { count: errorCount })}</span>
         )}
       </div>
 
@@ -183,7 +183,7 @@ export function MatchReview({
                 onClick={() => handleLeftClick(pair.left)}
                 disabled={!!correctFlash || !!wrongFlash}
                 className={cn(
-                  "w-full rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97]",
+                  "w-full cursor-pointer rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:active:scale-100",
                   getLeftStyle(pair.left)
                 )}
               >
@@ -198,7 +198,7 @@ export function MatchReview({
                 onClick={() => handleRightClick(right)}
                 disabled={!!correctFlash || !!wrongFlash}
                 className={cn(
-                  "w-full rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97]",
+                  "w-full cursor-pointer rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:active:scale-100",
                   getRightStyle(right)
                 )}
               >
@@ -227,7 +227,7 @@ export function MatchReview({
               <p className="text-sm mt-1">{t("learn.perfectMatch")}</p>
             )}
             {errorCount > 0 && (
-              <p className="text-sm mt-1">{errorCount} {errorCount === 1 ? "erro" : "erros"}</p>
+              <p className="text-sm mt-1">{t("learn.errorCount", { count: errorCount })}</p>
             )}
           </div>
           <Button onClick={handleNext} className="w-full" size="lg">

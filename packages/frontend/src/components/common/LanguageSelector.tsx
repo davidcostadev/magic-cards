@@ -11,7 +11,7 @@ export function LanguageSelector() {
   };
 
   return (
-    <Button variant="ghost" size="icon" onClick={toggleLanguage} title={i18n.language.toUpperCase()}>
+    <Button variant="outlinePrimary" size="icon" onClick={toggleLanguage} title={i18n.language.toUpperCase()}>
       <Globe className="h-6 w-6" />
     </Button>
   );

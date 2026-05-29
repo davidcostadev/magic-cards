@@ -48,11 +48,11 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
                 )}
                 {card.hints.length > 0 && (
                   <p className="mt-1.5 text-sm text-muted-foreground">
-                    {card.hints.length} {card.hints.length === 1 ? "hint" : "hints"}
+                    {t("cards.hintCount", { count: card.hints.length })}
                   </p>
                 )}
               </div>
-              <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex shrink-0 gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                 <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => onEdit(card)}>
                   <Pencil className="h-5 w-5" />
                 </Button>

@@ -31,6 +31,7 @@ export function CreateSubjectModal({ open, onOpenChange, subject, onSave }: Crea
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(COLORS[0]);
   const [icon, setIcon] = useState("code");
+  const [titleError, setTitleError] = useState(false);
 
   useEffect(() => {
     if (subject) {
@@ -44,10 +45,15 @@ export function CreateSubjectModal({ open, onOpenChange, subject, onSave }: Crea
       setColor(COLORS[0]);
       setIcon("code");
     }
+    setTitleError(false);
   }, [subject, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) {
+      setTitleError(true);
+      return;
+    }
     onSave({ title, description, color, icon });
     onOpenChange(false);
   };
@@ -66,8 +72,13 @@ export function CreateSubjectModal({ open, onOpenChange, subject, onSave }: Crea
             <Input
               id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => { setTitle(e.target.value); if (titleError) setTitleError(false); }}
+              aria-invalid={titleError}
+              aria-describedby={titleError ? "subject-title-error" : undefined}
             />
+            {titleError && (
+              <p id="subject-title-error" className="text-sm text-destructive">{t("validation.required")}</p>
+            )}
           </div>
           <div className="space-y-2.5">
             <Label htmlFor="description">{t("subjects.description")}</Label>
@@ -84,8 +95,10 @@ export function CreateSubjectModal({ open, onOpenChange, subject, onSave }: Crea
                 <button
                   key={c}
                   type="button"
+                  aria-label={`${t("subjects.color")} ${c}`}
+                  aria-pressed={color === c}
                   className={cn(
-                    "h-10 w-10 rounded-full border-2 transition-transform",
+                    "h-10 w-10 cursor-pointer rounded-full border-2 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     color === c ? "scale-110 border-foreground" : "border-transparent"
                   )}
                   style={{ backgroundColor: c }}
@@ -101,10 +114,12 @@ export function CreateSubjectModal({ open, onOpenChange, subject, onSave }: Crea
                 <button
                   key={id}
                   type="button"
+                  aria-label={id}
+                  aria-pressed={icon === id}
                   className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-xl border-2 transition-colors",
+                    "flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     icon === id
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary text-primary-foreground"
                       : "border-border hover:bg-accent"
                   )}
                   onClick={() => setIcon(id)}

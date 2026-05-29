@@ -29,7 +29,10 @@ export function SettingsPage() {
     updatePreferences({ theme: newTheme });
   };
 
+  const dailyGoalValid = Number.isFinite(dailyGoal) && dailyGoal >= 1 && dailyGoal <= 100;
+
   const handleDailyGoalSave = () => {
+    if (!dailyGoalValid) return;
     updatePreferences({ dailyGoal });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -69,7 +72,7 @@ export function SettingsPage() {
           <CardDescription>{t("settings.cardLanguageDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {[
               { code: "all", label: t("settings.allLanguages") },
               { code: "en", label: t("settings.english") },
@@ -79,7 +82,7 @@ export function SettingsPage() {
                 key={code}
                 variant={cardLanguage === code ? "default" : "outline"}
                 onClick={() => handleCardLanguageChange(code)}
-                className="flex-1"
+                className="w-full"
                 size="lg"
               >
                 {label}
@@ -130,11 +133,16 @@ export function SettingsPage() {
               max={100}
               value={dailyGoal}
               onChange={(e) => setDailyGoal(Number(e.target.value))}
+              aria-invalid={!dailyGoalValid}
+              aria-describedby={!dailyGoalValid ? "dailyGoal-error" : undefined}
               className="w-28"
             />
-            <Button onClick={handleDailyGoalSave}>
+            <Button onClick={handleDailyGoalSave} disabled={!dailyGoalValid}>
               {t("common.save")}
             </Button>
+            {!dailyGoalValid && (
+              <span id="dailyGoal-error" className="text-sm text-destructive">1–100</span>
+            )}
             {saved && (
               <span className="flex items-center gap-1.5 text-base text-success animate-[fadeIn_200ms_ease-in]">
                 <Check className="h-5 w-5" />

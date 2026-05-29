@@ -4,6 +4,7 @@ import { Target, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/utils/cn";
 import { StatsCard } from "@/components/features/dashboard/StatsCard";
 import { StreakWidget } from "@/components/features/dashboard/StreakWidget";
 import { WeakCardsWidget } from "@/components/features/dashboard/WeakCardsWidget";
@@ -50,7 +51,7 @@ export function DashboardPage() {
             {t("dashboard.greeting", { name: user?.username ?? "" })}
           </h1>
         </div>
-        <Link to="/learn" className={buttonVariants({ size: "lg" })}>
+        <Link to="/learn" className={cn(buttonVariants(), "hidden sm:inline-flex")}>
           <GraduationCap className="mr-2 h-5 w-5" />
           {t("dashboard.startStudying")}
         </Link>
@@ -112,6 +113,17 @@ export function DashboardPage() {
       </Card>
 
       <WeakCardsWidget cards={weakCards} />
+
+      <Link
+        to="/learn"
+        className={cn(
+          buttonVariants({ size: "sm" }),
+          "fixed bottom-20 right-5 z-40 shadow-lg sm:hidden"
+        )}
+      >
+        <GraduationCap className="mr-2 h-5 w-5" />
+        {t("dashboard.startStudying")}
+      </Link>
     </div>
   );
 }

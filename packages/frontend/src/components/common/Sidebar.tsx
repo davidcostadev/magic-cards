@@ -2,6 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { LayoutDashboard, BookOpen, GraduationCap, Settings } from "lucide-react";
 import { cn } from "@/utils/cn";
+import { useLearningSessions } from "@/context/LearningContext";
 
 const navItems = [
   { path: "/dashboard" as const, icon: LayoutDashboard, labelKey: "nav.dashboard" },
@@ -13,6 +14,9 @@ const navItems = [
 export function Sidebar() {
   const { t } = useTranslation();
   const location = useLocation();
+  const { inSession } = useLearningSessions();
+
+  if (inSession) return null;
 
   return (
     <aside className="fixed left-0 top-16 z-40 hidden h-[calc(100vh-4rem)] w-72 border-r bg-background lg:block">
@@ -24,9 +28,9 @@ export function Sidebar() {
               key={path}
               to={path}
               className={cn(
-                "flex items-center gap-3.5 rounded-xl px-4 py-3 text-base font-medium transition-colors",
+                "flex items-center gap-3.5 rounded-xl px-4 py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isActive
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
             >

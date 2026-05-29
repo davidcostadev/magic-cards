@@ -12,7 +12,9 @@ import { SubjectsPage } from "./pages/SubjectsPage";
 import { SubjectDetailPage } from "./pages/SubjectDetailPage";
 import { LearningSessionPage } from "./pages/LearningSessionPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { isOnboarded } from "./context/PreferencesContext";
 
 function isAuthenticated() {
   return localStorage.getItem("auth_token") !== null;
@@ -22,10 +24,22 @@ function requireAuth() {
   if (!isAuthenticated()) {
     throw redirect({ to: "/login" });
   }
+  if (!isOnboarded()) {
+    throw redirect({ to: "/onboarding" });
+  }
 }
 
 function requireGuest() {
   if (isAuthenticated()) {
+    throw redirect({ to: "/dashboard" });
+  }
+}
+
+function requireOnboardingPending() {
+  if (!isAuthenticated()) {
+    throw redirect({ to: "/login" });
+  }
+  if (isOnboarded()) {
     throw redirect({ to: "/dashboard" });
   }
 }
@@ -99,10 +113,18 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
+const onboardingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/onboarding",
+  beforeLoad: requireOnboardingPending,
+  component: OnboardingPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   signupRoute,
+  onboardingRoute,
   dashboardRoute,
   subjectsRoute,
   subjectDetailRoute,

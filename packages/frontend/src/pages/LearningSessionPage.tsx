@@ -12,6 +12,7 @@ import { SessionSummary } from "@/components/features/learning/SessionSummary";
 import { StudyModeModal, type StudyMode } from "@/components/features/learning/StudyModeModal";
 import { useLearningSessions } from "@/context/LearningContext";
 import { useAuth } from "@/context/AuthContext";
+import { usePreferences } from "@/context/PreferencesContext";
 import { mockCards, mockUser } from "@/mocks/data";
 
 type Quality = 1 | 3 | 4 | 5;
@@ -23,11 +24,17 @@ export function LearningSessionPage() {
   const { t } = useTranslation();
   const { setInSession, exitRequested, cancelExit } = useLearningSessions();
   const { user } = useAuth();
+  const { selectedSubjectIds } = usePreferences();
   const cardLanguage = user?.cardLanguage ?? "all";
 
   const allCardsUnfiltered = useMemo(
-    () => (subjectId ? mockCards.filter((c) => c.subjectId === subjectId) : mockCards),
-    [subjectId]
+    () =>
+      subjectId
+        ? mockCards.filter((c) => c.subjectId === subjectId)
+        : mockCards.filter(
+            (c) => selectedSubjectIds === null || selectedSubjectIds.includes(c.subjectId)
+          ),
+    [subjectId, selectedSubjectIds]
   );
 
   const allCards = useMemo(
@@ -68,6 +75,11 @@ export function LearningSessionPage() {
     setInSession(activeSession);
     return () => setInSession(false);
   }, [activeSession, setInSession]);
+
+  // Keep the question title visible at the top when a session starts or advances
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentIndex, mode]);
 
   if (allCardsUnfiltered.length === 0) {
     return (
@@ -147,7 +159,7 @@ export function LearningSessionPage() {
       {renderCard()}
 
       <Dialog open={exitRequested} onOpenChange={(open) => { if (!open) cancelExit(); }}>
-        <DialogContent className="max-w-sm text-center">
+        <DialogContent className="max-w-sm text-center justify-center">
           <DialogHeader>
             <DialogTitle>{t("learn.exitTitle")}</DialogTitle>
           </DialogHeader>

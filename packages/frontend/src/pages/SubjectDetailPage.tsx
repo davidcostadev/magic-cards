@@ -63,7 +63,7 @@ export function SubjectDetailPage() {
   return (
     <div className="p-5 md:p-7">
       <div className="mb-7">
-        <Link to="/subjects" className="inline-flex items-center gap-1.5 text-base text-muted-foreground hover:text-foreground mb-5">
+        <Link to="/subjects" className="inline-flex items-center gap-1.5 text-base text-muted-foreground hover:text-foreground mb-5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
           <ArrowLeft className="h-5 w-5" />
           {t("common.back")}
         </Link>

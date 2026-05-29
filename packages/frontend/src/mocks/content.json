@@ -1,0 +1,640 @@
+{
+  "subjects": [
+    {
+      "id": "sub-1",
+      "userId": "user-1",
+      "title": "TypeScript",
+      "description": "Core TypeScript concepts and advanced type patterns",
+      "color": "#3178C6",
+      "icon": "code",
+      "createdAt": "2026-01-15T00:00:00.000Z",
+      "updatedAt": "2026-05-20T00:00:00.000Z"
+    },
+    {
+      "id": "sub-2",
+      "userId": "user-1",
+      "title": "SQL",
+      "description": "Relational database queries and optimization",
+      "color": "#E48E00",
+      "icon": "database",
+      "createdAt": "2026-02-01T00:00:00.000Z",
+      "updatedAt": "2026-05-18T00:00:00.000Z"
+    },
+    {
+      "id": "sub-3",
+      "userId": "user-1",
+      "title": "React",
+      "description": "React hooks, patterns, and performance optimization",
+      "color": "#61DAFB",
+      "icon": "component",
+      "createdAt": "2026-03-10T00:00:00.000Z",
+      "updatedAt": "2026-05-22T00:00:00.000Z"
+    },
+    {
+      "id": "sub-4",
+      "userId": "user-1",
+      "title": "Git",
+      "description": "Version control workflows and advanced git commands",
+      "color": "#F05032",
+      "icon": "git-branch",
+      "createdAt": "2026-04-05T00:00:00.000Z",
+      "updatedAt": "2026-05-15T00:00:00.000Z"
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-1",
+      "subjectId": "sub-1",
+      "type": "open",
+      "language": "en",
+      "question": "What is the difference between `type` and `interface` in TypeScript?\n\n```typescript\ntype Point = { x: number; y: number };\ninterface IPoint { x: number; y: number; }\n```",
+      "answer": "Both can describe object shapes, but they differ in key ways:\n\n- **`interface`** supports declaration merging (re-opening)\n- **`type`** supports unions, intersections, mapped types, and conditional types\n- **`interface`** can `extends` other interfaces\n- **`type`** uses `&` for intersection\n\n```typescript\n// Only type can do this:\ntype StringOrNumber = string | number;\ntype Partial<T> = { [K in keyof T]?: T[K] };\n\n// Only interface can do this:\ninterface Window {\n  customProp: string; // merges with global Window\n}\n```\n\n**Rule of thumb**: Use `interface` for public API shapes, `type` for everything else.",
+      "hints": [
+        "Think about which one can be re-opened after declaration",
+        "Consider which one supports union types"
+      ],
+      "tags": [
+        "types",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-01-20T00:00:00.000Z",
+      "updatedAt": "2026-01-20T00:00:00.000Z"
+    },
+    {
+      "id": "card-2",
+      "subjectId": "sub-1",
+      "type": "open",
+      "language": "en",
+      "question": "What does the `keyof` operator do in TypeScript?\n\n```typescript\ninterface User {\n  id: number;\n  name: string;\n  email: string;\n}\n\ntype UserKeys = keyof User;\n```",
+      "answer": "`keyof` produces a **union of string literal types** representing all known public property names of the given type.\n\n```typescript\ntype UserKeys = keyof User;\n// Result: \"id\" | \"name\" | \"email\"\n\nfunction getValue<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key];\n}\n\nconst user: User = { id: 1, name: \"Alice\", email: \"a@b.com\" };\nconst name = getValue(user, \"name\"); // string\nconst id = getValue(user, \"id\");     // number\n```\n\nIt's the foundation for mapped types and generic property access.",
+      "hints": [
+        "It creates a union type",
+        "The result contains the property names, not the property types"
+      ],
+      "tags": [
+        "types",
+        "operators"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-01-22T00:00:00.000Z",
+      "updatedAt": "2026-01-22T00:00:00.000Z"
+    },
+    {
+      "id": "card-3",
+      "subjectId": "sub-1",
+      "type": "open",
+      "language": "en",
+      "question": "Explain the `infer` keyword in TypeScript conditional types.\n\n```typescript\ntype ReturnType<T> = T extends (...args: any[]) => infer R ? R : never;\n```",
+      "answer": "`infer` declares a type variable within a conditional type's `extends` clause. It lets you **extract and capture** a type from a pattern.\n\n```typescript\n// Extract return type\ntype ReturnType<T> = T extends (...args: any[]) => infer R ? R : never;\ntype R1 = ReturnType<() => string>; // string\n\n// Extract array element type\ntype ElementOf<T> = T extends (infer E)[] ? E : never;\ntype E1 = ElementOf<number[]>; // number\n\n// Extract promise value\ntype Awaited<T> = T extends Promise<infer V> ? Awaited<V> : T;\ntype A1 = Awaited<Promise<Promise<string>>>; // string\n```\n\n`infer` only works inside the `extends` clause of a conditional type.",
+      "hints": [
+        "It's used for pattern matching on types",
+        "Think of it as a 'capture group' for types"
+      ],
+      "tags": [
+        "types",
+        "advanced"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-02-05T00:00:00.000Z",
+      "updatedAt": "2026-02-05T00:00:00.000Z"
+    },
+    {
+      "id": "card-4",
+      "subjectId": "sub-2",
+      "type": "open",
+      "language": "en",
+      "question": "What is the difference between `INNER JOIN` and `LEFT JOIN`?\n\n```sql\nSELECT u.name, o.total\nFROM users u\nINNER JOIN orders o ON u.id = o.user_id;\n```",
+      "answer": "- **`INNER JOIN`**: Returns only rows where there is a match in **both** tables\n- **`LEFT JOIN`** (aka `LEFT OUTER JOIN`): Returns **all** rows from the left table, plus matched rows from the right table (or `NULL` if no match)\n\n```sql\n-- INNER JOIN: only users WITH orders\nSELECT u.name, o.total\nFROM users u\nINNER JOIN orders o ON u.id = o.user_id;\n-- Result: Alice|100, Bob|200\n\n-- LEFT JOIN: ALL users, even without orders\nSELECT u.name, o.total\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id;\n-- Result: Alice|100, Bob|200, Charlie|NULL\n```\n\nUse `LEFT JOIN` when you need rows from the left table regardless of whether a match exists.",
+      "hints": [
+        "One of them preserves all rows from one table",
+        "Think about what happens to users without orders"
+      ],
+      "tags": [
+        "joins",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-02-10T00:00:00.000Z",
+      "updatedAt": "2026-02-10T00:00:00.000Z"
+    },
+    {
+      "id": "card-5",
+      "subjectId": "sub-2",
+      "type": "open",
+      "language": "en",
+      "question": "What does `GROUP BY` do and when must you use it?\n\n```sql\nSELECT department, COUNT(*) as employee_count\nFROM employees\nGROUP BY department;\n```",
+      "answer": "`GROUP BY` groups rows with the same values in specified columns into summary rows. It's required when you use **aggregate functions** (`COUNT`, `SUM`, `AVG`, `MAX`, `MIN`) alongside non-aggregated columns.\n\n```sql\n-- Rule: every non-aggregated column in SELECT must be in GROUP BY\nSELECT department, role, COUNT(*) as count, AVG(salary) as avg_sal\nFROM employees\nGROUP BY department, role;\n\n-- Filter groups with HAVING (not WHERE)\nSELECT department, COUNT(*) as count\nFROM employees\nGROUP BY department\nHAVING COUNT(*) > 5;\n```\n\n**`WHERE`** filters rows before grouping. **`HAVING`** filters groups after grouping.",
+      "hints": [
+        "It's used with aggregate functions",
+        "There's a rule about which columns must appear in it"
+      ],
+      "tags": [
+        "aggregation",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-02-15T00:00:00.000Z",
+      "updatedAt": "2026-02-15T00:00:00.000Z"
+    },
+    {
+      "id": "card-6",
+      "subjectId": "sub-3",
+      "type": "open",
+      "language": "en",
+      "question": "What is the difference between `useMemo` and `useCallback` in React?\n\n```tsx\nconst memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);\nconst memoizedFn = useCallback(() => doSomething(a, b), [a, b]);\n```",
+      "answer": "Both are memoization hooks, but they cache different things:\n\n- **`useMemo`**: Caches the **return value** of a function\n- **`useCallback`**: Caches the **function itself** (referential identity)\n\n```tsx\n// useMemo: expensive computation, cached result\nconst sorted = useMemo(() => items.sort(compareFn), [items]);\n\n// useCallback: stable function reference for child components\nconst handleClick = useCallback((id: string) => {\n  setSelected(id);\n}, []);\n\n// useCallback is equivalent to:\nconst handleClick = useMemo(() => (id: string) => {\n  setSelected(id);\n}, []);\n```\n\nUse `useCallback` when passing functions to memoized children (`React.memo`). Use `useMemo` for expensive computations.",
+      "hints": [
+        "One caches a value, the other caches a function",
+        "Think about referential equality"
+      ],
+      "tags": [
+        "hooks",
+        "performance"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-03-15T00:00:00.000Z",
+      "updatedAt": "2026-03-15T00:00:00.000Z"
+    },
+    {
+      "id": "card-7",
+      "subjectId": "sub-3",
+      "type": "open",
+      "language": "en",
+      "question": "Explain React's `useEffect` cleanup function.\n\n```tsx\nuseEffect(() => {\n  const subscription = api.subscribe(id);\n  return () => {\n    subscription.unsubscribe();\n  };\n}, [id]);\n```",
+      "answer": "The cleanup function runs in two scenarios:\n\n1. **Before the effect re-runs** (when dependencies change)\n2. **When the component unmounts**\n\n```tsx\nuseEffect(() => {\n  // Setup: runs after render\n  const handler = (e: KeyboardEvent) => console.log(e.key);\n  window.addEventListener('keydown', handler);\n\n  // Cleanup: runs before re-run or unmount\n  return () => {\n    window.removeEventListener('keydown', handler);\n  };\n}, []); // empty deps = mount/unmount only\n```\n\nCommon use cases: unsubscribing from events, canceling timers, aborting fetch requests, closing WebSocket connections.\n\n**Without cleanup**, you get memory leaks and stale event listeners.",
+      "hints": [
+        "The returned function runs at specific lifecycle moments",
+        "Think about what happens when dependencies change"
+      ],
+      "tags": [
+        "hooks",
+        "lifecycle"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "card-8",
+      "subjectId": "sub-4",
+      "type": "open",
+      "language": "en",
+      "question": "What does `git rebase` do and how is it different from `git merge`?\n\n```bash\ngit checkout feature\ngit rebase main\n```",
+      "answer": "Both integrate changes from one branch into another, but differently:\n\n- **`merge`**: Creates a **merge commit** preserving both branch histories\n- **`rebase`**: **Replays** your commits on top of the target branch, creating a linear history\n\n```bash\n# Merge: creates a merge commit\ngit checkout feature\ngit merge main\n# History: A-B-C-M (M = merge commit)\n\n# Rebase: rewrites commits on top of main\ngit checkout feature\ngit rebase main\n# History: A-B-C' (linear, C' = replayed)\n```\n\n**Golden rule**: Never rebase commits that have been pushed to a shared branch.\n\nUse rebase for local feature branches. Use merge for shared/public branches.",
+      "hints": [
+        "One creates a new commit, the other rewrites existing commits",
+        "Think about what the commit history looks like after each"
+      ],
+      "tags": [
+        "branching",
+        "workflows"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-04-10T00:00:00.000Z",
+      "updatedAt": "2026-04-10T00:00:00.000Z"
+    },
+    {
+      "id": "card-9",
+      "subjectId": "sub-1",
+      "type": "quiz",
+      "language": "en",
+      "question": "What does the `readonly` modifier do in TypeScript?\n\n```typescript\ninterface Config {\n  readonly host: string;\n  readonly port: number;\n}\n```",
+      "answer": "It prevents reassignment of the property after initialization.",
+      "hints": [],
+      "tags": [
+        "types",
+        "fundamentals"
+      ],
+      "choices": [
+        {
+          "id": "c9-1",
+          "text": "Makes the property optional",
+          "isCorrect": false
+        },
+        {
+          "id": "c9-2",
+          "text": "Prevents reassignment after initialization",
+          "isCorrect": true
+        },
+        {
+          "id": "c9-3",
+          "text": "Makes the property private",
+          "isCorrect": false
+        },
+        {
+          "id": "c9-4",
+          "text": "Converts the property to a getter",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-01T00:00:00.000Z",
+      "updatedAt": "2026-05-01T00:00:00.000Z"
+    },
+    {
+      "id": "card-10",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "language": "en",
+      "question": "Which SQL clause is used to filter results **after** a `GROUP BY`?",
+      "answer": "HAVING filters groups after aggregation, while WHERE filters rows before grouping.",
+      "hints": [],
+      "tags": [
+        "aggregation",
+        "fundamentals"
+      ],
+      "choices": [
+        {
+          "id": "c10-1",
+          "text": "WHERE",
+          "isCorrect": false
+        },
+        {
+          "id": "c10-2",
+          "text": "HAVING",
+          "isCorrect": true
+        },
+        {
+          "id": "c10-3",
+          "text": "FILTER",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-02T00:00:00.000Z",
+      "updatedAt": "2026-05-02T00:00:00.000Z"
+    },
+    {
+      "id": "card-11",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "language": "en",
+      "question": "What hook would you use to access the **current value** of a ref without causing a re-render?\n\n```tsx\nconst inputRef = ???<HTMLInputElement>(null);\n```",
+      "answer": "useRef stores a mutable value that persists across renders without triggering re-renders.",
+      "hints": [],
+      "tags": [
+        "hooks",
+        "fundamentals"
+      ],
+      "choices": [
+        {
+          "id": "c11-1",
+          "text": "useState",
+          "isCorrect": false
+        },
+        {
+          "id": "c11-2",
+          "text": "useRef",
+          "isCorrect": true
+        },
+        {
+          "id": "c11-3",
+          "text": "useMemo",
+          "isCorrect": false
+        },
+        {
+          "id": "c11-4",
+          "text": "useContext",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-03T00:00:00.000Z",
+      "updatedAt": "2026-05-03T00:00:00.000Z"
+    },
+    {
+      "id": "card-12",
+      "subjectId": "sub-4",
+      "type": "quiz",
+      "language": "en",
+      "question": "Which git command shows the commit history of a single file?",
+      "answer": "git log -- <file> shows the commit history filtered to changes that affected that file.",
+      "hints": [],
+      "tags": [
+        "commands",
+        "fundamentals"
+      ],
+      "choices": [
+        {
+          "id": "c12-1",
+          "text": "git log -- <file>",
+          "isCorrect": true
+        },
+        {
+          "id": "c12-2",
+          "text": "git show <file>",
+          "isCorrect": false
+        },
+        {
+          "id": "c12-3",
+          "text": "git history <file>",
+          "isCorrect": false
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-04T00:00:00.000Z",
+      "updatedAt": "2026-05-04T00:00:00.000Z"
+    },
+    {
+      "id": "card-13",
+      "subjectId": "sub-1",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which TypeScript utility type makes all properties optional?\n\n```typescript\ntype User = { name: string; age: number };\ntype OptionalUser = ???<User>;\n```",
+      "answer": "Partial wraps each property with optional modifier using mapped types.",
+      "hints": [
+        "It starts with P"
+      ],
+      "tags": [
+        "types",
+        "utility-types"
+      ],
+      "choices": [],
+      "shortAnswer": "Partial",
+      "matchPairs": [],
+      "createdAt": "2026-05-10T00:00:00.000Z",
+      "updatedAt": "2026-05-10T00:00:00.000Z"
+    },
+    {
+      "id": "card-14",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which SQL keyword removes duplicate rows from the result set?\n\n```sql\nSELECT ??? department FROM employees;\n```",
+      "answer": "DISTINCT eliminates duplicate rows in the result set.",
+      "hints": [],
+      "tags": [
+        "queries",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "DISTINCT",
+      "matchPairs": [],
+      "createdAt": "2026-05-11T00:00:00.000Z",
+      "updatedAt": "2026-05-11T00:00:00.000Z"
+    },
+    {
+      "id": "card-15",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which React hook lets you run side effects after render?\n\n```tsx\n???(()=> { document.title = count }, [count]);\n```",
+      "answer": "useEffect runs side effects after the component renders.",
+      "hints": [
+        "It starts with 'use'"
+      ],
+      "tags": [
+        "hooks",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "useEffect",
+      "matchPairs": [],
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "updatedAt": "2026-05-12T00:00:00.000Z"
+    },
+    {
+      "id": "card-16",
+      "subjectId": "sub-4",
+      "type": "type-answer",
+      "language": "en",
+      "question": "Which git command creates a new branch and switches to it in one step?",
+      "answer": "git checkout -b creates and switches to a new branch.",
+      "hints": [],
+      "tags": [
+        "commands",
+        "branching"
+      ],
+      "choices": [],
+      "shortAnswer": "git checkout -b",
+      "matchPairs": [],
+      "createdAt": "2026-05-13T00:00:00.000Z",
+      "updatedAt": "2026-05-13T00:00:00.000Z"
+    },
+    {
+      "id": "card-17",
+      "subjectId": "sub-1",
+      "type": "match",
+      "language": "en",
+      "question": "Match the TypeScript utility type to its description",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "types",
+        "utility-types"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "Partial<T>",
+          "right": "All properties optional"
+        },
+        {
+          "left": "Required<T>",
+          "right": "All properties required"
+        },
+        {
+          "left": "Readonly<T>",
+          "right": "All properties readonly"
+        },
+        {
+          "left": "Pick<T, K>",
+          "right": "Select specific properties"
+        },
+        {
+          "left": "Omit<T, K>",
+          "right": "Exclude specific properties"
+        },
+        {
+          "left": "Record<K, V>",
+          "right": "Map keys to values"
+        }
+      ],
+      "createdAt": "2026-05-14T00:00:00.000Z",
+      "updatedAt": "2026-05-14T00:00:00.000Z"
+    },
+    {
+      "id": "card-18",
+      "subjectId": "sub-3",
+      "type": "match",
+      "language": "en",
+      "question": "Match the React hook to its purpose",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "hooks",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "useState",
+          "right": "Local component state"
+        },
+        {
+          "left": "useEffect",
+          "right": "Side effects after render"
+        },
+        {
+          "left": "useRef",
+          "right": "Mutable value without re-render"
+        },
+        {
+          "left": "useMemo",
+          "right": "Cache computed value"
+        },
+        {
+          "left": "useCallback",
+          "right": "Cache function reference"
+        },
+        {
+          "left": "useContext",
+          "right": "Access context value"
+        }
+      ],
+      "createdAt": "2026-05-15T00:00:00.000Z",
+      "updatedAt": "2026-05-15T00:00:00.000Z"
+    },
+    {
+      "id": "card-19",
+      "subjectId": "sub-1",
+      "type": "open",
+      "language": "pt",
+      "question": "Qual a diferença entre `type` e `interface` no TypeScript?\n\n```typescript\ntype Ponto = { x: number; y: number };\ninterface IPonto { x: number; y: number; }\n```",
+      "answer": "Ambos descrevem formas de objetos, mas diferem em pontos-chave:\n\n- **`interface`** suporta declaration merging (reabertura)\n- **`type`** suporta unions, intersections, mapped types e conditional types\n- **`interface`** pode `extends` outras interfaces\n- **`type`** usa `&` para intersecção\n\n**Regra geral**: Use `interface` para APIs públicas, `type` para o resto.",
+      "hints": [
+        "Pense em qual pode ser reaberta após a declaração",
+        "Considere qual suporta tipos union"
+      ],
+      "tags": [
+        "types",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-16T00:00:00.000Z",
+      "updatedAt": "2026-05-16T00:00:00.000Z"
+    },
+    {
+      "id": "card-20",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "language": "pt",
+      "question": "Qual hook do React permite gerenciar estado local em um componente funcional?\n\n```tsx\nconst [count, setCount] = ???(0);\n```",
+      "answer": "useState permite declarar variáveis de estado em componentes funcionais.",
+      "hints": [
+        "Começa com 'use'"
+      ],
+      "tags": [
+        "hooks",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "useState",
+      "matchPairs": [],
+      "createdAt": "2026-05-17T00:00:00.000Z",
+      "updatedAt": "2026-05-17T00:00:00.000Z"
+    },
+    {
+      "id": "card-21",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "language": "pt",
+      "question": "Qual cláusula SQL é usada para ordenar os resultados?",
+      "answer": "ORDER BY ordena os resultados por uma ou mais colunas.",
+      "hints": [],
+      "tags": [
+        "queries",
+        "fundamentals"
+      ],
+      "choices": [
+        {
+          "id": "c21-1",
+          "text": "GROUP BY",
+          "isCorrect": false
+        },
+        {
+          "id": "c21-2",
+          "text": "SORT BY",
+          "isCorrect": false
+        },
+        {
+          "id": "c21-3",
+          "text": "ORDER BY",
+          "isCorrect": true
+        }
+      ],
+      "shortAnswer": "",
+      "matchPairs": [],
+      "createdAt": "2026-05-18T00:00:00.000Z",
+      "updatedAt": "2026-05-18T00:00:00.000Z"
+    },
+    {
+      "id": "card-22",
+      "subjectId": "sub-3",
+      "type": "match",
+      "language": "pt",
+      "question": "Combine o hook do React com sua função",
+      "answer": "",
+      "hints": [],
+      "tags": [
+        "hooks",
+        "fundamentals"
+      ],
+      "choices": [],
+      "shortAnswer": "",
+      "matchPairs": [
+        {
+          "left": "useState",
+          "right": "Estado local do componente"
+        },
+        {
+          "left": "useEffect",
+          "right": "Efeitos colaterais após render"
+        },
+        {
+          "left": "useRef",
+          "right": "Valor mutável sem re-render"
+        },
+        {
+          "left": "useMemo",
+          "right": "Cachear valor computado"
+        },
+        {
+          "left": "useCallback",
+          "right": "Cachear referência de função"
+        },
+        {
+          "left": "useContext",
+          "right": "Acessar valor do contexto"
+        }
+      ],
+      "createdAt": "2026-05-19T00:00:00.000Z",
+      "updatedAt": "2026-05-19T00:00:00.000Z"
+    }
+  ]
+}

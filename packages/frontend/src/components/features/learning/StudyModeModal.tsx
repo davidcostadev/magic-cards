@@ -90,7 +90,7 @@ export function StudyModeModal({
             onClick={() => onSelect(mode)}
             disabled={count === 0}
             className={cn(
-              "flex items-center gap-5 rounded-2xl border-2 p-6 text-left transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none",
+              "flex cursor-pointer items-center gap-5 rounded-2xl border-2 p-6 text-left transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100",
               cardBg,
               borderColor
             )}

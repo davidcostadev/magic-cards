@@ -1,4 +1,4 @@
-import { type ReactNode, type HTMLAttributes, forwardRef, useEffect } from "react";
+import { type ReactNode, type HTMLAttributes, forwardRef, useEffect, useRef } from "react";
 import { cn } from "@/utils/cn";
 
 interface DialogProps {
@@ -7,17 +7,52 @@ interface DialogProps {
   children: ReactNode;
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 function Dialog({ open, onOpenChange, children }: DialogProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!open) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onOpenChange(false);
+
+    const container = containerRef.current;
+    const focusables = () => Array.from(container?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+
+    // Move focus into the dialog so keyboard users start inside it
+    (focusables()[0] ?? container)?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onOpenChange(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const items = focusables();
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !container?.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !container?.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
     };
-    document.addEventListener("keydown", handleEscape);
+
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = "";
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused.current?.focus?.();
     };
   }, [open, onOpenChange]);
 
@@ -25,7 +60,11 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-5"
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex justify-center p-0 focus:outline-none sm:items-center sm:p-5"
       onClick={() => onOpenChange(false)}
     >
       <div className="fixed inset-0 bg-black/60" />
@@ -39,7 +78,7 @@ const DialogContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>
     <div
       ref={ref}
       className={cn(
-        "relative z-50 w-full max-w-lg rounded-2xl border bg-background p-8 shadow-lg animate-in fade-in zoom-in-95",
+        "relative z-50 flex h-dvh w-full max-w-none flex-col overflow-y-auto rounded-none border-0 bg-background p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-lg animate-in fade-in sm:h-auto sm:max-h-[90dvh] sm:max-w-lg sm:rounded-2xl sm:border sm:p-8 sm:pb-8 sm:zoom-in-95",
         className
       )}
       onClick={(e) => e.stopPropagation()}

@@ -39,6 +39,7 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [choices, setChoices] = useState<Choice[]>([]);
+  const [errors, setErrors] = useState<{ question?: string; choices?: string }>({});
 
   useEffect(() => {
     if (card) {
@@ -59,10 +60,16 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
       setChoices([]);
     }
     setTagInput("");
+    setErrors({});
   }, [card, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const next: { question?: string; choices?: string } = {};
+    if (!question.trim()) next.question = t("validation.required");
+    if (cardType === "quiz" && !choices.some((c) => c.isCorrect)) next.choices = t("validation.correctChoice");
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
     onSave({
       type: cardType,
       language,
@@ -107,12 +114,12 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{card ? t("cards.editCard") : t("cards.createCard")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1 space-y-2.5">
               <Label>{t("cards.cardType")}</Label>
               <div className="flex gap-2">
@@ -157,10 +164,15 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
             <Textarea
               id="question"
               rows={4}
-              placeholder="Supports **Markdown** and ```code blocks```"
+              placeholder={t("cards.markdownPlaceholder")}
               value={question}
-              onChange={(e) => setQuestion(e.target.value)}
+              onChange={(e) => { setQuestion(e.target.value); if (errors.question) setErrors((prev) => ({ ...prev, question: undefined })); }}
+              aria-invalid={!!errors.question}
+              aria-describedby={errors.question ? "card-question-error" : undefined}
             />
+            {errors.question && (
+              <p id="card-question-error" className="text-sm text-destructive">{errors.question}</p>
+            )}
           </div>
 
           {cardType === "open" && (
@@ -170,7 +182,7 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
                 <Textarea
                   id="answer"
                   rows={4}
-                  placeholder="Supports **Markdown** and ```code blocks```"
+                  placeholder={t("cards.markdownPlaceholder")}
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                 />
@@ -190,7 +202,7 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
                       <Input
                         value={hint}
                         onChange={(e) => updateHint(index, e.target.value)}
-                        placeholder={`Hint ${index + 1}`}
+                        placeholder={t("cards.hintNumber", { n: index + 1 })}
                       />
                       <Button
                         type="button"
@@ -220,14 +232,19 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
                 )}
               </div>
               <p className="text-sm text-muted-foreground">{t("cards.choicesHelp")}</p>
+              {errors.choices && (
+                <p className="text-sm text-destructive">{errors.choices}</p>
+              )}
               <div className="space-y-2.5">
                 {choices.map((choice, index) => (
                   <div key={choice.id} className="flex items-center gap-2.5">
                     <button
                       type="button"
                       onClick={() => toggleCorrect(index)}
+                      aria-label={t("cards.choicesHelp")}
+                      aria-pressed={choice.isCorrect}
                       className={cn(
-                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                        "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         choice.isCorrect
                           ? "border-success bg-success text-white"
                           : "border-border hover:border-success/50"
@@ -277,7 +294,7 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
                     addTag();
                   }
                 }}
-                placeholder="Type and press Enter"
+                placeholder={t("cards.tagPlaceholder")}
               />
               <Button type="button" variant="outline" onClick={addTag}>
                 {t("cards.addTag")}
@@ -291,7 +308,12 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
                     className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-medium"
                   >
                     {tag}
-                    <button type="button" onClick={() => removeTag(tag)}>
+                    <button
+                      type="button"
+                      aria-label={`${t("common.delete")} ${tag}`}
+                      onClick={() => removeTag(tag)}
+                      className="cursor-pointer rounded-full transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </span>

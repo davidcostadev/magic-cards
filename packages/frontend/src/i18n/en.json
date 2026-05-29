@@ -9,7 +9,13 @@
     "create": "Create",
     "back": "Back",
     "confirm": "Confirm",
-    "close": "Close"
+    "close": "Close",
+    "options": "Options"
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Enter a valid email address",
+    "correctChoice": "Mark one option as correct"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -63,6 +69,10 @@
     "title": "Subjects",
     "search": "Search subjects...",
     "noResults": "No subjects match your search.",
+    "manage": "Manage",
+    "manageTitle": "Manage subjects",
+    "manageHint": "Choose which subjects appear in your list and study sessions.",
+    "noActive": "No active subjects. Add some with Manage.",
     "createSubject": "New Subject",
     "editSubject": "Edit Subject",
     "deleteSubject": "Delete Subject",
@@ -99,7 +109,12 @@
     "choicesHelp": "Click the circle to mark the correct answer",
     "explanation": "Explanation",
     "explanationPlaceholder": "Shown when the answer is wrong (optional)",
-    "language": "Language"
+    "language": "Language",
+    "hintCount_one": "{{count}} hint",
+    "hintCount_other": "{{count}} hints",
+    "hintNumber": "Hint {{n}}",
+    "markdownPlaceholder": "Supports **Markdown** and ```code blocks```",
+    "tagPlaceholder": "Type and press Enter"
   },
   "learn": {
     "title": "Learning Session",
@@ -137,7 +152,9 @@
     "exitTitle": "Leave session?",
     "exitMessage": "Your progress in this session will be lost.",
     "exitCancel": "Keep studying",
-    "exitConfirm": "Leave"
+    "exitConfirm": "Leave",
+    "errorCount_one": "{{count}} error",
+    "errorCount_other": "{{count}} errors"
   },
   "settings": {
     "title": "Settings",
@@ -153,6 +170,17 @@
     "english": "English",
     "portuguese": "Portuguese",
     "saved": "Settings saved!"
+  },
+  "onboarding": {
+    "welcome": "Welcome to Magic Cards",
+    "subtitle": "Let's set up your learning experience",
+    "interfaceLanguage": "Interface language",
+    "cardLanguage": "Card language",
+    "theme": "Theme",
+    "chooseSubjects": "Choose subjects to study",
+    "chooseSubjectsHint": "You can change these anytime",
+    "next": "Next",
+    "getStarted": "Get started"
   },
   "notFound": {
     "title": "Page Not Found",

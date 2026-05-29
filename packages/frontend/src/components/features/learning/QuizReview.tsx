@@ -138,26 +138,33 @@ export function QuizReview({
       )}
 
       <div className="space-y-3">
-        {shuffledChoices.map((choice) => (
-          <button
-            key={choice.id}
-            onClick={() => handleSelect(choice)}
-            disabled={answered || timedOut || eliminatedIds.has(choice.id)}
-            className={cn(
-              "flex w-full items-center gap-4 rounded-2xl border-2 p-5 text-left text-base font-semibold transition-all duration-200 active:scale-[0.98]",
-              getChoiceStyle(choice),
-              !answered && !timedOut && !eliminatedIds.has(choice.id) && "cursor-pointer"
-            )}
-          >
-            {(answered || timedOut) && choice.isCorrect && (
-              <Check className="h-6 w-6 shrink-0 text-white" />
-            )}
-            {answered && choice.id === selectedId && !choice.isCorrect && (
-              <X className="h-6 w-6 shrink-0 text-white" />
-            )}
-            <span>{choice.text}</span>
-          </button>
-        ))}
+        {shuffledChoices.map((choice, index) => {
+          const showCorrect = (answered || timedOut) && choice.isCorrect;
+          const showWrong = answered && choice.id === selectedId && !choice.isCorrect;
+          return (
+            <button
+              key={choice.id}
+              onClick={() => handleSelect(choice)}
+              disabled={answered || timedOut || eliminatedIds.has(choice.id)}
+              className={cn(
+                "flex w-full items-center gap-4 rounded-2xl border-2 p-5 text-left text-base font-semibold transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100",
+                getChoiceStyle(choice),
+                !answered && !timedOut && !eliminatedIds.has(choice.id) ? "cursor-pointer" : "disabled:cursor-not-allowed"
+              )}
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-foreground text-sm font-bold tabular-nums">
+                {showCorrect ? (
+                  <Check className="h-5 w-5" />
+                ) : showWrong ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  index + 1
+                )}
+              </span>
+              <span>{choice.text}</span>
+            </button>
+          );
+        })}
       </div>
 
       {(answered || timedOut) && (

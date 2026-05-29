@@ -1,17 +1,21 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, BookOpen, Search } from "lucide-react";
+import { Plus, BookOpen, Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SubjectCard } from "@/components/features/subjects/SubjectCard";
 import { CreateSubjectModal } from "@/components/features/subjects/CreateSubjectModal";
+import { ManageSubjectsModal } from "@/components/features/subjects/ManageSubjectsModal";
+import { usePreferences } from "@/context/PreferencesContext";
 import { mockSubjects as initialSubjects, mockCards } from "@/mocks/data";
 import type { Subject } from "@/mocks/types";
 
 export function SubjectsPage() {
   const { t } = useTranslation();
+  const { selectedSubjectIds } = usePreferences();
   const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
   const [modalOpen, setModalOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [query, setQuery] = useState("");
 
@@ -20,13 +24,13 @@ export function SubjectsPage() {
 
   const filteredSubjects = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return subjects;
-    return subjects.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.description.toLowerCase().includes(q)
-    );
-  }, [subjects, query]);
+    return subjects.filter((s) => {
+      const active = selectedSubjectIds === null || selectedSubjectIds.includes(s.id);
+      if (!active) return false;
+      if (!q) return true;
+      return s.title.toLowerCase().includes(q) || s.description.toLowerCase().includes(q);
+    });
+  }, [subjects, query, selectedSubjectIds]);
 
   const handleSave = (data: { title: string; description: string; color: string; icon: string }) => {
     if (editingSubject) {
@@ -61,12 +65,20 @@ export function SubjectsPage() {
 
   return (
     <div className="p-5 md:p-7">
-      <div className="mb-7 flex items-center justify-between">
+      <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold">{t("subjects.title")}</h1>
-        <Button onClick={() => { setEditingSubject(null); setModalOpen(true); }}>
-          <Plus className="mr-2 h-5 w-5" />
-          {t("subjects.createSubject")}
-        </Button>
+        <div className="flex gap-2">
+          {subjects.length > 0 && (
+            <Button variant="outline" onClick={() => setManageOpen(true)}>
+              <SlidersHorizontal className="mr-2 h-5 w-5" />
+              {t("subjects.manage")}
+            </Button>
+          )}
+          <Button onClick={() => { setEditingSubject(null); setModalOpen(true); }}>
+            <Plus className="mr-2 h-5 w-5" />
+            {t("subjects.createSubject")}
+          </Button>
+        </div>
       </div>
 
       {subjects.length === 0 ? (
@@ -91,9 +103,20 @@ export function SubjectsPage() {
             />
           </div>
           {filteredSubjects.length === 0 ? (
-            <p className="py-16 text-center text-lg text-muted-foreground">
-              {t("subjects.noResults")}
-            </p>
+            query.trim() ? (
+              <p className="py-16 text-center text-lg text-muted-foreground">
+                {t("subjects.noResults")}
+              </p>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-5 py-16 text-center">
+                <BookOpen className="h-14 w-14 text-muted-foreground" />
+                <p className="text-lg text-muted-foreground">{t("subjects.noActive")}</p>
+                <Button variant="outline" size="lg" onClick={() => setManageOpen(true)}>
+                  <SlidersHorizontal className="mr-2 h-5 w-5" />
+                  {t("subjects.manage")}
+                </Button>
+              </div>
+            )
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredSubjects.map((subject) => (
@@ -115,6 +138,12 @@ export function SubjectsPage() {
         onOpenChange={setModalOpen}
         subject={editingSubject}
         onSave={handleSave}
+      />
+
+      <ManageSubjectsModal
+        open={manageOpen}
+        onOpenChange={setManageOpen}
+        subjects={subjects}
       />
     </div>
   );

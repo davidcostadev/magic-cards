@@ -9,7 +9,13 @@
     "create": "Criar",
     "back": "Voltar",
     "confirm": "Confirmar",
-    "close": "Fechar"
+    "close": "Fechar",
+    "options": "Opções"
+  },
+  "validation": {
+    "required": "Campo obrigatório",
+    "email": "Digite um email válido",
+    "correctChoice": "Marque uma opção como correta"
   },
   "nav": {
     "dashboard": "Painel",
@@ -63,6 +69,10 @@
     "title": "Assuntos",
     "search": "Buscar assuntos...",
     "noResults": "Nenhum assunto corresponde à sua busca.",
+    "manage": "Gerenciar",
+    "manageTitle": "Gerenciar assuntos",
+    "manageHint": "Escolha quais assuntos aparecem na sua lista e nos estudos.",
+    "noActive": "Nenhum assunto ativo. Adicione em Gerenciar.",
     "createSubject": "Novo Assunto",
     "editSubject": "Editar Assunto",
     "deleteSubject": "Excluir Assunto",
@@ -99,7 +109,12 @@
     "choicesHelp": "Clique no círculo para marcar a resposta correta",
     "explanation": "Explicação",
     "explanationPlaceholder": "Exibida quando a resposta é errada (opcional)",
-    "language": "Idioma"
+    "language": "Idioma",
+    "hintCount_one": "{{count}} dica",
+    "hintCount_other": "{{count}} dicas",
+    "hintNumber": "Dica {{n}}",
+    "markdownPlaceholder": "Suporta **Markdown** e ```blocos de código```",
+    "tagPlaceholder": "Digite e pressione Enter"
   },
   "learn": {
     "title": "Sessão de Estudo",
@@ -137,7 +152,9 @@
     "exitTitle": "Sair da sessão?",
     "exitMessage": "Seu progresso nesta sessão será perdido.",
     "exitCancel": "Continuar estudando",
-    "exitConfirm": "Sair"
+    "exitConfirm": "Sair",
+    "errorCount_one": "{{count}} erro",
+    "errorCount_other": "{{count}} erros"
   },
   "settings": {
     "title": "Configurações",
@@ -153,6 +170,17 @@
     "english": "Inglês",
     "portuguese": "Português",
     "saved": "Configurações salvas!"
+  },
+  "onboarding": {
+    "welcome": "Bem-vindo ao Magic Cards",
+    "subtitle": "Vamos configurar sua experiência de aprendizado",
+    "interfaceLanguage": "Idioma da interface",
+    "cardLanguage": "Idioma dos cartões",
+    "theme": "Tema",
+    "chooseSubjects": "Escolha os assuntos para estudar",
+    "chooseSubjectsHint": "Você pode alterar isso quando quiser",
+    "next": "Próximo",
+    "getStarted": "Começar"
   },
   "notFound": {
     "title": "Página Não Encontrada",
