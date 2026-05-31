@@ -1,3 +1,6 @@
+import { gt, lt, type SQL } from 'drizzle-orm';
+import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
+import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { ListResponse } from './interceptors/list.interceptor';
 
@@ -16,6 +19,8 @@ export const paginationQuerySchema = z.object({
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 
+export class PaginationQueryDto extends createZodDto(paginationQuerySchema) {}
+
 /**
  * Build a `ListResponse` from rows fetched with `limit + 1`: the extra row signals
  * `has_more` and is trimmed off before returning.
@@ -23,4 +28,14 @@ export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 export function toListResponse<T>(rows: T[], limit: number): ListResponse<T> {
   const hasMore = rows.length > limit;
   return new ListResponse(hasMore ? rows.slice(0, limit) : rows, hasMore);
+}
+
+/**
+ * Cursor condition for a list ordered by `id DESC` (newest first). `starting_after`
+ * pages forward (older ids), `ending_before` pages backward (newer ids).
+ */
+export function cursorWhere(idColumn: SQLiteColumn, query: PaginationQuery): SQL | undefined {
+  if (query.starting_after) return lt(idColumn, query.starting_after);
+  if (query.ending_before) return gt(idColumn, query.ending_before);
+  return undefined;
 }

@@ -52,6 +52,134 @@ export interface paths {
         patch: operations["AuthController_updateMe"];
         trace?: never;
     };
+    "/v1/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SubjectsController_list"];
+        put?: never;
+        post: operations["SubjectsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subjects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SubjectsController_get"];
+        put?: never;
+        post?: never;
+        delete: operations["SubjectsController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["SubjectsController_update"];
+        trace?: never;
+    };
+    "/v1/subjects/{id}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SubjectsController_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CardsController_list"];
+        put?: never;
+        post: operations["CardsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CardsController_get"];
+        put?: never;
+        post?: never;
+        delete: operations["CardsController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["CardsController_update"];
+        trace?: never;
+    };
+    "/v1/review_queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewsController_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/review_queue/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewsController_next"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewsController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -95,6 +223,103 @@ export interface components {
             /** @enum {string} */
             theme?: "light" | "dark";
             dailyGoal?: number;
+        };
+        SubjectResponseDto: {
+            id: string;
+            userId: string;
+            title: string;
+            description: string | null;
+            color: string | null;
+            icon: string | null;
+            cardCount: number;
+            createdAt: string;
+            updatedAt: string;
+        };
+        CreateSubjectDto: {
+            title: string;
+            description?: string;
+            color?: string;
+            icon?: string;
+        };
+        UpdateSubjectDto: {
+            title?: string;
+            description?: string;
+            color?: string;
+            icon?: string;
+        };
+        SubjectStatsDto: {
+            totalCards: number;
+            new: number;
+            learning: number;
+            reviewing: number;
+            mastered: number;
+            due: number;
+        };
+        CardResponseDto: {
+            id: string;
+            subjectId: string;
+            question: string;
+            answer: string;
+            hints: string[];
+            tags: string[];
+            createdAt: string;
+            updatedAt: string;
+        };
+        CreateCardDto: {
+            subjectId: string;
+            question: string;
+            answer: string;
+            hints?: string[];
+            tags?: string[];
+        };
+        UpdateCardDto: {
+            question?: string;
+            answer?: string;
+            hints?: string[];
+            tags?: string[];
+        };
+        ReviewQueueResponseDto: {
+            due: {
+                id: string;
+                subjectId: string;
+                question: string;
+                answer: string;
+                hints: string[];
+                tags: string[];
+                createdAt: string;
+                updatedAt: string;
+            }[];
+            new: {
+                id: string;
+                subjectId: string;
+                question: string;
+                answer: string;
+                hints: string[];
+                tags: string[];
+                createdAt: string;
+                updatedAt: string;
+            }[];
+            total: number;
+        };
+        CreateReviewDto: {
+            cardId: string;
+            quality: number;
+            timeSpent: number;
+            wasHintUsed: boolean;
+        };
+        CardProgressResponseDto: {
+            id: string;
+            userId: string;
+            cardId: string;
+            interval: number;
+            easeFactor: number;
+            repetitions: number;
+            nextReviewDate: string;
+            lastReviewDate: string | null;
+            /** @enum {string} */
+            status: "new" | "learning" | "reviewing" | "mastered";
+            createdAt: string;
+            updatedAt: string;
         };
     };
     responses: never;
@@ -189,6 +414,315 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
+    SubjectsController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                starting_after?: string;
+                ending_before?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectResponseDto"][];
+                };
+            };
+        };
+    };
+    SubjectsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSubjectDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectResponseDto"];
+                };
+            };
+        };
+    };
+    SubjectsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectResponseDto"];
+                };
+            };
+        };
+    };
+    SubjectsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SubjectsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSubjectDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectResponseDto"];
+                };
+            };
+        };
+    };
+    SubjectsController_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectStatsDto"];
+                };
+            };
+        };
+    };
+    CardsController_list: {
+        parameters: {
+            query: {
+                limit?: number;
+                starting_after?: string;
+                ending_before?: string;
+                subject: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponseDto"][];
+                };
+            };
+        };
+    };
+    CardsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCardDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponseDto"];
+                };
+            };
+        };
+    };
+    CardsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponseDto"];
+                };
+            };
+        };
+    };
+    CardsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CardsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCardDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponseDto"];
+                };
+            };
+        };
+    };
+    ReviewsController_queue: {
+        parameters: {
+            query?: {
+                subject?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewQueueResponseDto"];
+                };
+            };
+        };
+    };
+    ReviewsController_next: {
+        parameters: {
+            query?: {
+                subject?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponseDto"];
+                };
+            };
+        };
+    };
+    ReviewsController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReviewDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardProgressResponseDto"];
                 };
             };
         };
