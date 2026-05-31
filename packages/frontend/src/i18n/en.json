@@ -154,7 +154,10 @@
     "exitCancel": "Keep studying",
     "exitConfirm": "Leave",
     "errorCount_one": "{{count}} error",
-    "errorCount_other": "{{count}} errors"
+    "errorCount_other": "{{count}} errors",
+    "exitShortcut": "Leave session (Esc)",
+    "keyEnter": "Enter",
+    "keyEsc": "Esc"
   },
   "settings": {
     "title": "Settings",

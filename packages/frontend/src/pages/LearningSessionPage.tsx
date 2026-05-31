@@ -1,9 +1,11 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/common/Kbd";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { isInteractiveTarget } from "@/utils/keyboard";
 import { CardReview } from "@/components/features/learning/CardReview";
 import { QuizReview } from "@/components/features/learning/QuizReview";
 import { TypeAnswerReview } from "@/components/features/learning/TypeAnswerReview";
@@ -22,7 +24,7 @@ export function LearningSessionPage() {
   const subjectId = (params as { subjectId?: string }).subjectId;
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { setInSession, exitRequested, cancelExit } = useLearningSessions();
+  const { setInSession, exitRequested, requestExit, cancelExit } = useLearningSessions();
   const { user } = useAuth();
   const { selectedSubjectIds } = usePreferences();
   const cardLanguage = user?.cardLanguage ?? "all";
@@ -80,6 +82,40 @@ export function LearningSessionPage() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentIndex, mode]);
+
+  const confirmExit = useCallback(() => {
+    setInSession(false);
+    cancelExit();
+    navigate({ to: "/dashboard" });
+  }, [setInSession, cancelExit, navigate]);
+
+  // Esc requests exit from anywhere in an active session (the confirm dialog
+  // handles its own Esc-to-cancel, so we skip while it is already open).
+  useEffect(() => {
+    if (!activeSession) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !exitRequested) {
+        e.preventDefault();
+        requestExit();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeSession, exitRequested, requestExit]);
+
+  // While the exit dialog is open: Enter confirms leaving, unless the user has
+  // tabbed onto one of the dialog buttons (then the focused button decides).
+  useEffect(() => {
+    if (!exitRequested) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !isInteractiveTarget(document.activeElement)) {
+        e.preventDefault();
+        confirmExit();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [exitRequested, confirmExit]);
 
   if (allCardsUnfiltered.length === 0) {
     return (
@@ -158,7 +194,11 @@ export function LearningSessionPage() {
     <>
       {renderCard()}
 
-      <Dialog open={exitRequested} onOpenChange={(open) => { if (!open) cancelExit(); }}>
+      <Dialog
+        open={exitRequested}
+        onOpenChange={(open) => { if (!open) cancelExit(); }}
+        autoFocus={false}
+      >
         <DialogContent className="max-w-sm text-center justify-center">
           <DialogHeader>
             <DialogTitle>{t("learn.exitTitle")}</DialogTitle>
@@ -167,18 +207,17 @@ export function LearningSessionPage() {
             {t("learn.exitMessage")}
           </p>
           <DialogFooter className="sm:justify-center">
-            <Button variant="outline" onClick={cancelExit}>
+            <Button variant="outline" onClick={cancelExit} aria-keyshortcuts="Escape">
               {t("learn.exitCancel")}
+              <Kbd className="ml-2">{t("learn.keyEsc")}</Kbd>
             </Button>
             <Button
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                setInSession(false);
-                cancelExit();
-                navigate({ to: "/dashboard" });
-              }}
+              onClick={confirmExit}
+              aria-keyshortcuts="Enter"
             >
               {t("learn.exitConfirm")}
+              <Kbd className="ml-2">{t("learn.keyEnter")}</Kbd>
             </Button>
           </DialogFooter>
         </DialogContent>

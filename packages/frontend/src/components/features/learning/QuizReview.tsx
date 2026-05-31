@@ -2,9 +2,11 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, X, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/common/Kbd";
 import { MarkdownContent } from "./MarkdownContent";
 import { calculateQuality } from "./Timer";
 import { useLearningSessions } from "@/context/LearningContext";
+import { isInteractiveTarget, isTypingTarget } from "@/utils/keyboard";
 import { cn } from "@/utils/cn";
 import type { Card as CardType, Choice } from "@/mocks/types";
 
@@ -30,7 +32,7 @@ export function QuizReview({
   onRate,
 }: QuizReviewProps) {
   const { t } = useTranslation();
-  const { updateSessionInfo } = useLearningSessions();
+  const { updateSessionInfo, exitRequested } = useLearningSessions();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
@@ -114,6 +116,35 @@ export function QuizReview({
     onRate(quality);
   };
 
+  // Keyboard flow: 1-9 picks an answer, H eliminates a wrong one, Enter advances.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (exitRequested || isTypingTarget(e.target)) return;
+      const key = e.key;
+
+      if (answered || timedOut) {
+        if ((key === "Enter" || key === " ") && !isInteractiveTarget(document.activeElement)) {
+          e.preventDefault();
+          handleNext();
+        }
+        return;
+      }
+
+      if (/^[1-9]$/.test(key)) {
+        const choice = shuffledChoices[Number(key) - 1];
+        if (choice && !eliminatedIds.has(choice.id)) {
+          e.preventDefault();
+          handleSelect(choice);
+        }
+      } else if (key.toLowerCase() === "h" && canEliminate) {
+        e.preventDefault();
+        handleEliminate();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [answered, timedOut, eliminatedIds, canEliminate, shuffledChoices, exitRequested, handleNext, handleSelect, handleEliminate]);
+
   const getChoiceStyle = (choice: Choice) => {
     if (eliminatedIds.has(choice.id)) {
       return "border-border bg-muted line-through pointer-events-none opacity-40";
@@ -131,9 +162,10 @@ export function QuizReview({
       <MarkdownContent text={card.question} />
 
       {canEliminate && (
-        <Button variant="outline" onClick={handleEliminate}>
+        <Button variant="outline" onClick={handleEliminate} aria-keyshortcuts="H">
           <Lightbulb className="mr-2 h-5 w-5" />
           {t("learn.eliminateChoice")} ({eliminatedIds.size}/{maxEliminations})
+          <Kbd className="ml-2">H</Kbd>
         </Button>
       )}
 
@@ -146,21 +178,24 @@ export function QuizReview({
               key={choice.id}
               onClick={() => handleSelect(choice)}
               disabled={answered || timedOut || eliminatedIds.has(choice.id)}
+              aria-keyshortcuts={!answered && !timedOut ? String(index + 1) : undefined}
               className={cn(
                 "flex w-full items-center gap-4 rounded-2xl border-2 p-5 text-left text-base font-semibold transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100",
                 getChoiceStyle(choice),
                 !answered && !timedOut && !eliminatedIds.has(choice.id) ? "cursor-pointer" : "disabled:cursor-not-allowed"
               )}
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-foreground text-sm font-bold tabular-nums">
-                {showCorrect ? (
-                  <Check className="h-5 w-5" />
-                ) : showWrong ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  index + 1
-                )}
-              </span>
+              {showCorrect ? (
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center">
+                  <Check className="h-6 w-6" />
+                </span>
+              ) : showWrong ? (
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center">
+                  <X className="h-6 w-6" />
+                </span>
+              ) : (
+                <Kbd className="h-8 w-8 shrink-0 text-sm">{index + 1}</Kbd>
+              )}
               <span>{choice.text}</span>
             </button>
           );
@@ -177,8 +212,9 @@ export function QuizReview({
           {(!isCorrect || timedOut) && card.answer && (
             <MarkdownContent text={card.answer} />
           )}
-          <Button onClick={handleNext} className="w-full" size="lg">
+          <Button onClick={handleNext} className="w-full" size="lg" aria-keyshortcuts="Enter">
             {t("learn.nextCard")}
+            <Kbd className="ml-2">{t("learn.keyEnter")}</Kbd>
           </Button>
         </div>
       )}

@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/common/Kbd";
 import { MarkdownContent } from "./MarkdownContent";
 import { HintReveal } from "./HintReveal";
 import { calculateQuality } from "./Timer";
 import { useLearningSessions } from "@/context/LearningContext";
+import { isInteractiveTarget, isTypingTarget } from "@/utils/keyboard";
 import { cn } from "@/utils/cn";
 import type { Card as CardType } from "@/mocks/types";
 
@@ -35,7 +37,7 @@ export function TypeAnswerReview({
   onRate,
 }: TypeAnswerReviewProps) {
   const { t } = useTranslation();
-  const { updateSessionInfo } = useLearningSessions();
+  const { updateSessionInfo, exitRequested } = useLearningSessions();
   const [userAnswer, setUserAnswer] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
@@ -98,6 +100,36 @@ export function TypeAnswerReview({
     onRate(quality);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (exitRequested) return;
+
+      // Alt+H reveals a hint even while the input is focused — a bare "h" would
+      // just be typed into the answer. e.code stays "KeyH" regardless of layout
+      // (on macOS, Option+H changes e.key to a dead-key char).
+      if (
+        e.altKey &&
+        (e.code === "KeyH" || e.key.toLowerCase() === "h") &&
+        !submitted &&
+        revealedHints < card.hints.length
+      ) {
+        e.preventDefault();
+        setRevealedHints((prev) => prev + 1);
+        return;
+      }
+
+      if (isTypingTarget(e.target)) return;
+
+      // Once the answer is checked the input is gone, so Enter/Space advances.
+      if (submitted && (e.key === "Enter" || e.key === " ") && !isInteractiveTarget(document.activeElement)) {
+        e.preventDefault();
+        handleNext();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [submitted, revealedHints, card.hints.length, exitRequested, handleNext]);
+
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
       <MarkdownContent text={card.question} />
@@ -106,6 +138,7 @@ export function TypeAnswerReview({
         hints={card.hints}
         revealedCount={revealedHints}
         onRevealNext={() => setRevealedHints((prev) => prev + 1)}
+        shortcutKey="Alt H"
       />
 
       {!submitted ? (
@@ -118,8 +151,9 @@ export function TypeAnswerReview({
             className="text-lg"
             disabled={timedOut}
           />
-          <Button type="submit" className="w-full" size="lg" disabled={!userAnswer.trim()}>
+          <Button type="submit" className="w-full" size="lg" disabled={!userAnswer.trim()} aria-keyshortcuts="Enter">
             {t("learn.checkAnswer")}
+            <Kbd className="ml-2">{t("learn.keyEnter")}</Kbd>
           </Button>
         </form>
       ) : (
@@ -151,8 +185,9 @@ export function TypeAnswerReview({
             </div>
           )}
 
-          <Button onClick={handleNext} className="w-full" size="lg">
+          <Button onClick={handleNext} className="w-full" size="lg" aria-keyshortcuts="Enter">
             {t("learn.nextCard")}
+            <Kbd className="ml-2">{t("learn.keyEnter")}</Kbd>
           </Button>
         </div>
       )}

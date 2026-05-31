@@ -1,11 +1,16 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/common/Kbd";
 import { useLearningSessions } from "@/context/LearningContext";
+import { isInteractiveTarget, isTypingTarget } from "@/utils/keyboard";
 import { cn } from "@/utils/cn";
 import type { Card as CardType } from "@/mocks/types";
 
 type Quality = 1 | 3 | 4 | 5;
+
+// Left column uses number keys, right column uses the QWER row above them.
+const RIGHT_KEYS = ["q", "w", "e", "r"];
 
 interface MatchReviewProps {
   card: CardType;
@@ -37,7 +42,7 @@ export function MatchReview({
   onRate,
 }: MatchReviewProps) {
   const { t } = useTranslation();
-  const { updateSessionInfo } = useLearningSessions();
+  const { updateSessionInfo, exitRequested } = useLearningSessions();
   const startTime = useRef(Date.now());
 
   const allPairs = useMemo(() => shuffle(card.matchPairs), [card.matchPairs]);
@@ -149,6 +154,42 @@ export function MatchReview({
     onRate(quality);
   };
 
+  // Keyboard flow: 1-4 selects a left term, Q/W/E/R selects a right term; a
+  // left+right pair auto-attempts the match. Enter advances when finished.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (exitRequested || isTypingTarget(e.target)) return;
+      const key = e.key;
+
+      if (completed || timedOut) {
+        if ((key === "Enter" || key === " ") && !isInteractiveTarget(document.activeElement)) {
+          e.preventDefault();
+          handleNext();
+        }
+        return;
+      }
+
+      if (wrongFlash || correctFlash) return;
+
+      if (/^[1-4]$/.test(key)) {
+        const pair = visiblePairs[Number(key) - 1];
+        if (pair) {
+          e.preventDefault();
+          handleLeftClick(pair.left);
+        }
+        return;
+      }
+
+      const rightIndex = RIGHT_KEYS.indexOf(key.toLowerCase());
+      if (rightIndex >= 0 && rightIndex < shuffledRights.length) {
+        e.preventDefault();
+        handleRightClick(shuffledRights[rightIndex]);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [completed, timedOut, wrongFlash, correctFlash, visiblePairs, shuffledRights, exitRequested, handleLeftClick, handleRightClick, handleNext]);
+
   const getLeftStyle = (left: string) => {
     if (correctFlash?.left === left) return "border-success bg-success text-white scale-95";
     if (wrongFlash?.left === left) return "border-destructive bg-destructive text-white animate-[shake_300ms_ease-in-out]";
@@ -177,32 +218,36 @@ export function MatchReview({
       {!completed ? (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2.5">
-            {visiblePairs.map((pair) => (
+            {visiblePairs.map((pair, index) => (
               <button
                 key={pair.left}
                 onClick={() => handleLeftClick(pair.left)}
                 disabled={!!correctFlash || !!wrongFlash}
+                aria-keyshortcuts={String(index + 1)}
                 className={cn(
-                  "w-full cursor-pointer rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:active:scale-100",
+                  "flex w-full items-center gap-2.5 cursor-pointer rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:active:scale-100",
                   getLeftStyle(pair.left)
                 )}
               >
-                {pair.left}
+                <Kbd className="shrink-0">{index + 1}</Kbd>
+                <span>{pair.left}</span>
               </button>
             ))}
           </div>
           <div className="space-y-2.5">
-            {shuffledRights.map((right) => (
+            {shuffledRights.map((right, index) => (
               <button
                 key={right}
                 onClick={() => handleRightClick(right)}
                 disabled={!!correctFlash || !!wrongFlash}
+                aria-keyshortcuts={RIGHT_KEYS[index]?.toUpperCase()}
                 className={cn(
-                  "w-full cursor-pointer rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:active:scale-100",
+                  "flex w-full items-center gap-2.5 cursor-pointer rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:active:scale-100",
                   getRightStyle(right)
                 )}
               >
-                {right}
+                <Kbd className="shrink-0">{RIGHT_KEYS[index]?.toUpperCase()}</Kbd>
+                <span>{right}</span>
               </button>
             ))}
           </div>
@@ -230,8 +275,9 @@ export function MatchReview({
               <p className="text-sm mt-1">{t("learn.errorCount", { count: errorCount })}</p>
             )}
           </div>
-          <Button onClick={handleNext} className="w-full" size="lg">
+          <Button onClick={handleNext} className="w-full" size="lg" aria-keyshortcuts="Enter">
             {t("learn.nextCard")}
+            <Kbd className="ml-2">{t("learn.keyEnter")}</Kbd>
           </Button>
         </div>
       )}

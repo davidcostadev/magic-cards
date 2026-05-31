@@ -1,14 +1,16 @@
 import { useTranslation } from "react-i18next";
 import { Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/common/Kbd";
 
 interface HintRevealProps {
   hints: string[];
   revealedCount: number;
   onRevealNext: () => void;
+  shortcutKey?: string;
 }
 
-export function HintReveal({ hints, revealedCount, onRevealNext }: HintRevealProps) {
+export function HintReveal({ hints, revealedCount, onRevealNext, shortcutKey }: HintRevealProps) {
   const { t } = useTranslation();
   const hasMore = revealedCount < hints.length;
 
@@ -26,9 +28,20 @@ export function HintReveal({ hints, revealedCount, onRevealNext }: HintRevealPro
         </div>
       ))}
       {hasMore && (
-        <Button variant="outline" onClick={onRevealNext}>
+        <Button
+          variant="outline"
+          onClick={onRevealNext}
+          aria-keyshortcuts={shortcutKey ? shortcutKey.trim().replace(/\s+/g, "+") : undefined}
+        >
           <Lightbulb className="mr-2 h-5 w-5" />
           {t("learn.showHint")} ({revealedCount + 1}/{hints.length})
+          {shortcutKey && (
+            <span className="ml-2 inline-flex items-center gap-1">
+              {shortcutKey.trim().split(/\s+/).map((key) => (
+                <Kbd key={key}>{key}</Kbd>
+              ))}
+            </span>
+          )}
         </Button>
       )}
     </div>

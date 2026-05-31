@@ -36,7 +36,14 @@ export function Header() {
               <span className={cn("text-lg font-mono font-bold tabular-nums", timerColor)}>
                 {Math.ceil(sessionInfo.timerSeconds)}s
               </span>
-              <Button variant="ghost" size="icon" onClick={requestExit}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={requestExit}
+                aria-label={t("learn.exitShortcut")}
+                aria-keyshortcuts="Escape"
+                title={t("learn.exitShortcut")}
+              >
                 <X className="h-6 w-6" />
               </Button>
             </div>

@@ -154,7 +154,10 @@
     "exitCancel": "Continuar estudando",
     "exitConfirm": "Sair",
     "errorCount_one": "{{count}} erro",
-    "errorCount_other": "{{count}} erros"
+    "errorCount_other": "{{count}} erros",
+    "exitShortcut": "Sair da sessão (Esc)",
+    "keyEnter": "Enter",
+    "keyEsc": "Esc"
   },
   "settings": {
     "title": "Configurações",

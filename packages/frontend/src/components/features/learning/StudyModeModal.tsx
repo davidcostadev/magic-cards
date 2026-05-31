@@ -1,5 +1,8 @@
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { BookOpen, ListChecks, Layers, Keyboard, Link2 } from "lucide-react";
+import { Kbd } from "@/components/common/Kbd";
+import { isTypingTarget } from "@/utils/keyboard";
 import { cn } from "@/utils/cn";
 
 export type StudyMode = "all" | "flashcards" | "quizzes" | "type-answer" | "match";
@@ -23,8 +26,7 @@ export function StudyModeModal({
   matchCount,
 }: StudyModeModalProps) {
   const { t } = useTranslation();
-
-  if (!open) return null;
+  const firstEnabledRef = useRef<HTMLButtonElement>(null);
 
   const totalCount = flashcardCount + quizCount + typeAnswerCount + matchCount;
 
@@ -76,6 +78,31 @@ export function StudyModeModal({
     },
   ];
 
+  // Press 1-5 to pick a study mode without reaching for the mouse.
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      const index = Number(e.key) - 1;
+      const target = modes[index];
+      if (target && target.count > 0) {
+        e.preventDefault();
+        onSelect(target.mode);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, modes, onSelect]);
+
+  // Move focus to the first available mode so keyboard users land inside the list.
+  useEffect(() => {
+    if (open) firstEnabledRef.current?.focus();
+  }, [open]);
+
+  if (!open) return null;
+
+  const firstEnabledIndex = modes.findIndex((m) => m.count > 0);
+
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center p-6">
       <h2 className="mb-2 text-3xl font-bold text-center">{t("learn.chooseMode")}</h2>
@@ -84,11 +111,13 @@ export function StudyModeModal({
       </p>
 
       <div className="grid w-full max-w-md gap-4">
-        {modes.map(({ mode, icon: Icon, label, count, bgColor, cardBg, borderColor }) => (
+        {modes.map(({ mode, icon: Icon, label, count, bgColor, cardBg, borderColor }, index) => (
           <button
             key={mode}
+            ref={index === firstEnabledIndex ? firstEnabledRef : undefined}
             onClick={() => onSelect(mode)}
             disabled={count === 0}
+            aria-keyshortcuts={count > 0 ? String(index + 1) : undefined}
             className={cn(
               "flex cursor-pointer items-center gap-5 rounded-2xl border-2 p-6 text-left transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100",
               cardBg,
@@ -98,12 +127,13 @@ export function StudyModeModal({
             <div className={cn("flex h-14 w-14 items-center justify-center rounded-xl shrink-0 text-white", bgColor)}>
               <Icon className="h-7 w-7" />
             </div>
-            <div>
+            <div className="flex-1">
               <span className="text-lg font-bold">{label}</span>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {t("learn.modeCardCount", { count })}
               </p>
             </div>
+            {count > 0 && <Kbd className="text-foreground/70">{index + 1}</Kbd>}
           </button>
         ))}
       </div>

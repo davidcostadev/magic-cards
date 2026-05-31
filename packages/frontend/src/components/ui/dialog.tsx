@@ -5,12 +5,18 @@ interface DialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
+  /**
+   * When false, focus moves to the dialog container instead of the first
+   * focusable control — useful when the dialog is driven by keyboard shortcuts
+   * and a pre-focused button would look "selected". Defaults to true.
+   */
+  autoFocus?: boolean;
 }
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-function Dialog({ open, onOpenChange, children }: DialogProps) {
+function Dialog({ open, onOpenChange, children, autoFocus = true }: DialogProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
@@ -23,7 +29,11 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
     const focusables = () => Array.from(container?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
 
     // Move focus into the dialog so keyboard users start inside it
-    (focusables()[0] ?? container)?.focus();
+    if (autoFocus) {
+      (focusables()[0] ?? container)?.focus();
+    } else {
+      container?.focus();
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -39,7 +49,11 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
       const first = items[0];
       const last = items[items.length - 1];
       const active = document.activeElement;
-      if (e.shiftKey && (active === first || !container?.contains(active))) {
+      // Focus sitting on the container (autoFocus=false) wraps to either end.
+      if (active === container) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      } else if (e.shiftKey && (active === first || !container?.contains(active))) {
         e.preventDefault();
         last.focus();
       } else if (!e.shiftKey && (active === last || !container?.contains(active))) {
@@ -54,7 +68,7 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
       document.removeEventListener("keydown", handleKeyDown);
       previouslyFocused.current?.focus?.();
     };
-  }, [open, onOpenChange]);
+  }, [open, onOpenChange, autoFocus]);
 
   if (!open) return null;
 
