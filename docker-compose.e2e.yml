@@ -1,0 +1,42 @@
+# Full-stack throwaway stack for Playwright E2E (architecture §11 / ADR 0005).
+# The browser runs on the host, so the frontend calls the backend at the host-mapped
+# port — VITE_API_URL and CORS_ORIGIN both use localhost.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      JWT_SECRET: e2e-secret
+      JWT_EXPIRATION: 24h
+      DATABASE_PATH: /app/packages/backend/data/e2e.db
+      CORS_ORIGIN: http://localhost:5100
+    # Dedicated host ports so the E2E stack never collides with the local dev servers
+    # (frontend :5000, backend :3001). Container ports are unchanged.
+    ports:
+      - "3100:3001"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3001/docs').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 2s
+      timeout: 3s
+      retries: 20
+      start_period: 3s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3100
+    ports:
+      - "5100:5000"
+    # Wait until the backend is actually serving so the first request can't race it.
+    depends_on:
+      backend:
+        condition: service_healthy
