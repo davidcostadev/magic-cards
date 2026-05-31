@@ -6,6 +6,7 @@ import { toListResponse } from '../../common/pagination';
 import type { AuthUser } from '../../common/types/authenticated-request';
 import { CardsService } from './cards.service';
 import {
+  CardListDto,
   CardListQueryDto,
   type CardResponse,
   CardResponseDto,
@@ -20,7 +21,7 @@ export class CardsController {
   constructor(private readonly cards: CardsService) {}
 
   @Get()
-  @ApiOkResponse({ type: CardResponseDto, isArray: true })
+  @ApiOkResponse({ type: CardListDto })
   list(
     @CurrentUser() user: AuthUser,
     @Query() query: CardListQueryDto

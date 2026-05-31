@@ -6,6 +6,7 @@ import { PaginationQueryDto, toListResponse } from '../../common/pagination';
 import type { AuthUser } from '../../common/types/authenticated-request';
 import {
   CreateSubjectDto,
+  SubjectListDto,
   type SubjectResponse,
   SubjectResponseDto,
   SubjectStatsDto,
@@ -20,7 +21,7 @@ export class SubjectsController {
   constructor(private readonly subjects: SubjectsService) {}
 
   @Get()
-  @ApiOkResponse({ type: SubjectResponseDto, isArray: true })
+  @ApiOkResponse({ type: SubjectListDto })
   list(
     @CurrentUser() user: AuthUser,
     @Query() query: PaginationQueryDto

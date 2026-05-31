@@ -21,6 +21,16 @@ export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 
 export class PaginationQueryDto extends createZodDto(paginationQuerySchema) {}
 
+/** The Stripe list envelope, parameterised by the item schema (for OpenAPI typing). */
+export function listResponseSchema<T extends z.ZodTypeAny>(item: T) {
+  return z.object({
+    object: z.literal('list'),
+    url: z.string(),
+    has_more: z.boolean(),
+    data: z.array(item),
+  });
+}
+
 /**
  * Build a `ListResponse` from rows fetched with `limit + 1`: the extra row signals
  * `has_more` and is trimmed off before returning.

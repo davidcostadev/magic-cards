@@ -161,10 +161,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SubjectResponseDto"
-                  }
+                  "$ref": "#/components/schemas/SubjectListDto"
                 }
               }
             }
@@ -400,10 +397,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CardResponseDto"
-                  }
+                  "$ref": "#/components/schemas/CardListDto"
                 }
               }
             }
@@ -838,6 +832,119 @@
           }
         }
       },
+      "SubjectListDto": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "list"
+          },
+          "url": {
+            "type": "string"
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "userId": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "color": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "icon": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "cardCount": {
+                  "type": "number"
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "userId",
+                "title",
+                "description",
+                "color",
+                "icon",
+                "cardCount",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "object",
+          "url",
+          "has_more",
+          "data"
+        ]
+      },
+      "CreateSubjectDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "icon": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
       "SubjectResponseDto": {
         "type": "object",
         "properties": {
@@ -902,31 +1009,6 @@
           "updatedAt"
         ]
       },
-      "CreateSubjectDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 120
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 1000
-          },
-          "color": {
-            "type": "string",
-            "maxLength": 32
-          },
-          "icon": {
-            "type": "string",
-            "maxLength": 64
-          }
-        },
-        "required": [
-          "title"
-        ]
-      },
       "UpdateSubjectDto": {
         "type": "object",
         "properties": {
@@ -980,6 +1062,111 @@
           "due"
         ]
       },
+      "CardListDto": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "list"
+          },
+          "url": {
+            "type": "string"
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "subjectId": {
+                  "type": "string"
+                },
+                "question": {
+                  "type": "string"
+                },
+                "answer": {
+                  "type": "string"
+                },
+                "hints": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "subjectId",
+                "question",
+                "answer",
+                "hints",
+                "tags",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "object",
+          "url",
+          "has_more",
+          "data"
+        ]
+      },
+      "CreateCardDto": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hints": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "subjectId",
+          "question",
+          "answer"
+        ]
+      },
       "CardResponseDto": {
         "type": "object",
         "properties": {
@@ -1023,42 +1210,6 @@
           "tags",
           "createdAt",
           "updatedAt"
-        ]
-      },
-      "CreateCardDto": {
-        "type": "object",
-        "properties": {
-          "subjectId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "question": {
-            "type": "string",
-            "minLength": 1
-          },
-          "answer": {
-            "type": "string",
-            "minLength": 1
-          },
-          "hints": {
-            "maxItems": 10,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "tags": {
-            "maxItems": 20,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "subjectId",
-          "question",
-          "answer"
         ]
       },
       "UpdateCardDto": {

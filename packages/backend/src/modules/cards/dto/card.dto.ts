@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { paginationQuerySchema } from '../../../common/pagination';
+import { listResponseSchema, paginationQuerySchema } from '../../../common/pagination';
 
 export const createCardSchema = z.object({
   subjectId: z.string().min(1),
@@ -32,6 +32,7 @@ export class CreateCardDto extends createZodDto(createCardSchema) {}
 export class UpdateCardDto extends createZodDto(updateCardSchema) {}
 export class CardListQueryDto extends createZodDto(cardListQuerySchema) {}
 export class CardResponseDto extends createZodDto(cardResponseSchema) {}
+export class CardListDto extends createZodDto(listResponseSchema(cardResponseSchema)) {}
 
 export type CardResponse = z.infer<typeof cardResponseSchema>;
 export type CardListQuery = z.infer<typeof cardListQuerySchema>;

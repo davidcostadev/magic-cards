@@ -1,5 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { listResponseSchema } from '../../../common/pagination';
 
 export const createSubjectSchema = z.object({
   title: z.string().min(1).max(120),
@@ -34,6 +35,7 @@ export const subjectStatsSchema = z.object({
 export class CreateSubjectDto extends createZodDto(createSubjectSchema) {}
 export class UpdateSubjectDto extends createZodDto(updateSubjectSchema) {}
 export class SubjectResponseDto extends createZodDto(subjectResponseSchema) {}
+export class SubjectListDto extends createZodDto(listResponseSchema(subjectResponseSchema)) {}
 export class SubjectStatsDto extends createZodDto(subjectStatsSchema) {}
 
 export type SubjectResponse = z.infer<typeof subjectResponseSchema>;
