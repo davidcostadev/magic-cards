@@ -13,7 +13,7 @@ The UI prototype and auth foundation are in place. The learner now needs the cor
 
 ## Solution
 
-Implement subject CRUD, card CRUD, the SM-2 spaced repetition algorithm, learning session card selection, and the review flow — connecting the existing UI components to real tRPC procedures backed by SQLite.
+Implement subject CRUD, card CRUD, the SM-2 spaced repetition algorithm, learning session card selection, and the review flow — connecting the existing UI components to real REST endpoints (`/v1`) backed by SQLite.
 
 ## User Stories
 
@@ -60,12 +60,12 @@ Implement subject CRUD, card CRUD, the SM-2 spaced repetition algorithm, learnin
 
 ## Implementation Decisions
 
-- **Subjects router**: `subjects.list` returns subjects with computed card count (COUNT query, not stored). `subjects.create`, `subjects.update`, `subjects.delete` — standard CRUD. All filter by `userId` from JWT context. Delete cascades to cards, cardProgress, and reviewHistory for that subject's cards.
-- **Cards router**: `cards.listBySubject`, `cards.getById`, `cards.create`, `cards.update`, `cards.delete` — standard CRUD. Hints stored as JSON array of strings. Tags stored as JSON array of strings. Cards belong to a subject; authorization verified by checking subject ownership.
-- **SM-2 service**: Pure function `calculateNextReview(quality, lastInterval, lastEaseFactor, repetitions)` returns `{ newInterval, newEaseFactor, newRepetitions }`. Logic as defined in architecture.md section 7. Status derived from progress state: New (0 repetitions), Learning (1-3 reps, interval < 7), Reviewing (stable intervals), Mastered (interval > 21, ease > 2.0).
-- **Learning service**: `getSessionCards(userId, subjectId?)` — queries overdue cards ordered by staleness, then fills with new cards (max 30% of batch). `submitReview(userId, cardId, quality, timeSpent, wasHintUsed)` — calls SM-2, updates cardProgress, inserts reviewHistory.
-- **Learning router**: `learning.today` returns due/new/total counts. `learning.session` returns the next card to review. `learning.review` accepts the review submission. All delegate to learning.service.
-- **Frontend integration**: Replace mock data in SubjectList, SubjectCard, SubjectDetail, CardList, CardForm, CardReview, QualityButtons, SessionSummary with real tRPC calls via TanStack Query. Use `trpc.subjects.list.useQuery()`, mutations with `onSuccess` invalidation.
+- **Subjects module** (controller + service): `GET /v1/subjects` returns the list envelope with computed card count (COUNT query, not stored). `POST /v1/subjects`, `PATCH /v1/subjects/:id`, `DELETE /v1/subjects/:id`, `GET /v1/subjects/:id/stats` — standard CRUD. All filter by `userId` from the `JwtAuthGuard` (`request.user`). Delete hard-cascades to cards, cardProgress, and reviewHistory for that subject's cards (frontend shows a confirmation dialog; past dashboard stats shift retroactively).
+- **Cards module** (controller + service): `GET /v1/cards?subject=:id`, `GET /v1/cards/:id`, `POST /v1/cards`, `PATCH /v1/cards/:id`, `DELETE /v1/cards/:id` — standard CRUD. Hints stored as JSON array of strings. Tags stored as JSON array of strings. Cards belong to a subject; authorization verified by checking subject ownership. No `expand[]` — the card carries `subjectId` and the frontend joins from the cached subjects list.
+- **SM-2 service** (Nest provider): Pure function `calculateNextReview(quality, lastInterval, lastEaseFactor, repetitions)` returns `{ newInterval, newEaseFactor, newRepetitions }`. Logic as defined in architecture.md section 7. Status derived from progress state: New (0 repetitions), Learning (1-3 reps, interval < 7), Reviewing (stable intervals), Mastered (interval > 21, ease > 2.0).
+- **Learning service** (Nest provider): `getSessionCards(userId, subjectId?)` — queries overdue cards ordered by staleness, then fills with new cards (max 30% of batch). `submitReview(userId, cardId, quality, timeSpent, wasHintUsed)` — calls SM-2, updates cardProgress, inserts reviewHistory.
+- **Reviews module** (controller + service): `GET /v1/review_queue?subject=:id` returns due/new/total counts; `GET /v1/review_queue/next?subject=:id` returns the next card to review (`204` if none). `POST /v1/reviews` accepts the review submission (`{ cardId, quality, timeSpent, wasHintUsed }`) and returns the updated `CardProgress`. No idempotency key — the frontend disables the submit button while the mutation is pending (TanStack Query mutations don't auto-retry), so SM-2 can't be advanced twice. All delegate to the learning/SM-2 providers.
+- **Frontend integration**: Replace mock data in SubjectList, SubjectCard, SubjectDetail, CardList, CardForm, CardReview, QualityButtons, SessionSummary with real REST calls via the generated typed client + TanStack Query. Query hooks in `api/queries/` wrap `api/client.ts`; mutations invalidate the relevant query keys `onSuccess`.
 - **Optimistic updates**: Not required in this phase. Standard invalidation-on-mutation is sufficient.
 - **Card selection is server-side**: The frontend requests the next card; the backend determines which card to show based on the SM-2 schedule. The frontend does not hold the full card queue.
 

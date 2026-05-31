@@ -42,7 +42,7 @@ Refine the Markdown rendering pipeline, perfect the review flow animations, ensu
 - **Theme persistence**: ThemeContext reads initial value from `localStorage` (or user preference from backend). Tailwind `darkMode: 'class'` — ThemeContext toggles `dark` class on `<html>`.
 - **Loading states**: TanStack Query's `isLoading` / `isPending` states used to show skeleton loaders (shadcn/ui Skeleton component) on lists and cards.
 - **Empty states**: Each list view (subjects, cards, reviews) has a dedicated empty state with illustration/icon and call-to-action.
-- **Form validation**: Zod schemas on tRPC inputs already validate server-side. Frontend should show inline validation errors from tRPC error responses. Optionally add client-side validation with the same Zod schemas for instant feedback.
+- **Form validation**: Zod schemas on REST endpoints already validate server-side. Frontend should show inline validation errors read from the Stripe-style error envelope (`error.code` → i18n message, `error.param` → field). Optionally add client-side validation with the same Zod schemas for instant feedback.
 
 ## Testing Decisions
 
@@ -50,7 +50,7 @@ No tests in this phase. Visual QA across viewports and themes is the acceptance 
 
 ## Out of Scope
 
-- New features or procedures — this phase only polishes existing functionality
+- New features or endpoints — this phase only polishes existing functionality
 - Dashboard stats (FRD-005)
 - Performance optimization
 - Automated visual regression tests

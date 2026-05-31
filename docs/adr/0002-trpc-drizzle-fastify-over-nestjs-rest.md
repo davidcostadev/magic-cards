@@ -1,8 +1,12 @@
 # ADR 0002: Fastify + tRPC + Drizzle instead of NestJS + REST
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR 0003](./0003-rest-stripe-style-over-trpc.md)
 - **Date**: 2026-05-27
 - **Deciders**: David Costa
+
+> **Note (2026-05-31):** The **tRPC** decision recorded here was superseded by ADR 0003, which adopts a
+> Stripe-style REST API (`/v1`) typed via an OpenAPI 3.1 contract. tRPC was never implemented. The
+> **Fastify + Drizzle + Zod** choices below remain in force — only the API/transport layer changed.
 
 ## Context
 

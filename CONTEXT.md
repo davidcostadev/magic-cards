@@ -82,21 +82,21 @@ A bounded sequence of Reviews that the learner initiates on demand.
 
 An immutable log entry recording the outcome of a single Review: quality, time spent, whether hints were used, and when it happened. Used for analytics, never mutated.
 
-## Procedure (tRPC)
+## Endpoint (REST)
 
-A typed function exposed by the backend that the frontend can call directly with full TypeScript inference. Replaces REST endpoints. Procedures are organized into tRPC routers grouped by domain (auth, subjects, cards, learning). Input is validated with Zod schemas.
+A versioned HTTP operation exposed by the backend under `/v1`, modeled on Stripe's API conventions. Endpoints follow conventional REST verbs (`GET` retrieve/list, `POST` create, `PATCH` partial update, `PUT` replace, `DELETE` remove) over resource URLs (`/v1/subjects`, `/v1/cards`, `/v1/reviews`, …). Request params, query, and body are validated with Zod schemas; those same schemas generate the OpenAPI 3.1 spec.
 
-## Router
+## Route / Resource
 
-The presentation layer in tRPC. A router groups related Procedures, validates input via Zod, and delegates to Services (when business logic exists) or to Drizzle directly (for simple CRUD). Routers contain no business logic.
+The presentation layer of the backend. A controller (one NestJS module per resource) validates the request via Zod (`nestjs-zod`), delegates to Services (when business logic exists) or to Drizzle directly (for simple CRUD), and shapes the response. Controllers contain no business logic. Lists are returned in the Stripe list envelope; errors in the Stripe error envelope (via a global interceptor + exception filter).
 
 ## Service
 
-A plain TypeScript module containing business logic that is independent of tRPC. Services exist only when there is real logic to encapsulate (SM-2 algorithm, card selection, auth). Simple CRUD does not warrant a service — the router calls Drizzle directly.
+A plain TypeScript module containing business logic that is independent of the HTTP layer (no Fastify/route imports). Services exist only when there is real logic to encapsulate (SM-2 algorithm, card selection, auth). Simple CRUD does not warrant a service — the route calls Drizzle directly.
 
 ## Monorepo
 
-The project is organized as a pnpm workspace monorepo. The frontend imports the `AppRouter` type from the backend package for end-to-end type inference — no manual API types, no codegen.
+The project is organized as a pnpm workspace monorepo. The backend emits an OpenAPI 3.1 spec from its Zod schemas; the frontend generates TypeScript types from that spec (`pnpm gen:api`) and consumes a typed client — end-to-end type safety via codegen, no hand-written API types.
 
 ## Internationalization (i18n)
 
@@ -104,13 +104,13 @@ Translation lives exclusively in the frontend (`react-i18next`). The backend nev
 
 ## Frontend State Strategy
 
-- **Server state** (cards, subjects, sessions, stats) is managed exclusively by TanStack Query via `@trpc/react-query`. No manual fetching hooks or contexts for server data.
+- **Server state** (cards, subjects, sessions, stats) is managed exclusively by TanStack Query over a typed REST client (`openapi-fetch`, generated from the OpenAPI spec). No manual fetching hooks or contexts for server data.
 - **Client state** uses React Context for two concerns only: **AuthContext** (JWT token + current user) and **ThemeContext** (dark/light mode).
 - **Language** is managed by `react-i18next` directly — no custom LanguageContext.
 
 ## API Response Convention
 
-No wrapper envelope. tRPC handles serialization and error propagation automatically. Errors surface as typed TRPCError instances with standard HTTP status codes.
+Stripe-style, pragmatic profile. A single resource is returned as a bare object in `camelCase` with ISO 8601 timestamps. A collection is returned in the **list envelope**: `{ "object": "list", "url", "has_more", "data": [...] }`, with cursor pagination (`limit`, `starting_after`, `ending_before`) over time-sortable UUIDv7 IDs. Errors use the **error envelope**: `{ "error": { "type", "code", "param?" } }` with semantic HTTP status codes — `error.code` carries the i18n key (the backend never returns user-facing text). No `expand[]` and no idempotency keys (a single first-party client joins from cache; double-submit is guarded client-side). Everything lives under `/v1`.
 
 ## Dashboard
 

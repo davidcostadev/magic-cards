@@ -25,7 +25,7 @@ Magic Cards is a spaced repetition learning platform designed primarily for prog
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Class Merge**: `cn()` utility from clsx/tailwind-merge
 - **Routing**: TanStack Router (type-safe, integrated with TanStack Query)
-- **Server State**: TanStack Query via `@trpc/react-query`
+- **Server State**: TanStack Query over a typed REST client (`openapi-fetch`, generated from the OpenAPI spec)
 - **Client State**: React Context (AuthContext, ThemeContext)
 - **Markdown Rendering**: react-markdown with syntax highlighting (e.g., rehype-highlight or shiki)
 - **Testing**: Vitest + React Testing Library
@@ -33,20 +33,22 @@ Magic Cards is a spaced repetition learning platform designed primarily for prog
 - **i18n**: react-i18next
 
 ### Backend
-- **HTTP Server**: Fastify
-- **API Layer**: tRPC (Fastify adapter)
+- **Framework**: NestJS on the **Fastify adapter** (`@nestjs/platform-fastify`) — Nest's structure, Fastify's performance (see ADR 0004)
+- **API Layer**: REST under `/v1`, modeled on Stripe (pragmatic profile — see §6)
+- **API Schema**: Zod request/response schemas via `nestjs-zod` (`ZodValidationPipe` + `createZodDto`)
+- **API Docs/Contract**: OpenAPI 3.1 emitted by `@nestjs/swagger` (patched via `patchNestjsSwagger`; Swagger UI at `/docs`)
 - **Database**: SQLite (in-process via better-sqlite3)
 - **ORM**: Drizzle ORM
-- **Validation**: Zod (shared with tRPC input schemas)
-- **Testing**: Vitest
+- **Validation**: Zod (single source of truth — drives both request validation and the OpenAPI spec)
+- **Testing**: Vitest (+ `@nestjs/testing` + supertest for endpoint/E2E tests)
 - **Code Quality**: Biome (linter + formatter)
-- **Authentication**: JWT (jose or jsonwebtoken) + bcrypt
+- **Authentication**: JWT (jose or jsonwebtoken) + bcrypt, via a Nest `JwtAuthGuard`
 - **Environment**: Node.js 18+
 
 ### Monorepo
 - **Package Manager**: pnpm workspaces
 - **Structure**: `packages/frontend` + `packages/backend`
-- **Type Sharing**: Frontend imports `AppRouter` type from backend package — end-to-end type safety with zero codegen
+- **Type Sharing**: The backend emits an OpenAPI 3.1 spec from its Zod schemas; `pnpm gen:api` boots Nest standalone (no `listen`), writes the committed `openapi.json`, and generates `api/schema.d.ts` for the frontend's typed client. End-to-end type safety via codegen instead of a direct `AppRouter` import. CI re-runs `gen:api` and fails if the committed spec drifts.
 
 ### Development
 - **Dev Servers**: Two processes (frontend on :5173, backend on :3001)
@@ -75,25 +77,26 @@ magic-cards/
 │   │   ├── drizzle.config.ts
 │   │   ├── .env.example
 │   │   └── src/
+│   │       ├── main.ts                   # Nest bootstrap (Fastify adapter), swagger, global prefix /v1
+│   │       ├── app.module.ts             # root module (imports feature modules + common providers)
 │   │       ├── db/
-│   │       │   ├── schema.ts         # Drizzle table definitions
-│   │       │   ├── client.ts         # SQLite connection
-│   │       │   └── migrations/       # Drizzle Kit migrations
-│   │       ├── routers/
-│   │       │   ├── auth.ts           # signup, login, me
-│   │       │   ├── subjects.ts       # CRUD subjects
-│   │       │   ├── cards.ts          # CRUD cards
-│   │       │   ├── learning.ts       # session, review, stats
-│   │       │   └── index.ts          # appRouter (merges all routers)
-│   │       ├── services/
-│   │       │   ├── auth.service.ts   # password hashing, JWT sign/verify
-│   │       │   ├── learning.service.ts # session card selection, stats
-│   │       │   └── sm2.service.ts    # spaced repetition algorithm
-│   │       ├── middleware/
-│   │       │   └── auth.ts           # JWT validation → protectedProcedure
-│   │       ├── context.ts            # tRPC context creation
-│   │       ├── trpc.ts               # tRPC init + procedure builders
-│   │       └── server.ts             # Fastify + tRPC plugin boot
+│   │       │   ├── schema.ts             # Drizzle table definitions
+│   │       │   ├── client.ts             # SQLite connection
+│   │       │   └── migrations/           # Drizzle Kit migrations
+│   │       ├── modules/                  # one feature module per resource (controller + service + dto)
+│   │       │   ├── auth/                 # POST /v1/auth/signup, /login; GET+PATCH /v1/me
+│   │       │   ├── subjects/             # /v1/subjects CRUD + /:id/stats
+│   │       │   ├── cards/                # /v1/cards CRUD (filtered by ?subject=)
+│   │       │   ├── reviews/              # /v1/review_queue(/next), POST /v1/reviews
+│   │       │   ├── dashboard/            # /v1/dashboard/stats|weak_cards|upcoming
+│   │       │   └── learning/             # sm2.service + learning.service (providers)
+│   │       │   #  each module: *.controller.ts, *.service.ts, dto/*.dto.ts (createZodDto)
+│   │       ├── common/
+│   │       │   ├── guards/jwt-auth.guard.ts        # validates JWT → request.user
+│   │       │   ├── filters/http-exception.filter.ts # → Stripe error envelope { error: {...} }
+│   │       │   ├── interceptors/list.interceptor.ts # → { object:"list", data, has_more, url }
+│   │       │   └── pagination.ts                    # UUIDv7 cursor helpers
+│   │       └── (Zod schemas live in each module's dto/, shared schemas in common/)
 │   └── frontend/
 │       ├── package.json
 │       ├── tsconfig.json
@@ -147,10 +150,13 @@ magic-cards/
 │           ├── context/
 │           │   ├── AuthContext.tsx
 │           │   └── ThemeContext.tsx
+│           ├── api/
+│           │   ├── client.ts         # openapi-fetch client + auth header injection
+│           │   ├── schema.d.ts        # generated from /openapi.json (pnpm gen:api)
+│           │   └── queries/           # TanStack Query hooks per resource
 │           ├── utils/
 │           │   ├── cn.ts
-│           │   ├── formatters.ts
-│           │   └── trpc.ts           # tRPC client + React Query setup
+│           │   └── formatters.ts
 │           ├── i18n/
 │           │   ├── en.json
 │           │   ├── pt.json
@@ -168,6 +174,10 @@ magic-cards/
 ### Schema
 
 Drizzle generates TypeScript types from the schema — no manual type definitions needed.
+
+All `id` columns are **UUIDv7** (time-sortable) — generated by the app on insert. Because they sort by
+creation time, list endpoints use the `id` directly as a pagination cursor (`starting_after` /
+`ending_before`) without a separate sort key (see §6).
 
 #### users
 | Column | Type | Constraints |
@@ -243,23 +253,29 @@ Immutable — insert only, never updated.
 
 ---
 
-## 5. Backend Architecture (Fastify + tRPC)
+## 5. Backend Architecture (NestJS + REST + OpenAPI)
+
+NestJS runs on the Fastify adapter. Cross-cutting Stripe concerns are global Nest providers, so controllers
+stay thin: a **`JwtAuthGuard`** (auth), an **`HttpExceptionFilter`** (error envelope), and a **list
+interceptor** (list envelope). Validation + OpenAPI come from `nestjs-zod`.
 
 ### Layers
 
-#### Routers (Presentation)
-- Receive tRPC procedure calls
-- Validate input with Zod schemas
+#### Controllers (Presentation)
+- One Nest controller per resource, routes mounted under the global `/v1` prefix
+- Validate request (params, query, body) via `nestjs-zod`'s `ZodValidationPipe` and `createZodDto` — the
+  same Zod schemas feed the OpenAPI spec via `patchNestjsSwagger`
 - Delegate to services (when business logic exists) or query Drizzle directly (for simple CRUD)
-- No business logic in routers
+- No business logic in controllers
+- List responses are wrapped by the global list interceptor; errors by the global exception filter (see §6)
 
 #### Services (Business Logic)
-- Plain TypeScript modules, independent of tRPC and Fastify
+- Injectable Nest **providers**, but the logic stays framework-agnostic (no controller/HTTP imports)
 - Only created when real logic exists:
   - `auth.service.ts` — password hashing, JWT sign/verify
   - `sm2.service.ts` — spaced repetition algorithm
   - `learning.service.ts` — session card selection, stats computation
-- Simple CRUD does not warrant a service
+- Simple CRUD does not warrant a service — the controller calls Drizzle directly
 
 #### Database (Infrastructure)
 - Drizzle schema + SQLite client
@@ -267,55 +283,104 @@ Immutable — insert only, never updated.
 - Migration from SQLite to PostgreSQL requires changing the Drizzle dialect, not rewriting queries
 
 ### Authentication Flow
-- `publicProcedure` — accessible without auth (signup, login)
-- `protectedProcedure` — requires valid JWT in `Authorization: Bearer <token>` header
-- tRPC middleware extracts and validates the token, injects `userId` into context
+- **Public routes** — accessible without auth: `POST /v1/auth/signup`, `POST /v1/auth/login`
+- **Protected routes** — everything else; require a valid JWT in the `Authorization: Bearer <token>` header
+- A global **`JwtAuthGuard`** validates the token and sets `request.user`; public routes opt out with an
+  `@Public()` decorator. Missing/invalid tokens return `401 authentication_error`
 - Logout is 100% client-side (remove token from localStorage)
 
 ---
 
-## 6. tRPC Procedures
+## 6. REST API (`/v1`, Stripe-style)
 
-### Auth Router (`auth.*`)
+The API is RESTful and versioned under `/v1`, modeled on Stripe's conventions in a **pragmatic profile**:
+Stripe's resource layout, list envelope, error envelope, and cursor pagination, but with conventional REST
+verbs, JSON request bodies, `camelCase` fields, ISO 8601 timestamps, and plain UUIDv7 IDs. `/v1` is a plain
+path prefix (an escape hatch), not a version-negotiation system.
 
-| Procedure | Type | Auth | Input | Output |
-|-----------|------|------|-------|--------|
-| `auth.signup` | mutation | public | `{ email, password, username }` | `{ user, token }` |
-| `auth.login` | mutation | public | `{ email, password }` | `{ user, token }` |
-| `auth.me` | query | protected | — | `User` |
-| `auth.updatePreferences` | mutation | protected | `{ language?, theme?, dailyGoal? }` | `User` |
+### Cross-cutting Conventions
 
-### Subjects Router (`subjects.*`)
+- **Base path**: every endpoint lives under `/v1`.
+- **Auth**: `Authorization: Bearer <JWT>` on protected endpoints. Public: signup, login.
+- **Request bodies**: JSON (`application/json`).
+- **Verbs**: `GET` (retrieve/list), `POST` (create), `PATCH` (partial update), `PUT` (replace),
+  `DELETE` (remove).
+- **Single resource response**: the bare resource object in `camelCase` with ISO timestamps
+  (`createdAt`, `updatedAt`). No `object` field, no prefixed IDs.
+- **Single resource response**: bare object in `camelCase` with ISO timestamps. No per-resource `object`
+  field — the generated TS types are the discriminator.
+- **List response (Stripe envelope)**:
+  ```json
+  { "object": "list", "url": "/v1/cards", "has_more": false, "data": [ /* resources */ ] }
+  ```
+  Cursor pagination via query params `limit` (default 20, max 100), `starting_after`, `ending_before`.
+  Cursors are resource `id`s; since IDs are **UUIDv7** (time-sortable), they double as the sort key — no
+  separate cursor column needed.
+- **No `expand[]`**: a single first-party frontend joins related data from the TanStack Query cache, so
+  resources carry only foreign-key IDs (e.g. `subjectId`). Keeps response shapes and generated types stable.
+- **Error response (Stripe envelope)**:
+  ```json
+  { "error": { "type": "invalid_request_error", "code": "auth.emailAlreadyExists", "param": "email" } }
+  ```
+  - `type` ∈ `invalid_request_error` (400 / 404), `authentication_error` (401), `api_error` (500). No
+    `permission_error` — cross-user access returns `404` (don't leak existence), so `403` is never emitted.
+  - `code` carries the **i18n key** — the backend never returns user-facing text; the frontend maps the
+    code to a translated message (see §10). `param` names the offending field when relevant.
+  - HTTP status codes are semantic (`200`, `201`, `204`, `400`, `401`, `404`, `500`).
+- **No idempotency keys**: `POST /v1/reviews` is guarded client-side — the frontend disables the submit
+  button while the mutation is pending and TanStack Query mutations don't auto-retry, preventing a
+  double-submit that would advance SM-2 twice.
 
-| Procedure | Type | Auth | Input | Output |
-|-----------|------|------|-------|--------|
-| `subjects.list` | query | protected | — | `Subject[]` (with computed card count) |
-| `subjects.getById` | query | protected | `{ id }` | `Subject` |
-| `subjects.create` | mutation | protected | `{ title, description?, color?, icon? }` | `Subject` |
-| `subjects.update` | mutation | protected | `{ id, title?, description?, color?, icon? }` | `Subject` |
-| `subjects.delete` | mutation | protected | `{ id }` | `void` |
-| `subjects.stats` | query | protected | `{ id }` | `SubjectStats` |
+### Auth & Account
 
-### Cards Router (`cards.*`)
+| Method & Path | Auth | Body / Query | Response |
+|---|---|---|---|
+| `POST /v1/auth/signup` | public | `{ email, password, username }` | `201` `{ user, token }` |
+| `POST /v1/auth/login` | public | `{ email, password }` | `200` `{ user, token }` |
+| `GET /v1/me` | protected | — | `200` `User` |
+| `PATCH /v1/me` | protected | `{ language?, theme?, dailyGoal? }` | `200` `User` |
 
-| Procedure | Type | Auth | Input | Output |
-|-----------|------|------|-------|--------|
-| `cards.listBySubject` | query | protected | `{ subjectId }` | `Card[]` |
-| `cards.getById` | query | protected | `{ id }` | `Card` |
-| `cards.create` | mutation | protected | `{ subjectId, question, answer, hints?, tags? }` | `Card` |
-| `cards.update` | mutation | protected | `{ id, question?, answer?, hints?, tags? }` | `Card` |
-| `cards.delete` | mutation | protected | `{ id }` | `void` |
+### Subjects
 
-### Learning Router (`learning.*`)
+| Method & Path | Auth | Body / Query | Response |
+|---|---|---|---|
+| `GET /v1/subjects` | protected | `?limit&starting_after&ending_before` | `200` list of `Subject` (each with computed `cardCount`) |
+| `POST /v1/subjects` | protected | `{ title, description?, color?, icon? }` | `201` `Subject` |
+| `GET /v1/subjects/:id` | protected | — | `200` `Subject` |
+| `PATCH /v1/subjects/:id` | protected | `{ title?, description?, color?, icon? }` | `200` `Subject` |
+| `DELETE /v1/subjects/:id` | protected | — | `204` (cascades to cards, progress, history) |
+| `GET /v1/subjects/:id/stats` | protected | — | `200` `SubjectStats` |
 
-| Procedure | Type | Auth | Input | Output |
-|-----------|------|------|-------|--------|
-| `learning.today` | query | protected | `{ subjectId? }` | `{ due: Card[], new: Card[], total: number }` |
-| `learning.session` | query | protected | `{ subjectId? }` | `Card` (next card to review) |
-| `learning.review` | mutation | protected | `{ cardId, quality, timeSpent, wasHintUsed }` | `CardProgress` |
-| `learning.stats` | query | protected | `{ period?: '7d' \| '30d' }` | `DashboardStats` |
-| `learning.weakCards` | query | protected | `{ limit? }` | `Card[]` (with progress) |
-| `learning.upcoming` | query | protected | — | `{ today: number, tomorrow: number, thisWeek: number }` |
+### Cards
+
+Cards are a top-level resource filtered by subject via a query param (Stripe-style, e.g. `?customer=`).
+
+| Method & Path | Auth | Body / Query | Response |
+|---|---|---|---|
+| `GET /v1/cards` | protected | `?subject=:id` (required) `&limit&starting_after&ending_before` | `200` list of `Card` |
+| `POST /v1/cards` | protected | `{ subjectId, question, answer, hints?, tags? }` | `201` `Card` |
+| `GET /v1/cards/:id` | protected | — | `200` `Card` |
+| `PATCH /v1/cards/:id` | protected | `{ question?, answer?, hints?, tags? }` | `200` `Card` |
+| `DELETE /v1/cards/:id` | protected | — | `204` |
+
+### Reviews & Review Queue
+
+A **Review** is a creatable resource: submitting one (`POST /v1/reviews`) logs immutable review history
+and updates the card's progress via SM-2.
+
+| Method & Path | Auth | Body / Query | Response |
+|---|---|---|---|
+| `GET /v1/review_queue` | protected | `?subject=:id` (optional) | `200` `{ due: Card[], new: Card[], total: number }` |
+| `GET /v1/review_queue/next` | protected | `?subject=:id` (optional) | `200` `Card` (next card to review) or `204` if empty |
+| `POST /v1/reviews` | protected | `{ cardId, quality, timeSpent, wasHintUsed }` | `201` `CardProgress` |
+
+### Dashboard
+
+| Method & Path | Auth | Body / Query | Response |
+|---|---|---|---|
+| `GET /v1/dashboard/stats` | protected | `?period=7d\|30d` | `200` `DashboardStats` |
+| `GET /v1/dashboard/weak_cards` | protected | `?limit` | `200` list of `Card` (with progress) |
+| `GET /v1/dashboard/upcoming` | protected | — | `200` `{ today: number, tomorrow: number, thisWeek: number }` |
 
 ---
 
@@ -405,7 +470,7 @@ Mastered (interval > 21 days, high ease factor)
 
 - Token stored in localStorage (frontend)
 - Sent via `Authorization: Bearer <token>` header
-- Validated in tRPC middleware → `protectedProcedure`
+- Validated by a global Nest `JwtAuthGuard` (public routes opt out via `@Public()`)
 - Logout is client-side only (remove token from localStorage)
 - No refresh token, no server-side session
 
@@ -414,11 +479,14 @@ Mastered (interval > 21 days, high ease factor)
 - Never stored or transmitted in plain text
 
 ### Authorization
-- `protectedProcedure` middleware validates JWT on every call
-- All data queries filter by `userId` from JWT — users only access their own data
+- The `JwtAuthGuard` validates the token on every protected route and sets `request.user`
+- All data queries filter by `userId` — users only access their own data; cross-user access returns
+  `404 invalid_request_error` (resource not found for this user), not `403`
 
 ### Input Validation
-- All tRPC inputs validated with Zod schemas
+- All request params, query strings, and bodies validated with Zod schemas via `nestjs-zod`'s
+  `ZodValidationPipe`; the same schemas (`createZodDto`) generate the OpenAPI spec
+- Validation failures return `400 invalid_request_error` with the offending field in `error.param`
 - Sanitize Markdown content to prevent XSS on render
 
 ---
@@ -426,10 +494,13 @@ Mastered (interval > 21 days, high ease factor)
 ## 9. Frontend Architecture
 
 ### State Management
-- **Server state**: TanStack Query via `@trpc/react-query` — handles fetching, caching, loading, errors, invalidation
+- **Server state**: TanStack Query over a typed REST client. `api/client.ts` is an `openapi-fetch`
+  instance (typed by the generated `api/schema.d.ts`) that injects the `Authorization` header; query
+  hooks in `api/queries/` wrap it for fetching, caching, loading, errors, and invalidation
 - **Client state**: React Context for AuthContext (JWT + user) and ThemeContext (dark/light)
 - **Language**: react-i18next (no custom context)
 - **Local UI state**: useState for forms, modals, toggles
+- **API errors**: read `error.code` from the Stripe-style envelope and map it to an i18n message
 
 ### Review UI Flow
 1. Card question displayed (rendered Markdown with syntax highlighting)
@@ -502,9 +573,9 @@ pnpm type:check
 - No snapshot tests
 
 #### Backend (Vitest)
-- Unit tests for services (80%+ coverage target)
+- Unit tests for service providers (80%+ coverage target)
 - Integration tests with real SQLite database
-- E2E tests for critical tRPC procedure flows
+- E2E tests for critical REST endpoint flows via `@nestjs/testing` + supertest (Nest test app)
 
 ### Naming Conventions
 - **Components**: PascalCase (`LoginForm.tsx`)
@@ -528,7 +599,7 @@ cp packages/backend/.env.example packages/backend/.env
 
 ### Running Development Servers
 ```bash
-# Terminal 1: Backend (Fastify + tRPC)
+# Terminal 1: Backend (Fastify + REST)
 pnpm --filter backend dev
 
 # Terminal 2: Frontend (Vite)
@@ -567,16 +638,17 @@ pnpm --filter backend db:generate   # Generate migration from schema changes
 
 ### Phase 0: Foundation
 - [ ] Monorepo setup (pnpm workspaces, tsconfig, biome)
-- [ ] Backend: Fastify + tRPC + Drizzle + SQLite scaffold
-- [ ] Database schema and initial migration
+- [ ] Backend: NestJS (Fastify adapter) + REST (`/v1`) + Drizzle + SQLite scaffold
+- [ ] Zod schemas + `nestjs-zod` + `@nestjs/swagger` (committed `openapi.json`, `/docs`, CI drift check)
+- [ ] Database schema and initial migration (UUIDv7 IDs)
 - [ ] Auth service (signup, login, JWT)
-- [ ] tRPC context + protectedProcedure middleware
-- [ ] Frontend: Vite + React + tRPC client setup
+- [ ] `JwtAuthGuard` + global exception filter (Stripe error envelope) + list interceptor
+- [ ] Frontend: Vite + React + TanStack Query + generated `openapi-fetch` client (`pnpm gen:api`)
 - [ ] AuthContext + login/signup pages
 
 ### Phase 1: Core Learning
-- [ ] Subject CRUD (router + UI)
-- [ ] Card CRUD (router + UI)
+- [ ] Subject CRUD (routes + UI)
+- [ ] Card CRUD (routes + UI)
 - [ ] SM-2 algorithm service
 - [ ] Learning session (card selection, review, progress tracking)
 - [ ] Review history logging
@@ -614,11 +686,17 @@ See `docs/adr/` for detailed records. Summary:
 | Decision | Rationale |
 |----------|-----------|
 | **SQLite over JSON Server** | Real relational DB, in-process, no extra server. See ADR 0001 |
-| **Fastify + tRPC over NestJS + REST** | End-to-end type safety, less boilerplate, NestJS infra unused with tRPC. See ADR 0002 |
-| **Drizzle over TypeORM/Prisma** | Lightweight, type-safe, SQL-close, easy SQLite→PostgreSQL swap |
+| **Stripe-style REST (`/v1`) over tRPC** | Standard, versioned HTTP contract usable by any client; Stripe's list/error envelopes are proven ergonomics. See ADR 0003 (supersedes 0002) |
+| **NestJS (Fastify adapter) over Fastify-standalone** | With REST back, the tRPC premise that killed NestJS is gone; guards/interceptors/filters map onto the Stripe auth + envelopes, `@nestjs/swagger` onto OpenAPI. See ADR 0004 |
+| **`nestjs-zod` over class-validator DTOs** | Keeps Zod as single source of truth (validation + OpenAPI) rather than adopting Nest's class-validator idiom |
+| **OpenAPI + generated client for type safety** | Replaces tRPC's inference; Zod → OpenAPI 3.1 → typed TS client preserves compile-time safety at the cost of a codegen step (committed spec, CI drift check) |
+| **Conventional REST verbs (POST/PATCH/PUT/DELETE)** | Clearer than Stripe's POST-for-everything; JSON bodies over Stripe's legacy form-encoding |
+| **Drizzle over Prisma** | SQL-close (good for the aggregation-heavy dashboard/streak queries), no query engine, clean SQLite→PostgreSQL swap. Kept after review — no premise changed. See ADR 0004 |
 | **No repository pattern** | Drizzle is the abstraction; repositories would be passthrough boilerplate |
-| **Zod for validation** | Shared between tRPC input and Drizzle, single source of truth |
-| **pnpm monorepo** | Frontend imports backend types directly, no codegen |
+| **Zod for validation** | Single source of truth — drives request validation, the OpenAPI spec, and aligns with Drizzle |
+| **UUIDv7 IDs** | Time-sortable, so list endpoints use the `id` directly as a pagination cursor |
+| **No `expand[]`, no idempotency keys** | Single first-party client joins from cache; double-submit prevented client-side — Stripe machinery not worth the cost |
+| **pnpm monorepo** | Frontend generates types from the backend's OpenAPI spec (`pnpm gen:api`) |
 | **TanStack Query for server state** | Replaces manual fetch hooks and API cache contexts |
 | **JWT + email/password** | Stateless, simple, sufficient for educational app scope |
 | **Client-side logout** | No server state to invalidate; remove token from localStorage |
@@ -641,7 +719,12 @@ See `docs/adr/` for detailed records. Summary:
 - Forgetting Curve: https://en.wikipedia.org/wiki/Forgetting_curve
 
 ### Technologies
-- [tRPC Documentation](https://trpc.io/docs)
+- [Stripe API Reference (design conventions)](https://stripe.com/docs/api)
+- [OpenAPI 3.1 Specification](https://spec.openapis.org/oas/v3.1.0)
+- [NestJS Documentation](https://docs.nestjs.com/)
+- [NestJS OpenAPI (`@nestjs/swagger`)](https://docs.nestjs.com/openapi/introduction)
+- [nestjs-zod](https://github.com/risen228/nestjs-zod)
+- [openapi-typescript / openapi-fetch](https://openapi-ts.dev/)
 - [Drizzle ORM Documentation](https://orm.drizzle.team/)
 - [Fastify Documentation](https://fastify.dev/docs/latest/)
 - [Vite Documentation](https://vitejs.dev/)
@@ -651,6 +734,6 @@ See `docs/adr/` for detailed records. Summary:
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: 2026-05-27
-**Status**: Architecture Refined — Ready for Implementation
+**Document Version**: 3.1
+**Last Updated**: 2026-05-31
+**Status**: Architecture Refined (NestJS on Fastify · REST / Stripe-style / OpenAPI) — Ready for Implementation

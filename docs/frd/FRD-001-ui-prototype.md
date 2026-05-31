@@ -60,7 +60,7 @@ No tests in this phase. Visual validation by the developer is the acceptance cri
 
 ## Out of Scope
 
-- Real backend (Fastify, tRPC, Drizzle, SQLite)
+- Real backend (Fastify, REST `/v1`, Drizzle, SQLite)
 - Real authentication (JWT, bcrypt)
 - SM-2 algorithm logic
 - Real card selection / learning session logic

@@ -18,7 +18,7 @@ Add comprehensive automated tests, migrate from SQLite to PostgreSQL via Drizzle
 ## User Stories
 
 1. As a developer, I want automated tests covering SM-2 algorithm edge cases, so that scheduling logic is verified beyond manual testing.
-2. As a developer, I want integration tests for tRPC procedures with a real database, so that I catch query and validation bugs.
+2. As a developer, I want integration tests for the REST endpoints with a real database, so that I catch query and validation bugs.
 3. As a developer, I want component tests for the review flow (CardReview, QualityButtons), so that the critical UI interaction is protected from regressions.
 4. As a developer, I want E2E tests for the full learning loop (signup → create subject → create card → review → verify schedule), so that the system works end-to-end.
 5. As a developer, I want 80%+ code coverage on backend services, so that business logic is well-tested.
@@ -33,7 +33,7 @@ Add comprehensive automated tests, migrate from SQLite to PostgreSQL via Drizzle
 ## Implementation Decisions
 
 - **Test framework**: Vitest for both backend and frontend. React Testing Library for component tests.
-- **Backend tests**: Unit tests for `sm2.service` (known input/output pairs from SM-2 spec), `auth.service` (hash/verify, sign/verify token), `learning.service` (card selection logic, review submission). Integration tests for each router using a test SQLite database.
+- **Backend tests**: Unit tests for `sm2.service` (known input/output pairs from SM-2 spec), `auth.service` (hash/verify, sign/verify token), `learning.service` (card selection logic, review submission). Integration tests for each route module via `fastify.inject` against a test SQLite database.
 - **Frontend tests**: Component tests for CardReview, QualityButtons, HintReveal (the review flow). Utility tests for formatters and helpers.
 - **E2E tests**: Vitest with a test server instance. Full user flow: signup → create subject → create cards → start session → complete reviews → verify dashboard stats.
 - **PostgreSQL migration**: Change Drizzle config from `better-sqlite3` dialect to `pg` dialect. Update connection string. Run `db:generate` for PostgreSQL-specific migration. Adjust any SQLite-specific syntax (e.g., `integer` booleans → native `boolean`).
@@ -45,7 +45,7 @@ Add comprehensive automated tests, migrate from SQLite to PostgreSQL via Drizzle
 
 This is the phase where automated tests are introduced. Target:
 - 80%+ coverage on backend services (`sm2.service`, `learning.service`, `auth.service`)
-- Integration tests for all tRPC routers (real SQLite database in test)
+- Integration tests for all REST route modules via `fastify.inject` (real SQLite database in test)
 - Component tests for the review flow UI
 - At least one E2E test covering the full learning loop
 - Tests should verify external behavior, not implementation details

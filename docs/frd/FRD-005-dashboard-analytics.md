@@ -13,7 +13,7 @@ The learner is studying with spaced repetition, but has no visibility into their
 
 ## Solution
 
-Implement backend stats procedures and connect them to the existing dashboard UI components. All metrics are computed from the review history and card progress tables — no new tables or denormalized counters.
+Implement backend stats endpoints (`/v1/dashboard/*`) and connect them to the existing dashboard UI components. All metrics are computed from the review history and card progress tables — no new tables or denormalized counters.
 
 ## User Stories
 
@@ -31,17 +31,17 @@ Implement backend stats procedures and connect them to the existing dashboard UI
 
 ## Implementation Decisions
 
-- **`learning.stats` procedure**: Accepts `{ period?: '7d' | '30d' }`. Returns:
+- **`GET /v1/dashboard/stats` endpoint**: Accepts `?period=7d|30d`. Returns:
   - `reviewedToday`: COUNT of reviewHistory where `reviewedAt` is today and `userId` matches.
   - `dailyGoal`: From user preferences.
   - `streak`: Count consecutive past days (from yesterday backwards) where daily review count >= dailyGoal. Today counts toward streak only if goal is already met.
   - `accuracy`: Percentage of reviews with `quality >= 3` within the requested period.
   - `cardsByStatus`: Group cardProgress by status, count per group. Include per-subject breakdown.
-- **`learning.weakCards` procedure**: Returns cards ordered by lowest `easeFactor` (ascending), with a secondary sort by most recent failure (quality < 3). Default limit: 10. Returns card data joined with cardProgress and subject info.
-- **`learning.upcoming` procedure**: Returns `{ today, tomorrow, thisWeek }` — counts of cardProgress rows where `nextReviewDate` falls within each window.
+- **`GET /v1/dashboard/weak_cards` endpoint**: Returns a list envelope of cards ordered by lowest `easeFactor` (ascending), with a secondary sort by most recent failure (quality < 3). Default `limit`: 10. Returns card data joined with cardProgress and subject info (no `expand[]` — the subject fields needed are included directly).
+- **`GET /v1/dashboard/upcoming` endpoint**: Returns `{ today, tomorrow, thisWeek }` — counts of cardProgress rows where `nextReviewDate` falls within each window.
 - **Streak calculation**: Query reviewHistory grouped by date (UTC), count per day, check against dailyGoal. Iterate backwards from yesterday until a day fails the threshold. Pure SQL aggregation, no stored streak counter.
 - **No temporal charts**: As defined in CONTEXT.md, the dashboard shows point-in-time metrics only — no line charts, no historical trends, no user comparisons.
-- **Frontend**: Connect Dashboard, StatsCard, StreakWidget, WeakCardsWidget, UpcomingReviews components to real tRPC queries. Replace mock data. Use TanStack Query with appropriate `staleTime` (stats can be stale for ~60s).
+- **Frontend**: Connect Dashboard, StatsCard, StreakWidget, WeakCardsWidget, UpcomingReviews components to the real `/v1/dashboard/*` endpoints via the generated client. Replace mock data. Use TanStack Query with appropriate `staleTime` (stats can be stale for ~60s).
 - **Caching strategy**: Dashboard stats are read-heavy and can tolerate brief staleness. Use `staleTime: 60_000` for stats queries. Invalidate on review submission.
 
 ## Testing Decisions
