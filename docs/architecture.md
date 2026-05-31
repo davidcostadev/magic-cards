@@ -67,6 +67,10 @@ magic-cards/
 ├── pnpm-workspace.yaml
 ├── CLAUDE.md
 ├── CONTEXT.md                    # Domain glossary
+├── docker-compose.e2e.yml        # brings up backend + frontend for E2E (throwaway SQLite)
+├── e2e/                          # Playwright full-stack specs
+│   ├── playwright.config.ts
+│   └── specs/                    # signup → subject → cards → session → dashboard
 ├── docs/
 │   ├── architecture.md           # This file
 │   └── adr/                      # Architecture Decision Records
@@ -75,6 +79,7 @@ magic-cards/
 │   │   ├── package.json
 │   │   ├── tsconfig.json
 │   │   ├── drizzle.config.ts
+│   │   ├── Dockerfile              # used by docker-compose.e2e.yml
 │   │   ├── .env.example
 │   │   └── src/
 │   │       ├── main.ts                   # Nest bootstrap (Fastify adapter), swagger, global prefix /v1
@@ -103,6 +108,7 @@ magic-cards/
 │       ├── vite.config.ts
 │       ├── vitest.config.ts
 │       ├── biome.json
+│       ├── Dockerfile              # used by docker-compose.e2e.yml
 │       ├── index.html
 │       └── src/
 │           ├── components/
@@ -566,16 +572,26 @@ pnpm type:check
 
 ### Testing Strategy
 
-#### Frontend (Vitest)
-- Unit tests for utilities and hooks (80%+ coverage)
-- Component tests for critical UI components
-- Integration tests for key user flows
-- No snapshot tests
+**Methodology — Test-Driven Development (TDD).** Backend and frontend *functionalities* are built
+test-first: write a failing test (red), implement the minimum to pass (green), refactor. Applies to
+backend service providers + endpoints and to frontend logic/hooks/components — not to pure visual
+scaffolding or styling-only polish. See ADR 0005.
 
-#### Backend (Vitest)
-- Unit tests for service providers (80%+ coverage target)
-- Integration tests with real SQLite database
-- E2E tests for critical REST endpoint flows via `@nestjs/testing` + supertest (Nest test app)
+**Test pyramid:**
+
+#### Unit / Integration (Vitest) — written first, alongside each feature
+- **Frontend**: unit tests for utilities and hooks; component tests (React Testing Library) for critical
+  UI (CardReview, QualityButtons, forms); no snapshot tests
+- **Backend**: unit tests for service providers (SM-2 especially — known input/output pairs); integration
+  tests for REST endpoints via `@nestjs/testing` + supertest against a real SQLite database
+- Coverage target: **80%+** on backend services and critical frontend logic
+
+#### End-to-End (Playwright) — full stack, front + back, in Docker
+- A real browser drives the frontend against a running backend; the whole stack is brought up with
+  `docker compose` (backend + frontend, backend on a throwaway per-run SQLite DB) so local and CI runs are
+  identical (ADR 0005)
+- Canonical flow: signup → create subject → create cards → study session → review → dashboard reflects it
+- Lives in `e2e/` with `playwright.config.ts`; run via `pnpm test:e2e`
 
 ### Naming Conventions
 - **Components**: PascalCase (`LoginForm.tsx`)
@@ -621,7 +637,9 @@ PORT=3001
 ```bash
 # Root (all packages)
 pnpm dev              # Start all dev servers
-pnpm test             # Run all tests
+pnpm test             # Run unit/integration tests (Vitest) — add --watch for the TDD loop
+pnpm test:e2e         # Bring up the Docker stack and run the Playwright full-stack suite
+pnpm gen:api          # Regenerate openapi.json + frontend client types
 pnpm lint             # Biome check all packages
 pnpm type:check       # TypeScript check all packages
 
@@ -636,6 +654,11 @@ pnpm --filter backend db:generate   # Generate migration from schema changes
 
 ## 13. Implementation Phases
 
+> **TDD throughout (ADR 0005).** Every functionality below is built test-first — write the failing
+> Vitest test, then the implementation. The Playwright full-stack E2E suite is set up in Phase 0 (one
+> smoke flow) and grown each phase as features land; Phase 4 hardens it (Docker compose + CI + coverage
+> gates). Pure visual/polish work (Phase 2) is exempt from TDD.
+
 ### Phase 0: Foundation
 - [ ] Monorepo setup (pnpm workspaces, tsconfig, biome)
 - [ ] Backend: NestJS (Fastify adapter) + REST (`/v1`) + Drizzle + SQLite scaffold
@@ -645,6 +668,7 @@ pnpm --filter backend db:generate   # Generate migration from schema changes
 - [ ] `JwtAuthGuard` + global exception filter (Stripe error envelope) + list interceptor
 - [ ] Frontend: Vite + React + TanStack Query + generated `openapi-fetch` client (`pnpm gen:api`)
 - [ ] AuthContext + login/signup pages
+- [ ] Test harness: Vitest (both packages) + `@nestjs/testing`/supertest + RTL; Playwright + `docker-compose.e2e.yml` with one smoke E2E (signup → login)
 
 ### Phase 1: Core Learning
 - [ ] Subject CRUD (routes + UI)
@@ -671,7 +695,8 @@ pnpm --filter backend db:generate   # Generate migration from schema changes
 - [ ] Daily goal progress bar
 
 ### Phase 4: Production Ready
-- [ ] E2E testing
+- [ ] Harden the Playwright E2E suite (full flow signup → subject → cards → session → dashboard) + run the Dockerized stack in CI
+- [ ] CI pipeline: lint → type-check → unit/integration (Vitest) → E2E (Playwright in Docker); enforce coverage gates (80%+)
 - [ ] Performance optimization
 - [ ] Database migration to PostgreSQL (Drizzle dialect swap)
 - [ ] Deployment setup
@@ -707,6 +732,8 @@ See `docs/adr/` for detailed records. Summary:
 | **Tailwind + shadcn/ui** | Fast development, consistent design system |
 | **TanStack Router** | Type-safe routing, integrates with TanStack Query ecosystem already in use |
 | **Biome for linting** | Fast, zero-config, built-in formatter |
+| **TDD (test-first)** | Features built red→green→refactor; locks behavior early, esp. SM-2 scheduling. Reverses the old "tests at Phase 4" plan. See ADR 0005 |
+| **Playwright E2E in Docker (front+back)** | Real browser drives the real frontend against the real backend via `docker compose` — reproducible local/CI full-stack verification. See ADR 0005 |
 | **SM-2 Algorithm** | Proven spaced repetition method, balances simplicity and effectiveness |
 
 ---
@@ -727,6 +754,9 @@ See `docs/adr/` for detailed records. Summary:
 - [openapi-typescript / openapi-fetch](https://openapi-ts.dev/)
 - [Drizzle ORM Documentation](https://orm.drizzle.team/)
 - [Fastify Documentation](https://fastify.dev/docs/latest/)
+- [Playwright](https://playwright.dev/)
+- [Vitest](https://vitest.dev/)
+- [Testing Library](https://testing-library.com/)
 - [Vite Documentation](https://vitejs.dev/)
 - [React Documentation](https://react.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
@@ -734,6 +764,6 @@ See `docs/adr/` for detailed records. Summary:
 
 ---
 
-**Document Version**: 3.1
+**Document Version**: 3.2
 **Last Updated**: 2026-05-31
-**Status**: Architecture Refined (NestJS on Fastify · REST / Stripe-style / OpenAPI) — Ready for Implementation
+**Status**: Architecture Refined (NestJS on Fastify · REST / Stripe-style / OpenAPI · TDD + Playwright E2E) — Ready for Implementation

@@ -60,7 +60,9 @@ Two servers run in parallel:
 ### Common Commands
 ```bash
 pnpm dev                          # Start all dev servers
-pnpm test                         # Run all tests
+pnpm test                         # Unit/integration (Vitest) — add --watch for the TDD loop
+pnpm test:e2e                     # Playwright full-stack E2E against the Docker stack
+pnpm gen:api                      # Regenerate openapi.json + frontend client types
 pnpm lint                         # Biome check all
 pnpm type:check                   # TypeScript check all
 pnpm --filter backend db:migrate  # Run Drizzle migrations
@@ -70,7 +72,8 @@ pnpm --filter backend db:generate # Generate migration from schema
 ### Code Quality
 - **Linter/Formatter**: Biome (no Prettier/ESLint)
 - **Git Hooks**: Husky pre-commit (lint + type check) and pre-push (tests)
-- **Testing**: Vitest for both frontend and backend — 80%+ coverage target
+- **TDD**: build features test-first (ADR 0005) — failing test → implement → refactor. Applies to backend services/endpoints and frontend logic/components (not pure visual/polish)
+- **Testing**: Vitest (unit/integration, both packages) + RTL (components) + `@nestjs/testing`/supertest (API) + **Playwright** for full-stack E2E in Docker — 80%+ coverage target on services/critical logic
 - **Naming**: PascalCase components, camelCase functions, UPPER_SNAKE_CASE constants
 
 ### Commit Convention
@@ -93,7 +96,7 @@ See `docs/architecture.md` section 13 for detailed phases:
 
 ## Important Files to Know
 - `docs/architecture.md` — Complete system design (schema, REST endpoints, algorithms)
-- `docs/adr/` — Architecture Decision Records (0003 = REST/Stripe/OpenAPI; 0004 = NestJS-on-Fastify + nestjs-zod + Drizzle; both supersede/refine 0002)
+- `docs/adr/` — Architecture Decision Records (0003 = REST/Stripe/OpenAPI; 0004 = NestJS-on-Fastify + nestjs-zod + Drizzle; 0005 = TDD + Playwright E2E in Docker; 0003/0004 supersede/refine 0002)
 - `CONTEXT.md` — Domain glossary (canonical terms and rules)
 - `packages/backend/src/db/schema.ts` — Drizzle schema (source of truth for DB types; UUIDv7 IDs)
 - `packages/backend/src/app.module.ts` — root Nest module; feature modules under `src/modules/`
@@ -115,6 +118,7 @@ See `docs/architecture.md` section 13 for detailed phases:
 
 ## Notes for Future Sessions
 - `docs/architecture.md` and `CONTEXT.md` are the sources of truth
+- Build features test-first (TDD) — write the failing Vitest test before the implementation; full-stack flows are covered by Playwright E2E in Docker (ADR 0005)
 - i18n lives exclusively in the frontend — backend returns error codes only
 - Hints cap quality at 3 in the SM-2 algorithm
 - Card difficulty is emergent (ease factor), not a static field

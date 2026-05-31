@@ -44,7 +44,10 @@ Set up the pnpm monorepo with backend and frontend packages. Build the NestJS (F
 
 ## Testing Decisions
 
-No tests in this phase. Validation is manual — signup, login, refresh, logout, and preference update flows verified in the browser.
+**TDD (ADR 0005).** Each feature is built test-first:
+- **Unit** (Vitest): `auth.service` — `hashPassword`/`verifyPassword` round-trip, `signToken`/`verifyToken`.
+- **Integration** (`@nestjs/testing` + supertest, real SQLite): the auth endpoints — `POST /v1/auth/signup` (incl. duplicate-email → `400 auth.emailAlreadyExists`), `POST /v1/auth/login` (incl. bad creds → `401 auth.invalidCredentials`), `GET`/`PATCH /v1/me` (incl. missing/invalid token → `401`). Assert the Stripe error envelope shape.
+- **E2E** (Playwright, Docker stack): one smoke flow — signup → see profile → logout. Establishes `docker-compose.e2e.yml` + `playwright.config.ts` for later phases.
 
 ## Out of Scope
 
@@ -53,7 +56,6 @@ No tests in this phase. Validation is manual — signup, login, refresh, logout,
 - SM-2 algorithm
 - Learning session logic
 - Dashboard stats endpoints
-- Automated tests
 - Deployment
 
 ## Further Notes

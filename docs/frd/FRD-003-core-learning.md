@@ -71,7 +71,11 @@ Implement subject CRUD, card CRUD, the SM-2 spaced repetition algorithm, learnin
 
 ## Testing Decisions
 
-No tests in this phase. Manual validation of the full learning loop: create subject → create cards → start session → review cards → verify scheduling.
+**TDD (ADR 0005).** Build each feature test-first:
+- **Unit** (Vitest): `sm2.service.calculateNextReview` — the most important tests in the app; cover known input/output pairs from the SM-2 spec, the fail-reset (quality < 3 → interval 1), ease-factor floor 1.3, the repetition→interval steps, and the hint-cap (quality capped at 3). Plus `learning.service` card-selection (overdue-first ordering, new-cards ≤ 30% of batch).
+- **Integration** (`@nestjs/testing` + supertest, real SQLite): subjects/cards CRUD (incl. cross-user access → `404`, cascade delete), `GET /v1/review_queue(/next)`, and `POST /v1/reviews` (asserts cardProgress update + reviewHistory insert).
+- **Component** (RTL): CardReview / QualityButtons two-step flow and the hint-used → quality-cap behavior.
+- **E2E** (Playwright, Docker stack): grow the suite — create subject → create cards → study session → review → next card.
 
 ## Out of Scope
 
@@ -79,10 +83,9 @@ No tests in this phase. Manual validation of the full learning loop: create subj
 - Frontend animations and polish — already done in FRD-001, refined in FRD-004
 - Bulk card import/export
 - Card search or filtering by tags
-- Automated tests
 
 ## Further Notes
 
-- The SM-2 service is the most critical module in the entire application. Even though there are no automated tests in this phase, the algorithm should be manually verified with known inputs/outputs from the SM-2 specification.
+- The SM-2 service is the most critical module in the entire application — it is developed strictly test-first, with the known input/output pairs from the SM-2 specification as the initial failing tests.
 - After this phase, the app is functionally complete for the core learning loop. A learner can sign up, create subjects and cards, and study with spaced repetition scheduling.
 - Quality 0 and 2 are not reachable through the UI (as defined in CONTEXT.md). The SM-2 function should still handle them gracefully but the UI only produces 1, 3, 4, or 5.

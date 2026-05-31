@@ -9,19 +9,19 @@
 
 ## Problem Statement
 
-The application is feature-complete but runs only in development mode with SQLite. Before going to production, it needs automated test coverage, performance optimization, a production-grade database, and a deployment pipeline.
+The application is feature-complete and — because features were built TDD-style (ADR 0005) — already has unit/integration coverage. It runs only in development mode with SQLite. Before going to production it needs the full-stack E2E suite hardened and wired into CI, performance optimization, a production-grade database, and a deployment pipeline.
 
 ## Solution
 
-Add comprehensive automated tests, migrate from SQLite to PostgreSQL via Drizzle dialect swap, optimize frontend bundle and backend query performance, conduct a security audit, and set up deployment infrastructure.
+Harden the Playwright full-stack E2E suite running against the Dockerized front+back stack, wire the CI pipeline (lint → type-check → unit/integration → E2E → build → deploy) with coverage gates, migrate from SQLite to PostgreSQL via Drizzle dialect swap, optimize frontend bundle and backend query performance, conduct a security audit, and set up deployment infrastructure.
 
 ## User Stories
 
-1. As a developer, I want automated tests covering SM-2 algorithm edge cases, so that scheduling logic is verified beyond manual testing.
+1. As a developer, I want the SM-2 algorithm edge cases covered by tests (written test-first in FRD-003), so that scheduling logic is verified.
 2. As a developer, I want integration tests for the REST endpoints with a real database, so that I catch query and validation bugs.
 3. As a developer, I want component tests for the review flow (CardReview, QualityButtons), so that the critical UI interaction is protected from regressions.
-4. As a developer, I want E2E tests for the full learning loop (signup → create subject → create card → review → verify schedule), so that the system works end-to-end.
-5. As a developer, I want 80%+ code coverage on backend services, so that business logic is well-tested.
+4. As a developer, I want a full-stack Playwright E2E suite (signup → create subject → create card → review → verify schedule + dashboard) running against the Dockerized front+back stack, so that the system is verified end-to-end in a CI-identical environment.
+5. As a developer, I want 80%+ code coverage on backend services enforced as a CI gate, so that business logic stays well-tested.
 6. As a developer, I want the database to be PostgreSQL in production, so that the app can handle concurrent users and larger datasets.
 7. As a developer, I want the SQLite → PostgreSQL migration to require only a Drizzle dialect change, so that no queries are rewritten.
 8. As a developer, I want the frontend bundle optimized (code splitting, lazy loading routes), so that initial load time is fast.
@@ -32,22 +32,22 @@ Add comprehensive automated tests, migrate from SQLite to PostgreSQL via Drizzle
 
 ## Implementation Decisions
 
-- **Test framework**: Vitest for both backend and frontend. React Testing Library for component tests.
-- **Backend tests**: Unit tests for `sm2.service` (known input/output pairs from SM-2 spec), `auth.service` (hash/verify, sign/verify token), `learning.service` (card selection logic, review submission). Integration tests for each route module via `fastify.inject` against a test SQLite database.
+- **Test framework**: Vitest (unit/integration, both packages), React Testing Library (components), Playwright (E2E). Most of these tests already exist — they were written test-first in FRD-002/003/005; this phase fills coverage gaps and adds the Dockerized E2E suite.
+- **Backend tests**: Unit for `sm2.service` (known input/output pairs from SM-2 spec), `auth.service` (hash/verify, sign/verify token), `learning.service` (card selection, review submission). Integration for each Nest module via `@nestjs/testing` + supertest against a test SQLite database.
 - **Frontend tests**: Component tests for CardReview, QualityButtons, HintReveal (the review flow). Utility tests for formatters and helpers.
-- **E2E tests**: Vitest with a test server instance. Full user flow: signup → create subject → create cards → start session → complete reviews → verify dashboard stats.
+- **E2E tests**: Playwright driving a real browser against the full stack brought up by `docker-compose.e2e.yml` (backend + frontend, throwaway SQLite seeded per run). Full flow: signup → create subject → create cards → start session → complete reviews → verify dashboard stats.
 - **PostgreSQL migration**: Change Drizzle config from `better-sqlite3` dialect to `pg` dialect. Update connection string. Run `db:generate` for PostgreSQL-specific migration. Adjust any SQLite-specific syntax (e.g., `integer` booleans → native `boolean`).
 - **Performance**: Frontend — route-level code splitting with React.lazy and Suspense. Backend — add indexes on `cardProgress(userId, nextReviewDate)`, `reviewHistory(userId, reviewedAt)`, `subjects(userId)`, `cards(subjectId)`.
 - **Security audit checklist**: JWT secret is strong and from environment variable; passwords hashed with bcrypt; all inputs validated with Zod; Markdown output sanitized (XSS prevention); all queries filter by `userId` (no cross-user data access); CORS configured to allow only the frontend origin; rate limiting on auth endpoints.
-- **Deployment**: To be determined based on hosting choice (Vercel/Netlify for frontend, Railway/Fly.io for backend, or a unified platform). CI/CD with GitHub Actions: lint → type-check → test → build → deploy.
+- **Deployment**: To be determined based on hosting choice (Vercel/Netlify for frontend, Railway/Fly.io for backend, or a unified platform). CI/CD with GitHub Actions: lint → type-check → unit/integration (Vitest) → E2E (Playwright in Docker) → build → deploy.
 
 ## Testing Decisions
 
-This is the phase where automated tests are introduced. Target:
-- 80%+ coverage on backend services (`sm2.service`, `learning.service`, `auth.service`)
-- Integration tests for all REST route modules via `fastify.inject` (real SQLite database in test)
+Automated tests are **not introduced here** — they were written test-first from FRD-002 onward (ADR 0005). This phase consolidates and hardens them. Target:
+- 80%+ coverage on backend services (`sm2.service`, `learning.service`, `auth.service`), enforced as a CI gate
+- Integration tests for all Nest modules via `@nestjs/testing` + supertest (real SQLite database in test)
 - Component tests for the review flow UI
-- At least one E2E test covering the full learning loop
+- The full-stack Playwright E2E suite (Dockerized front+back) covering the complete learning loop, running in CI
 - Tests should verify external behavior, not implementation details
 - No snapshot tests (as defined in architecture.md)
 

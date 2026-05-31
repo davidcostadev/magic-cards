@@ -46,7 +46,13 @@ Implement backend stats endpoints (`/v1/dashboard/*`) and connect them to the ex
 
 ## Testing Decisions
 
-No tests in this phase. Manual verification of dashboard metrics against known review data.
+**TDD (ADR 0005).** The metrics are pure aggregation logic — ideal for test-first:
+- **Unit/Integration** (Vitest + `@nestjs/testing`, real SQLite seeded with known reviewHistory): the
+  **streak** query (the trickiest — consecutive days vs. daily goal, UTC grouping, edge cases: user
+  created today, goal met today but not yesterday), `accuracy` (% quality ≥ 3 over 7d/30d),
+  `cardsByStatus`, `weak_cards` ordering, and `upcoming` windows. Each metric gets a failing test against a
+  fixed dataset before implementation.
+- **E2E** (Playwright): the dashboard reflects a freshly completed review (reviewed-today count + streak).
 
 ## Out of Scope
 
@@ -54,7 +60,6 @@ No tests in this phase. Manual verification of dashboard metrics against known r
 - User-vs-user comparisons or leaderboards
 - Export of analytics data
 - Notification system for streak at risk
-- Automated tests
 
 ## Further Notes
 
