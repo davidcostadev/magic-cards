@@ -3,6 +3,7 @@ import { useParams, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Plus, GraduationCap } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/utils/cn";
 import { CardList } from "@/components/features/cards/CardList";
 import { CardForm, type CardFormData } from "@/components/features/cards/CardForm";
@@ -23,7 +24,17 @@ export function SubjectDetailPage() {
   const [editingCard, setEditingCard] = useState<Card | null>(null);
 
   if (subjectLoading) {
-    return <p className="p-5 text-center text-lg text-muted-foreground">{t("common.loading")}</p>;
+    return (
+      <div className="p-5 md:p-7 space-y-5">
+        <Skeleton className="h-5 w-24" />
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-14 w-14 rounded-xl" />
+          <Skeleton className="h-8 w-48" />
+        </div>
+        <Skeleton className="h-20 w-full rounded-2xl" />
+        <Skeleton className="h-20 w-full rounded-2xl" />
+      </div>
+    );
   }
   if (isError || !subject) {
     return (

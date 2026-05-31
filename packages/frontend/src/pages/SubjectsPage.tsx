@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Plus, BookOpen, Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SubjectCard } from "@/components/features/subjects/SubjectCard";
 import { CreateSubjectModal } from "@/components/features/subjects/CreateSubjectModal";
 import { ManageSubjectsModal } from "@/components/features/subjects/ManageSubjectsModal";
@@ -72,7 +73,11 @@ export function SubjectsPage() {
       </div>
 
       {isLoading ? (
-        <p className="py-20 text-center text-lg text-muted-foreground">{t("common.loading")}</p>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-44 rounded-2xl" />
+          ))}
+        </div>
       ) : isError ? (
         <p className="py-20 text-center text-lg text-destructive">{t("errors.internal")}</p>
       ) : subjects.length === 0 ? (

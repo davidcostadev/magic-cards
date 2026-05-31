@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "highlight.js/styles/github-dark.min.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -99,4 +98,107 @@
 .learn-markdown pre {
   margin: 0;
   border-radius: 0;
+}
+
+/*
+ * Theme-aware syntax highlighting (GitHub light/dark palettes via CSS variables).
+ * Replaces the always-dark highlight.js stylesheet so code respects the active theme.
+ */
+:root {
+  --hl-bg: #f6f8fa;
+  --hl-fg: #24292e;
+  --hl-comment: #6a737d;
+  --hl-keyword: #d73a49;
+  --hl-entity: #6f42c1;
+  --hl-string: #032f62;
+  --hl-constant: #005cc5;
+  --hl-tag: #22863a;
+  --hl-symbol: #e36209;
+}
+
+.dark {
+  --hl-bg: #0d1117;
+  --hl-fg: #c9d1d9;
+  --hl-comment: #8b949e;
+  --hl-keyword: #ff7b72;
+  --hl-entity: #d2a8ff;
+  --hl-string: #a5d6ff;
+  --hl-constant: #79c0ff;
+  --hl-tag: #7ee787;
+  --hl-symbol: #ffa657;
+}
+
+.learn-markdown pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.hljs {
+  color: var(--hl-fg);
+  background: var(--hl-bg);
+}
+
+.learn-markdown :not(pre) > code {
+  background: var(--color-muted);
+  padding: 0.15em 0.35em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--hl-comment);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst,
+.hljs-doctag,
+.hljs-type {
+  color: var(--hl-keyword);
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-meta .hljs-string {
+  color: var(--hl-string);
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attr,
+.hljs-attribute {
+  color: var(--hl-constant);
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id,
+.hljs-title.class_,
+.hljs-title.function_ {
+  color: var(--hl-entity);
+}
+
+.hljs-tag,
+.hljs-name {
+  color: var(--hl-tag);
+}
+
+.hljs-built_in,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-meta {
+  color: var(--hl-symbol);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
 }
