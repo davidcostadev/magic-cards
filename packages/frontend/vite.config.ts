@@ -10,6 +10,11 @@ export default defineConfig({
     host: true,
     allowedHosts: [".davidcosta.dev"],
   },
+  preview: {
+    port: 5000,
+    host: true,
+    allowedHosts: true,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

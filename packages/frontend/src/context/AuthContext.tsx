@@ -1,54 +1,123 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { apiClient, errorCode, TOKEN_KEY } from "@/api/client";
 import type { User } from "@/mocks/types";
-import { mockUser } from "@/mocks/data";
+
+const CARD_LANGUAGE_KEY = "cardLanguage";
+
+type Preferences = Partial<Pick<User, "language" | "cardLanguage" | "theme" | "dailyGoal">>;
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => void;
-  signup: (email: string, password: string, username: string) => void;
+  /** True while the session is being restored from a stored token on first load. */
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, username: string) => Promise<void>;
   logout: () => void;
-  updatePreferences: (prefs: Partial<Pick<User, "language" | "cardLanguage" | "theme" | "dailyGoal">>) => void;
+  updatePreferences: (prefs: Preferences) => void;
+}
+
+/** The backend `User` (camelCase, no password hash) as typed by the generated client. */
+type ApiUser = {
+  id: string;
+  email: string;
+  username: string;
+  language: string;
+  theme: string;
+  dailyGoal: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** `cardLanguage` is a frontend-only preference (which language cards display in). */
+function toUser(apiUser: ApiUser): User {
+  return { ...apiUser, cardLanguage: localStorage.getItem(CARD_LANGUAGE_KEY) ?? "all" };
+}
+
+/** Thrown by `login`/`signup` carrying the i18n error code from the API envelope. */
+export class AuthError extends Error {
+  readonly code: string;
+
+  constructor(code: string) {
+    super(code);
+    this.name = "AuthError";
+    this.code = code;
+  }
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    if (!localStorage.getItem("auth_token")) return null;
-    return { ...mockUser, cardLanguage: localStorage.getItem("cardLanguage") ?? mockUser.cardLanguage };
-  });
+  const hasToken = !!localStorage.getItem(TOKEN_KEY);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(hasToken);
+  const [loading, setLoading] = useState(hasToken);
 
-  const login = (_email: string, _password: string) => {
-    localStorage.setItem("auth_token", "mock-jwt-token");
-    setUser({ ...mockUser, cardLanguage: localStorage.getItem("cardLanguage") ?? mockUser.cardLanguage });
-  };
+  function applySession(token: string, apiUser: ApiUser) {
+    localStorage.setItem(TOKEN_KEY, token);
+    setUser(toUser(apiUser));
+    setIsAuthenticated(true);
+  }
 
-  const signup = (_email: string, _password: string, username: string) => {
-    localStorage.setItem("auth_token", "mock-jwt-token");
-    setUser({ ...mockUser, username });
-  };
-
-  const logout = () => {
-    localStorage.removeItem("auth_token");
+  function clearSession() {
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    setIsAuthenticated(false);
+  }
+
+  // Restore the user from a stored token on first load; an invalid/expired token logs out.
+  useEffect(() => {
+    if (!localStorage.getItem(TOKEN_KEY)) {
+      setLoading(false);
+      return;
+    }
+    let active = true;
+    void (async () => {
+      const { data, error } = await apiClient.GET("/v1/me");
+      if (!active) return;
+      if (error || !data) clearSession();
+      else {
+        setUser(toUser(data));
+        setIsAuthenticated(true);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const { data, error } = await apiClient.POST("/v1/auth/login", { body: { email, password } });
+    if (error || !data) throw new AuthError(errorCode(error));
+    applySession(data.token, data.user);
   };
 
-  const updatePreferences = (prefs: Partial<Pick<User, "language" | "cardLanguage" | "theme" | "dailyGoal">>) => {
-    if (prefs.cardLanguage !== undefined) localStorage.setItem("cardLanguage", prefs.cardLanguage);
-    setUser((prev) => (prev ? { ...prev, ...prefs } : null));
+  const signup = async (email: string, password: string, username: string) => {
+    const { data, error } = await apiClient.POST("/v1/auth/signup", {
+      body: { email, password, username },
+    });
+    if (error || !data) throw new AuthError(errorCode(error));
+    applySession(data.token, data.user);
+  };
+
+  const logout = () => clearSession();
+
+  const updatePreferences = (prefs: Preferences) => {
+    if (prefs.cardLanguage !== undefined) localStorage.setItem(CARD_LANGUAGE_KEY, prefs.cardLanguage);
+    setUser((prev) => (prev ? { ...prev, ...prefs } : prev));
+
+    const { language, theme, dailyGoal } = prefs;
+    if (language !== undefined || theme !== undefined || dailyGoal !== undefined) {
+      void apiClient.PATCH("/v1/me", {
+        body: { language, theme: theme as "light" | "dark" | undefined, dailyGoal },
+      });
+    }
   };
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: user !== null,
-        login,
-        signup,
-        logout,
-        updatePreferences,
-      }}
+      value={{ user, isAuthenticated, loading, login, signup, logout, updatePreferences }}
     >
       {children}
     </AuthContext.Provider>

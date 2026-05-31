@@ -15,7 +15,15 @@
   "validation": {
     "required": "Campo obrigatório",
     "email": "Digite um email válido",
+    "passwordMin": "A senha deve ter no mínimo 8 caracteres",
     "correctChoice": "Marque uma opção como correta"
+  },
+  "errors": {
+    "validation": "Verifique os campos destacados e tente novamente",
+    "internal": "Algo deu errado. Tente novamente.",
+    "badRequest": "Não foi possível processar essa solicitação",
+    "unauthorized": "Sua sessão expirou. Faça login novamente.",
+    "notFound": "Não encontramos o que você procurava"
   },
   "nav": {
     "dashboard": "Painel",
@@ -36,10 +44,16 @@
     "username": "Nome de usuário",
     "loginButton": "Entrar",
     "signupButton": "Criar Conta",
+    "loginButtonLoading": "Entrando…",
+    "signupButtonLoading": "Criando conta…",
     "noAccount": "Não tem uma conta?",
     "hasAccount": "Já tem uma conta?",
     "signupLink": "Criar conta",
-    "loginLink": "Entrar"
+    "loginLink": "Entrar",
+    "invalidCredentials": "Email ou senha incorretos",
+    "emailAlreadyExists": "Já existe uma conta com este email",
+    "invalidToken": "Sua sessão expirou. Faça login novamente.",
+    "missingToken": "Faça login para continuar"
   },
   "dashboard": {
     "title": "Painel",

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/context/AuthContext";
+import { AuthError, useAuth } from "@/context/AuthContext";
 
 export function LoginForm() {
   const { t } = useTranslation();
@@ -14,8 +14,10 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const next: { email?: string; password?: string } = {};
     if (!email.trim()) next.email = t("validation.required");
@@ -23,8 +25,18 @@ export function LoginForm() {
     if (!password) next.password = t("validation.required");
     setErrors(next);
     if (Object.keys(next).length > 0) return;
-    login(email, password);
-    navigate({ to: "/dashboard" });
+
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await login(email, password);
+      navigate({ to: "/dashboard" });
+    } catch (err) {
+      const code = err instanceof AuthError ? err.code : "errors.internal";
+      setSubmitError(t(code, { defaultValue: t("errors.internal") }));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -66,8 +78,13 @@ export function LoginForm() {
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-5">
-          <Button type="submit" className="w-full" size="lg">
-            {t("auth.loginButton")}
+          {submitError && (
+            <p role="alert" className="w-full text-sm text-destructive text-center">
+              {submitError}
+            </p>
+          )}
+          <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+            {submitting ? t("auth.loginButtonLoading") : t("auth.loginButton")}
           </Button>
           <p className="text-base text-muted-foreground">
             {t("auth.noAccount")}{" "}

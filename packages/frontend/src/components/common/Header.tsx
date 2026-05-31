@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Sparkles, LogOut, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,14 @@ import { cn } from "@/utils/cn";
 
 export function Header() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
   const { inSession, requestExit, sessionInfo } = useLearningSessions();
+
+  const handleLogout = () => {
+    logout();
+    navigate({ to: "/login" });
+  };
 
   const timerColor = sessionInfo.timerSeconds <= 5
     ? "text-destructive"
@@ -58,7 +64,13 @@ export function Header() {
               <LanguageSelector />
               <ThemeToggle />
               {isAuthenticated && (
-                <Button variant="outlinePrimary" size="icon" onClick={logout}>
+                <Button
+                  variant="outlinePrimary"
+                  size="icon"
+                  onClick={handleLogout}
+                  aria-label={t("nav.logout")}
+                  title={t("nav.logout")}
+                >
                   <LogOut className="h-6 w-6" />
                 </Button>
               )}

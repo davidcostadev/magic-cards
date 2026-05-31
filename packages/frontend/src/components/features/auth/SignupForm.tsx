@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/context/AuthContext";
+import { AuthError, useAuth } from "@/context/AuthContext";
 
 export function SignupForm() {
   const { t } = useTranslation();
@@ -15,18 +15,31 @@ export function SignupForm() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [errors, setErrors] = useState<{ username?: string; email?: string; password?: string }>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const next: { username?: string; email?: string; password?: string } = {};
     if (!username.trim()) next.username = t("validation.required");
     if (!email.trim()) next.email = t("validation.required");
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = t("validation.email");
     if (!password) next.password = t("validation.required");
+    else if (password.length < 8) next.password = t("validation.passwordMin");
     setErrors(next);
     if (Object.keys(next).length > 0) return;
-    signup(email, password, username);
-    navigate({ to: "/dashboard" });
+
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await signup(email, password, username);
+      navigate({ to: "/dashboard" });
+    } catch (err) {
+      const code = err instanceof AuthError ? err.code : "errors.internal";
+      setSubmitError(t(code, { defaultValue: t("errors.internal") }));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -82,8 +95,13 @@ export function SignupForm() {
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-5">
-          <Button type="submit" className="w-full" size="lg">
-            {t("auth.signupButton")}
+          {submitError && (
+            <p role="alert" className="w-full text-sm text-destructive text-center">
+              {submitError}
+            </p>
+          )}
+          <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+            {submitting ? t("auth.signupButtonLoading") : t("auth.signupButton")}
           </Button>
           <p className="text-base text-muted-foreground">
             {t("auth.hasAccount")}{" "}

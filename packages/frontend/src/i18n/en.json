@@ -15,7 +15,15 @@
   "validation": {
     "required": "This field is required",
     "email": "Enter a valid email address",
+    "passwordMin": "Password must be at least 8 characters",
     "correctChoice": "Mark one option as correct"
+  },
+  "errors": {
+    "validation": "Please check the highlighted fields and try again",
+    "internal": "Something went wrong. Please try again.",
+    "badRequest": "That request couldn't be processed",
+    "unauthorized": "Your session has expired. Please log in again.",
+    "notFound": "We couldn't find what you were looking for"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -36,10 +44,16 @@
     "username": "Username",
     "loginButton": "Log In",
     "signupButton": "Sign Up",
+    "loginButtonLoading": "Logging in…",
+    "signupButtonLoading": "Creating account…",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "signupLink": "Sign up",
-    "loginLink": "Log in"
+    "loginLink": "Log in",
+    "invalidCredentials": "Incorrect email or password",
+    "emailAlreadyExists": "An account with this email already exists",
+    "invalidToken": "Your session has expired. Please log in again.",
+    "missingToken": "Please log in to continue"
   },
   "dashboard": {
     "title": "Dashboard",
