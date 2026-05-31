@@ -3,3 +3,16 @@ dist/
 .env
 .env.local
 *.local
+
+# databases
+data/
+*.db
+*.db-journal
+
+# build info
+*.tsbuildinfo
+
+# playwright
+test-results/
+playwright-report/
+e2e/.last-run.json

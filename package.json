@@ -1,11 +1,33 @@
 {
   "name": "magic-cards",
   "private": true,
+  "packageManager": "pnpm@10.33.2",
   "scripts": {
-    "dev": "pnpm --filter frontend dev",
-    "build": "pnpm --filter frontend build",
-    "lint": "pnpm --filter frontend lint",
-    "type:check": "pnpm --filter frontend type:check",
-    "test": "pnpm --filter frontend test"
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
+    "gen:api": "pnpm --filter backend gen:api && pnpm --filter frontend gen:client",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "type:check": "pnpm -r type:check",
+    "db:migrate": "pnpm --filter backend db:migrate",
+    "db:generate": "pnpm --filter backend db:generate",
+    "prepare": "husky || true"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@playwright/test": "^1.49.0",
+    "concurrently": "^10.0.0",
+    "husky": "^9.1.7"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@scarf/scarf",
+      "@swc/core",
+      "better-sqlite3",
+      "esbuild"
+    ]
   }
 }

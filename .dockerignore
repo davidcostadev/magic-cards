@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/data
+**/*.db
+**/*.db-journal
+.git
+.husky
+e2e/test-results
+e2e/playwright-report
+global-docs
