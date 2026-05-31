@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { GraduationCap } from "lucide-react";
@@ -6,18 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/common/Kbd";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { isInteractiveTarget } from "@/utils/keyboard";
-import { CardReview } from "@/components/features/learning/CardReview";
-import { QuizReview } from "@/components/features/learning/QuizReview";
-import { TypeAnswerReview } from "@/components/features/learning/TypeAnswerReview";
-import { MatchReview } from "@/components/features/learning/MatchReview";
+import { CardReview, type ReviewResult } from "@/components/features/learning/CardReview";
 import { SessionSummary } from "@/components/features/learning/SessionSummary";
-import { StudyModeModal, type StudyMode } from "@/components/features/learning/StudyModeModal";
 import { useLearningSessions } from "@/context/LearningContext";
 import { useAuth } from "@/context/AuthContext";
-import { usePreferences } from "@/context/PreferencesContext";
-import { mockCards, mockUser } from "@/mocks/data";
+import type { Card } from "@/api/queries/cards";
+import { type ReviewQueue, useReviewQueue, useSubmitReview } from "@/api/queries/reviews";
 
-type Quality = 1 | 3 | 4 | 5;
+const DEFAULT_DAILY_GOAL = 20;
+
+function orderedSession(queue: ReviewQueue): Card[] {
+  return [...queue.due, ...queue.new];
+}
 
 export function LearningSessionPage() {
   const params = useParams({ strict: false });
@@ -26,62 +26,35 @@ export function LearningSessionPage() {
   const { t } = useTranslation();
   const { setInSession, exitRequested, requestExit, cancelExit } = useLearningSessions();
   const { user } = useAuth();
-  const { selectedSubjectIds } = usePreferences();
-  const cardLanguage = user?.cardLanguage ?? "all";
+  const dailyGoal = user?.dailyGoal ?? DEFAULT_DAILY_GOAL;
 
-  const allCardsUnfiltered = useMemo(
-    () =>
-      subjectId
-        ? mockCards.filter((c) => c.subjectId === subjectId)
-        : mockCards.filter(
-            (c) => selectedSubjectIds === null || selectedSubjectIds.includes(c.subjectId)
-          ),
-    [subjectId, selectedSubjectIds]
-  );
+  const { data: queue, isLoading } = useReviewQueue(subjectId);
+  const submitReview = useSubmitReview();
 
-  const allCards = useMemo(
-    () => cardLanguage !== "all" ? allCardsUnfiltered.filter((c) => c.language === cardLanguage) : allCardsUnfiltered,
-    [allCardsUnfiltered, cardLanguage]
-  );
-
-  const flashcardCount = allCards.filter((c) => c.type === "open").length;
-  const quizCount = allCards.filter((c) => c.type === "quiz").length;
-  const typeAnswerCount = allCards.filter((c) => c.type === "type-answer").length;
-  const matchCount = allCards.filter((c) => c.type === "match").length;
-
-  const [mode, setMode] = useState<StudyMode | null>(null);
+  // Snapshot the queue once so mid-session invalidations don't reshuffle the deck.
+  const [sessionCards, setSessionCards] = useState<Card[] | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [completed, setCompleted] = useState(false);
   const startTime = useRef(Date.now());
 
-  const sessionCards = useMemo(() => {
-    let cards;
-    if (!mode) return [];
-    if (mode === "flashcards") cards = allCards.filter((c) => c.type === "open");
-    else if (mode === "quizzes") cards = allCards.filter((c) => c.type === "quiz");
-    else if (mode === "type-answer") cards = allCards.filter((c) => c.type === "type-answer");
-    else if (mode === "match") cards = allCards.filter((c) => c.type === "match");
-    else cards = [...allCards];
-
-    for (let i = cards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [cards[i], cards[j]] = [cards[j], cards[i]];
+  useEffect(() => {
+    if (queue && sessionCards === null) {
+      setSessionCards(orderedSession(queue));
+      startTime.current = Date.now();
     }
-    return cards;
-  }, [allCards, mode]);
+  }, [queue, sessionCards]);
 
-  const activeSession = !!mode && !completed;
+  const activeSession = !!sessionCards && sessionCards.length > 0 && !completed;
 
   useEffect(() => {
     setInSession(activeSession);
     return () => setInSession(false);
   }, [activeSession, setInSession]);
 
-  // Keep the question title visible at the top when a session starts or advances
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [currentIndex, mode]);
+  }, [currentIndex]);
 
   const confirmExit = useCallback(() => {
     setInSession(false);
@@ -89,8 +62,7 @@ export function LearningSessionPage() {
     navigate({ to: "/dashboard" });
   }, [setInSession, cancelExit, navigate]);
 
-  // Esc requests exit from anywhere in an active session (the confirm dialog
-  // handles its own Esc-to-cancel, so we skip while it is already open).
+  // Esc requests exit; the confirm dialog handles its own Esc-to-cancel.
   useEffect(() => {
     if (!activeSession) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,8 +75,6 @@ export function LearningSessionPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeSession, exitRequested, requestExit]);
 
-  // While the exit dialog is open: Enter confirms leaving, unless the user has
-  // tabbed onto one of the dialog buttons (then the focused button decides).
   useEffect(() => {
     if (!exitRequested) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -117,32 +87,23 @@ export function LearningSessionPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [exitRequested, confirmExit]);
 
-  if (allCardsUnfiltered.length === 0) {
+  if (isLoading || sessionCards === null) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center p-5">
-        <GraduationCap className="h-16 w-16 text-muted-foreground" />
-        <p className="text-lg text-muted-foreground">{t("learn.noCardsToReview")}</p>
+      <div className="flex min-h-[60vh] items-center justify-center p-5">
+        <p className="text-lg text-muted-foreground">{t("common.loading")}</p>
       </div>
     );
   }
 
-  if (!mode) {
+  if (sessionCards.length === 0) {
     return (
-      <StudyModeModal
-        open
-        onOpenChange={() => {}}
-        onSelect={(selected) => {
-          setMode(selected);
-          setCurrentIndex(0);
-          setCorrectCount(0);
-          setCompleted(false);
-          startTime.current = Date.now();
-        }}
-        flashcardCount={flashcardCount}
-        quizCount={quizCount}
-        typeAnswerCount={typeAnswerCount}
-        matchCount={matchCount}
-      />
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center p-5">
+        <GraduationCap className="h-16 w-16 text-muted-foreground" />
+        <p className="text-lg text-muted-foreground">{t("learn.noCardsToReview")}</p>
+        <Button variant="outline" onClick={() => navigate({ to: "/dashboard" })}>
+          {t("common.back")}
+        </Button>
+      </div>
     );
   }
 
@@ -156,10 +117,11 @@ export function LearningSessionPage() {
     );
   }
 
-  const handleRate = (quality: Quality) => {
-    if (quality >= 3) {
-      setCorrectCount((prev) => prev + 1);
-    }
+  const currentCard = sessionCards[currentIndex];
+
+  const handleRate = ({ quality, wasHintUsed, timeSpentMs }: ReviewResult) => {
+    submitReview.mutate({ cardId: currentCard.id, quality, timeSpent: timeSpentMs, wasHintUsed });
+    if (quality >= 3) setCorrectCount((prev) => prev + 1);
     if (currentIndex + 1 >= sessionCards.length) {
       setCompleted(true);
     } else {
@@ -167,32 +129,17 @@ export function LearningSessionPage() {
     }
   };
 
-  const currentCard = sessionCards[currentIndex];
-  const commonProps = {
-    card: currentCard,
-    currentIndex,
-    totalCards: sessionCards.length,
-    dailyGoalProgress: currentIndex,
-    dailyGoal: mockUser.dailyGoal,
-    onRate: handleRate,
-  };
-
-  const renderCard = () => {
-    switch (currentCard.type) {
-      case "quiz":
-        return <QuizReview key={currentCard.id} {...commonProps} />;
-      case "type-answer":
-        return <TypeAnswerReview key={currentCard.id} {...commonProps} />;
-      case "match":
-        return <MatchReview key={currentCard.id} {...commonProps} />;
-      default:
-        return <CardReview key={currentCard.id} {...commonProps} />;
-    }
-  };
-
   return (
     <>
-      {renderCard()}
+      <CardReview
+        key={currentCard.id}
+        card={currentCard}
+        currentIndex={currentIndex}
+        totalCards={sessionCards.length}
+        dailyGoalProgress={currentIndex}
+        dailyGoal={dailyGoal}
+        onRate={handleRate}
+      />
 
       <Dialog
         open={exitRequested}
@@ -203,9 +150,7 @@ export function LearningSessionPage() {
           <DialogHeader>
             <DialogTitle>{t("learn.exitTitle")}</DialogTitle>
           </DialogHeader>
-          <p className="text-base text-muted-foreground py-2">
-            {t("learn.exitMessage")}
-          </p>
+          <p className="text-base text-muted-foreground py-2">{t("learn.exitMessage")}</p>
           <DialogFooter className="sm:justify-center">
             <Button variant="outline" onClick={cancelExit} aria-keyshortcuts="Escape">
               {t("learn.exitCancel")}

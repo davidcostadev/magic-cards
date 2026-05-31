@@ -6,50 +6,40 @@ import { Input } from "@/components/ui/input";
 import { SubjectCard } from "@/components/features/subjects/SubjectCard";
 import { CreateSubjectModal } from "@/components/features/subjects/CreateSubjectModal";
 import { ManageSubjectsModal } from "@/components/features/subjects/ManageSubjectsModal";
-import { usePreferences } from "@/context/PreferencesContext";
-import { mockSubjects as initialSubjects, mockCards } from "@/mocks/data";
-import type { Subject } from "@/mocks/types";
+import {
+  type Subject,
+  useCreateSubject,
+  useDeleteSubject,
+  useSubjects,
+  useUpdateSubject,
+} from "@/api/queries/subjects";
 
 export function SubjectsPage() {
   const { t } = useTranslation();
-  const { selectedSubjectIds } = usePreferences();
-  const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
+  const { data: subjects = [], isLoading, isError } = useSubjects();
+  const createSubject = useCreateSubject();
+  const updateSubject = useUpdateSubject();
+  const deleteSubject = useDeleteSubject();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [query, setQuery] = useState("");
 
-  const getCardCount = (subjectId: string) =>
-    mockCards.filter((c) => c.subjectId === subjectId).length;
-
   const filteredSubjects = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return subjects.filter((s) => {
-      const active = selectedSubjectIds === null || selectedSubjectIds.includes(s.id);
-      if (!active) return false;
-      if (!q) return true;
-      return s.title.toLowerCase().includes(q) || s.description.toLowerCase().includes(q);
-    });
-  }, [subjects, query, selectedSubjectIds]);
+    if (!q) return subjects;
+    return subjects.filter(
+      (s) =>
+        s.title.toLowerCase().includes(q) || (s.description ?? "").toLowerCase().includes(q)
+    );
+  }, [subjects, query]);
 
   const handleSave = (data: { title: string; description: string; color: string; icon: string }) => {
     if (editingSubject) {
-      setSubjects((prev) =>
-        prev.map((s) =>
-          s.id === editingSubject.id
-            ? { ...s, ...data, updatedAt: new Date().toISOString() }
-            : s
-        )
-      );
+      updateSubject.mutate({ id: editingSubject.id, body: data });
     } else {
-      const newSubject: Subject = {
-        id: `sub-${Date.now()}`,
-        userId: "user-1",
-        ...data,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setSubjects((prev) => [...prev, newSubject]);
+      createSubject.mutate(data);
     }
     setEditingSubject(null);
   };
@@ -60,7 +50,7 @@ export function SubjectsPage() {
   };
 
   const handleDelete = (id: string) => {
-    setSubjects((prev) => prev.filter((s) => s.id !== id));
+    deleteSubject.mutate(id);
   };
 
   return (
@@ -81,7 +71,11 @@ export function SubjectsPage() {
         </div>
       </div>
 
-      {subjects.length === 0 ? (
+      {isLoading ? (
+        <p className="py-20 text-center text-lg text-muted-foreground">{t("common.loading")}</p>
+      ) : isError ? (
+        <p className="py-20 text-center text-lg text-destructive">{t("errors.internal")}</p>
+      ) : subjects.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-5 py-20 text-center">
           <BookOpen className="h-16 w-16 text-muted-foreground" />
           <p className="text-lg text-muted-foreground">{t("subjects.noSubjects")}</p>
@@ -103,27 +97,16 @@ export function SubjectsPage() {
             />
           </div>
           {filteredSubjects.length === 0 ? (
-            query.trim() ? (
-              <p className="py-16 text-center text-lg text-muted-foreground">
-                {t("subjects.noResults")}
-              </p>
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-5 py-16 text-center">
-                <BookOpen className="h-14 w-14 text-muted-foreground" />
-                <p className="text-lg text-muted-foreground">{t("subjects.noActive")}</p>
-                <Button variant="outline" size="lg" onClick={() => setManageOpen(true)}>
-                  <SlidersHorizontal className="mr-2 h-5 w-5" />
-                  {t("subjects.manage")}
-                </Button>
-              </div>
-            )
+            <p className="py-16 text-center text-lg text-muted-foreground">
+              {t("subjects.noResults")}
+            </p>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredSubjects.map((subject) => (
                 <SubjectCard
                   key={subject.id}
                   subject={subject}
-                  cardCount={getCardCount(subject.id)}
+                  cardCount={subject.cardCount}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
@@ -140,11 +123,7 @@ export function SubjectsPage() {
         onSave={handleSave}
       />
 
-      <ManageSubjectsModal
-        open={manageOpen}
-        onOpenChange={setManageOpen}
-        subjects={subjects}
-      />
+      <ManageSubjectsModal open={manageOpen} onOpenChange={setManageOpen} subjects={subjects} />
     </div>
   );
 }

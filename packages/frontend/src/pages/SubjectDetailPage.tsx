@@ -5,51 +5,45 @@ import { ArrowLeft, Plus, GraduationCap } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
 import { CardList } from "@/components/features/cards/CardList";
-import { CardForm } from "@/components/features/cards/CardForm";
+import { CardForm, type CardFormData } from "@/components/features/cards/CardForm";
 import { getSubjectIcon } from "@/components/features/subjects/subjectIcons";
-import { mockSubjects, mockCards as initialCards } from "@/mocks/data";
-import type { Card } from "@/mocks/types";
+import { useSubject } from "@/api/queries/subjects";
+import { type Card, useCards, useCreateCard, useDeleteCard, useUpdateCard } from "@/api/queries/cards";
 
 export function SubjectDetailPage() {
   const { subjectId } = useParams({ from: "/subjects/$subjectId" });
   const { t } = useTranslation();
-  const subject = mockSubjects.find((s) => s.id === subjectId);
-  const [cards, setCards] = useState<Card[]>(
-    initialCards.filter((c) => c.subjectId === subjectId)
-  );
+  const { data: subject, isLoading: subjectLoading, isError } = useSubject(subjectId);
+  const { data: cards = [] } = useCards(subjectId);
+  const createCard = useCreateCard();
+  const updateCard = useUpdateCard();
+  const deleteCard = useDeleteCard();
+
   const [formOpen, setFormOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
 
-  if (!subject) {
+  if (subjectLoading) {
+    return <p className="p-5 text-center text-lg text-muted-foreground">{t("common.loading")}</p>;
+  }
+  if (isError || !subject) {
     return (
       <div className="p-5 text-center">
-        <p className="text-lg text-muted-foreground">Subject not found</p>
+        <p className="text-lg text-muted-foreground">{t("errors.notFound")}</p>
+        <Link to="/subjects" className="mt-3 inline-block text-primary hover:underline">
+          {t("common.back")}
+        </Link>
       </div>
     );
   }
 
-  const Icon = getSubjectIcon(subject.icon);
+  const Icon = getSubjectIcon(subject.icon ?? "code");
+  const color = subject.color ?? "#6366f1";
 
-  const handleSave = (data: Pick<Card, "type" | "language" | "question" | "answer" | "hints" | "tags" | "choices">) => {
+  const handleSave = (data: CardFormData) => {
     if (editingCard) {
-      setCards((prev) =>
-        prev.map((c) =>
-          c.id === editingCard.id
-            ? { ...c, ...data, updatedAt: new Date().toISOString() }
-            : c
-        )
-      );
+      updateCard.mutate({ id: editingCard.id, body: data });
     } else {
-      const newCard: Card = {
-        id: `card-${Date.now()}`,
-        subjectId,
-        ...data,
-        shortAnswer: "",
-        matchPairs: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setCards((prev) => [...prev, newCard]);
+      createCard.mutate({ subjectId, ...data });
     }
     setEditingCard(null);
   };
@@ -64,13 +58,15 @@ export function SubjectDetailPage() {
         <div className="flex items-center gap-4 mb-5">
           <div
             className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
-            style={{ backgroundColor: `${subject.color}20`, color: subject.color }}
+            style={{ backgroundColor: `${color}20`, color }}
           >
             <Icon className="h-7 w-7" />
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl font-bold truncate sm:text-3xl">{subject.title}</h1>
-            <p className="text-sm text-muted-foreground line-clamp-2 sm:text-base">{subject.description}</p>
+            <p className="text-sm text-muted-foreground line-clamp-2 sm:text-base">
+              {subject.description ?? ""}
+            </p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -98,7 +94,7 @@ export function SubjectDetailPage() {
       <CardList
         cards={cards}
         onEdit={(card) => { setEditingCard(card); setFormOpen(true); }}
-        onDelete={(id) => setCards((prev) => prev.filter((c) => c.id !== id))}
+        onDelete={(id) => deleteCard.mutate({ id, subjectId })}
       />
 
       <CardForm
@@ -106,6 +102,7 @@ export function SubjectDetailPage() {
         onOpenChange={setFormOpen}
         card={editingCard}
         onSave={handleSave}
+        isSubmitting={createCard.isPending || updateCard.isPending}
       />
 
       {cards.length > 0 && (

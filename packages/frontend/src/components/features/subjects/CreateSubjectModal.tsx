@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Code, Database, Component, GitBranch } from "lucide-react";
 import { cn } from "@/utils/cn";
-import type { Subject } from "@/mocks/types";
+import type { Subject } from "@/api/queries/subjects";
 
 const COLORS = ["#3178C6", "#E48E00", "#61DAFB", "#F05032", "#68A063", "#DD4B25", "#764ABC", "#FF6F61"];
 
@@ -36,9 +36,9 @@ export function CreateSubjectModal({ open, onOpenChange, subject, onSave }: Crea
   useEffect(() => {
     if (subject) {
       setTitle(subject.title);
-      setDescription(subject.description);
-      setColor(subject.color);
-      setIcon(subject.icon);
+      setDescription(subject.description ?? "");
+      setColor(subject.color ?? COLORS[0]);
+      setIcon(subject.icon ?? "code");
     } else {
       setTitle("");
       setDescription("");

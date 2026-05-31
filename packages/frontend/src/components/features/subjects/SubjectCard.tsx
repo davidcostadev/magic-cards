@@ -6,7 +6,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/utils/cn";
 import { getSubjectIcon } from "@/components/features/subjects/subjectIcons";
-import type { Subject } from "@/mocks/types";
+import type { Subject } from "@/api/queries/subjects";
 import { useState, useRef, useEffect } from "react";
 
 interface SubjectCardProps {
@@ -16,10 +16,13 @@ interface SubjectCardProps {
   onDelete: (id: string) => void;
 }
 
+const DEFAULT_COLOR = "#6366f1";
+
 export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCardProps) {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const Icon = getSubjectIcon(subject.icon);
+  const Icon = getSubjectIcon(subject.icon ?? "code");
+  const color = subject.color ?? DEFAULT_COLOR;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstItemRef = useRef<HTMLButtonElement>(null);
 
@@ -88,7 +91,7 @@ export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCar
           <div className="flex items-center gap-3.5">
             <div
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-              style={{ backgroundColor: `${subject.color}20`, color: subject.color }}
+              style={{ backgroundColor: `${color}20`, color }}
             >
               <Icon className="h-5 w-5" />
             </div>
@@ -101,7 +104,7 @@ export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCar
           </div>
         </CardHeader>
         <CardContent className="px-5 pb-4 pt-0">
-          <p className="text-sm text-muted-foreground line-clamp-2">{subject.description}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">{subject.description ?? ""}</p>
         </CardContent>
       </Link>
       {cardCount > 0 && (

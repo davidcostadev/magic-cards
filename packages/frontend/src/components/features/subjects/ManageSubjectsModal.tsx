@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
 import { getSubjectIcon } from "@/components/features/subjects/subjectIcons";
 import { usePreferences } from "@/context/PreferencesContext";
-import type { Subject } from "@/mocks/types";
+import type { Subject } from "@/api/queries/subjects";
 
 interface ManageSubjectsModalProps {
   open: boolean;
@@ -26,7 +26,8 @@ export function ManageSubjectsModal({ open, onOpenChange, subjects }: ManageSubj
         <p className="text-sm text-muted-foreground">{t("subjects.manageHint")}</p>
         <div className="mt-4 space-y-2.5">
           {subjects.map((subject) => {
-            const Icon = getSubjectIcon(subject.icon);
+            const Icon = getSubjectIcon(subject.icon ?? "code");
+            const color = subject.color ?? "#6366f1";
             const active = isSubjectActive(subject.id);
             return (
               <button
@@ -41,7 +42,7 @@ export function ManageSubjectsModal({ open, onOpenChange, subjects }: ManageSubj
               >
                 <div
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: `${subject.color}20`, color: subject.color }}
+                  style={{ backgroundColor: `${color}20`, color }}
                 >
                   <Icon className="h-5 w-5" />
                 </div>

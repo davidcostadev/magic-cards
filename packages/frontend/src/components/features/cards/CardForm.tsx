@@ -1,63 +1,48 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, X, GripVertical, Check } from "lucide-react";
+import { Plus, X, GripVertical } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/utils/cn";
-import type { Card, CardType, Choice } from "@/mocks/types";
+import type { Card } from "@/api/queries/cards";
 
-const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "pt", label: "Português" },
-];
+export interface CardFormData {
+  question: string;
+  answer: string;
+  hints: string[];
+  tags: string[];
+}
 
 interface CardFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   card?: Card | null;
-  onSave: (data: {
-    type: CardType;
-    language: string;
-    question: string;
-    answer: string;
-    hints: string[];
-    tags: string[];
-    choices: Choice[];
-  }) => void;
+  onSave: (data: CardFormData) => void;
+  isSubmitting?: boolean;
 }
 
-export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
+export function CardForm({ open, onOpenChange, card, onSave, isSubmitting }: CardFormProps) {
   const { t } = useTranslation();
-  const [cardType, setCardType] = useState<CardType>("open");
-  const [language, setLanguage] = useState("en");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [hints, setHints] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [choices, setChoices] = useState<Choice[]>([]);
-  const [errors, setErrors] = useState<{ question?: string; choices?: string }>({});
+  const [errors, setErrors] = useState<{ question?: string; answer?: string }>({});
 
   useEffect(() => {
     if (card) {
-      setCardType(card.type);
-      setLanguage(card.language);
       setQuestion(card.question);
       setAnswer(card.answer);
       setHints([...card.hints]);
       setTags([...card.tags]);
-      setChoices([...card.choices]);
     } else {
-      setCardType("open");
-      setLanguage("en");
       setQuestion("");
       setAnswer("");
       setHints([]);
       setTags([]);
-      setChoices([]);
     }
     setTagInput("");
     setErrors({});
@@ -65,20 +50,12 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const next: { question?: string; choices?: string } = {};
+    const next: { question?: string; answer?: string } = {};
     if (!question.trim()) next.question = t("validation.required");
-    if (cardType === "quiz" && !choices.some((c) => c.isCorrect)) next.choices = t("validation.correctChoice");
+    if (!answer.trim()) next.answer = t("validation.required");
     setErrors(next);
     if (Object.keys(next).length > 0) return;
-    onSave({
-      type: cardType,
-      language,
-      question,
-      answer,
-      hints: cardType === "open" ? hints.filter(Boolean) : [],
-      tags,
-      choices: cardType === "quiz" ? choices : [],
-    });
+    onSave({ question, answer, hints: hints.filter((h) => h.trim()), tags });
     onOpenChange(false);
   };
 
@@ -90,19 +67,6 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
   };
   const removeHint = (index: number) => setHints(hints.filter((_, i) => i !== index));
 
-  const addChoice = () => {
-    setChoices([...choices, { id: `new-${Date.now()}`, text: "", isCorrect: false }]);
-  };
-  const updateChoice = (index: number, text: string) => {
-    const updated = [...choices];
-    updated[index] = { ...updated[index], text };
-    setChoices(updated);
-  };
-  const toggleCorrect = (index: number) => {
-    setChoices(choices.map((c, i) => ({ ...c, isCorrect: i === index })));
-  };
-  const removeChoice = (index: number) => setChoices(choices.filter((_, i) => i !== index));
-
   const addTag = () => {
     const trimmed = tagInput.trim();
     if (trimmed && !tags.includes(trimmed)) {
@@ -110,7 +74,7 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
       setTagInput("");
     }
   };
-  const removeTag = (tag: string) => setTags(tags.filter((t) => t !== tag));
+  const removeTag = (tag: string) => setTags(tags.filter((x) => x !== tag));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,46 +83,6 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
           <DialogTitle>{card ? t("cards.editCard") : t("cards.createCard")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="flex-1 space-y-2.5">
-              <Label>{t("cards.cardType")}</Label>
-              <div className="flex gap-2">
-                {([
-                  { value: "open" as const, label: t("cards.typeOpen") },
-                  { value: "quiz" as const, label: t("cards.typeQuiz") },
-                ] as const).map(({ value, label }) => (
-                  <Button
-                    key={value}
-                    type="button"
-                    variant={cardType === value ? "default" : "outline"}
-                    onClick={() => setCardType(value)}
-                    className="flex-1"
-                    size="sm"
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div className="flex-1 space-y-2.5">
-              <Label>{t("cards.language")}</Label>
-              <div className="flex gap-2">
-                {LANGUAGES.map(({ code, label }) => (
-                  <Button
-                    key={code}
-                    type="button"
-                    variant={language === code ? "default" : "outline"}
-                    onClick={() => setLanguage(code)}
-                    className="flex-1"
-                    size="sm"
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-
           <div className="space-y-2.5">
             <Label htmlFor="question">{t("cards.question")}</Label>
             <Textarea
@@ -166,7 +90,10 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
               rows={4}
               placeholder={t("cards.markdownPlaceholder")}
               value={question}
-              onChange={(e) => { setQuestion(e.target.value); if (errors.question) setErrors((prev) => ({ ...prev, question: undefined })); }}
+              onChange={(e) => {
+                setQuestion(e.target.value);
+                if (errors.question) setErrors((prev) => ({ ...prev, question: undefined }));
+              }}
               aria-invalid={!!errors.question}
               aria-describedby={errors.question ? "card-question-error" : undefined}
             />
@@ -175,117 +102,62 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
             )}
           </div>
 
-          {cardType === "open" && (
-            <>
-              <div className="space-y-2.5">
-                <Label htmlFor="answer">{t("cards.answer")}</Label>
-                <Textarea
-                  id="answer"
-                  rows={4}
-                  placeholder={t("cards.markdownPlaceholder")}
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <Label>{t("cards.hints")}</Label>
-                  <Button type="button" variant="ghost" onClick={addHint}>
-                    <Plus className="mr-1.5 h-5 w-5" />
-                    {t("cards.addHint")}
-                  </Button>
-                </div>
-                <div className="space-y-2.5">
-                  {hints.map((hint, index) => (
-                    <div key={index} className="flex items-center gap-2.5">
-                      <GripVertical className="h-5 w-5 text-muted-foreground shrink-0" />
-                      <Input
-                        value={hint}
-                        onChange={(e) => updateHint(index, e.target.value)}
-                        placeholder={t("cards.hintNumber", { n: index + 1 })}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 shrink-0"
-                        onClick={() => removeHint(index)}
-                      >
-                        <X className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {cardType === "quiz" && (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <Label>{t("cards.choices")}</Label>
-                {choices.length < 4 && (
-                  <Button type="button" variant="ghost" onClick={addChoice}>
-                    <Plus className="mr-1.5 h-5 w-5" />
-                    {t("cards.addChoice")}
-                  </Button>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground">{t("cards.choicesHelp")}</p>
-              {errors.choices && (
-                <p className="text-sm text-destructive">{errors.choices}</p>
-              )}
-              <div className="space-y-2.5">
-                {choices.map((choice, index) => (
-                  <div key={choice.id} className="flex items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => toggleCorrect(index)}
-                      aria-label={t("cards.choicesHelp")}
-                      aria-pressed={choice.isCorrect}
-                      className={cn(
-                        "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        choice.isCorrect
-                          ? "border-success bg-success text-white"
-                          : "border-border hover:border-success/50"
-                      )}
-                    >
-                      {choice.isCorrect && <Check className="h-4 w-4" />}
-                    </button>
-                    <Input
-                      value={choice.text}
-                      onChange={(e) => updateChoice(index, e.target.value)}
-                      placeholder={`${t("cards.choice")} ${index + 1}`}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-10 w-10 shrink-0"
-                      onClick={() => removeChoice(index)}
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-2.5">
-                <Label htmlFor="explanation">{t("cards.explanation")}</Label>
-                <Textarea
-                  id="explanation"
-                  rows={2}
-                  placeholder={t("cards.explanationPlaceholder")}
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
+          <div className="space-y-2.5">
+            <Label htmlFor="answer">{t("cards.answer")}</Label>
+            <Textarea
+              id="answer"
+              rows={4}
+              placeholder={t("cards.markdownPlaceholder")}
+              value={answer}
+              onChange={(e) => {
+                setAnswer(e.target.value);
+                if (errors.answer) setErrors((prev) => ({ ...prev, answer: undefined }));
+              }}
+              aria-invalid={!!errors.answer}
+              aria-describedby={errors.answer ? "card-answer-error" : undefined}
+            />
+            {errors.answer && (
+              <p id="card-answer-error" className="text-sm text-destructive">{errors.answer}</p>
+            )}
+          </div>
 
           <div className="space-y-2.5">
-            <Label>{t("cards.tags")}</Label>
+            <div className="flex items-center justify-between">
+              <Label>{t("cards.hints")}</Label>
+              <Button type="button" variant="ghost" onClick={addHint}>
+                <Plus className="mr-1.5 h-5 w-5" />
+                {t("cards.addHint")}
+              </Button>
+            </div>
+            <div className="space-y-2.5">
+              {hints.map((hint, index) => (
+                <div key={index} className="flex items-center gap-2.5">
+                  <GripVertical className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <Input
+                    value={hint}
+                    onChange={(e) => updateHint(index, e.target.value)}
+                    placeholder={t("cards.hintNumber", { n: index + 1 })}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("common.delete")}
+                    className="h-10 w-10 shrink-0"
+                    onClick={() => removeHint(index)}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            <Label htmlFor="tag-input">{t("cards.tags")}</Label>
             <div className="flex gap-2.5">
               <Input
+                id="tag-input"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -326,7 +198,9 @@ export function CardForm({ open, onOpenChange, card, onSave }: CardFormProps) {
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit">{t("common.save")}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {t("common.save")}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -224,6 +224,29 @@ export interface components {
             theme?: "light" | "dark";
             dailyGoal?: number;
         };
+        SubjectListDto: {
+            /** @constant */
+            object: "list";
+            url: string;
+            has_more: boolean;
+            data: {
+                id: string;
+                userId: string;
+                title: string;
+                description: string | null;
+                color: string | null;
+                icon: string | null;
+                cardCount: number;
+                createdAt: string;
+                updatedAt: string;
+            }[];
+        };
+        CreateSubjectDto: {
+            title: string;
+            description?: string;
+            color?: string;
+            icon?: string;
+        };
         SubjectResponseDto: {
             id: string;
             userId: string;
@@ -234,12 +257,6 @@ export interface components {
             cardCount: number;
             createdAt: string;
             updatedAt: string;
-        };
-        CreateSubjectDto: {
-            title: string;
-            description?: string;
-            color?: string;
-            icon?: string;
         };
         UpdateSubjectDto: {
             title?: string;
@@ -255,6 +272,29 @@ export interface components {
             mastered: number;
             due: number;
         };
+        CardListDto: {
+            /** @constant */
+            object: "list";
+            url: string;
+            has_more: boolean;
+            data: {
+                id: string;
+                subjectId: string;
+                question: string;
+                answer: string;
+                hints: string[];
+                tags: string[];
+                createdAt: string;
+                updatedAt: string;
+            }[];
+        };
+        CreateCardDto: {
+            subjectId: string;
+            question: string;
+            answer: string;
+            hints?: string[];
+            tags?: string[];
+        };
         CardResponseDto: {
             id: string;
             subjectId: string;
@@ -264,13 +304,6 @@ export interface components {
             tags: string[];
             createdAt: string;
             updatedAt: string;
-        };
-        CreateCardDto: {
-            subjectId: string;
-            question: string;
-            answer: string;
-            hints?: string[];
-            tags?: string[];
         };
         UpdateCardDto: {
             question?: string;
@@ -436,7 +469,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubjectResponseDto"][];
+                    "application/json": components["schemas"]["SubjectListDto"];
                 };
             };
         };
@@ -569,7 +602,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CardResponseDto"][];
+                    "application/json": components["schemas"]["CardListDto"];
                 };
             };
         };

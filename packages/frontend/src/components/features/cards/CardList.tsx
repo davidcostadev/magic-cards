@@ -3,7 +3,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Card as CardType } from "@/mocks/types";
+import type { Card as CardType } from "@/api/queries/cards";
 
 interface CardListProps {
   cards: CardType[];
@@ -33,9 +33,6 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
                   <p className="text-base font-semibold line-clamp-2">
                     {card.question.split("\n")[0].replace(/[#`*]/g, "")}
                   </p>
-                  {card.type === "quiz" && (
-                    <Badge variant="default" className="shrink-0">Quiz</Badge>
-                  )}
                 </div>
                 {card.tags.length > 0 && (
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -53,12 +50,19 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
                 )}
               </div>
               <div className="flex shrink-0 gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => onEdit(card)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("common.edit")}
+                  className="h-10 w-10"
+                  onClick={() => onEdit(card)}
+                >
                   <Pencil className="h-5 w-5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label={t("common.delete")}
                   className="h-10 w-10 text-destructive"
                   onClick={() => onDelete(card.id)}
                 >

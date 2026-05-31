@@ -8,9 +8,15 @@ import { MarkdownContent } from "./MarkdownContent";
 import { calculateQuality } from "./Timer";
 import { useLearningSessions } from "@/context/LearningContext";
 import { isInteractiveTarget, isTypingTarget } from "@/utils/keyboard";
-import type { Card as CardType } from "@/mocks/types";
+import type { Card as CardType } from "@/api/queries/cards";
 
 type Quality = 1 | 3 | 4 | 5;
+
+export interface ReviewResult {
+  quality: Quality;
+  wasHintUsed: boolean;
+  timeSpentMs: number;
+}
 
 interface CardReviewProps {
   card: CardType;
@@ -18,7 +24,7 @@ interface CardReviewProps {
   totalCards: number;
   dailyGoalProgress: number;
   dailyGoal: number;
-  onRate: (quality: Quality) => void;
+  onRate: (result: ReviewResult) => void;
 }
 
 const TIMER_SECONDS = 30;
@@ -70,13 +76,13 @@ export function CardReview({
   }, [answerRevealed, updateSessionInfo]);
 
   const handleAnswer = (correct: boolean) => {
-    const elapsed = (Date.now() - startTime.current) / 1000;
-    const quality = calculateQuality(correct, elapsed, usedHint, timedOut);
+    const elapsedMs = Date.now() - startTime.current;
+    const quality = calculateQuality(correct, elapsedMs / 1000, usedHint, timedOut);
     setRevealedHints(0);
     setAnswerRevealed(false);
     setTimedOut(false);
     startTime.current = Date.now();
-    onRate(quality);
+    onRate({ quality, wasHintUsed: usedHint, timeSpentMs: Math.round(elapsedMs) });
   };
 
   // Keyboard flow: Space/Enter reveals, H shows a hint, then 1 = wrong, 2/Enter = right.
