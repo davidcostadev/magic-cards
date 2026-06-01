@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gte, lt, type SQL, sql } from 'drizzle-orm';
+import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
 import { cardProgress, cards, reviewHistory, subjects, users } from '../../db/schema';
 import type { DashboardStats, Upcoming, WeakCard } from './dto/dashboard.dto';
@@ -148,7 +149,7 @@ export class DashboardService {
         .select({ count: countInt })
         .from(cards)
         .innerJoin(subjects, eq(cards.subjectId, subjects.id))
-        .where(eq(subjects.userId, userId)),
+        .where(canSeeSubject(userId)),
       this.db.select({ count: countInt }).from(cardProgress).where(eq(cardProgress.userId, userId)),
     ]);
 

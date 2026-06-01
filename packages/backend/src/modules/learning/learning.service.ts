@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, getTableColumns, isNull, lte } from 'drizzle-orm';
 import { ApiError } from '../../common/errors/api-error';
+import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
 import { cardProgress, cards, reviewHistory, subjects, users } from '../../db/schema';
 import type { CardResponse } from '../cards/dto/card.dto';
@@ -28,7 +29,7 @@ export class LearningService {
    * (never-reviewed) cards capped at 30% of the daily goal (architecture §7).
    */
   async getSessionCards(userId: string, subjectId?: string): Promise<SessionCards> {
-    if (subjectId) await this.assertSubjectOwned(userId, subjectId);
+    if (subjectId) await this.assertSubjectVisible(userId, subjectId);
 
     const now = new Date().toISOString();
     const [user] = await this.db
@@ -48,7 +49,7 @@ export class LearningService {
       .where(
         and(
           eq(cardProgress.userId, userId),
-          eq(subjects.userId, userId),
+          canSeeSubject(userId),
           lte(cardProgress.nextReviewDate, now),
           subjectFilter
         )
@@ -65,7 +66,7 @@ export class LearningService {
               cardProgress,
               and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
             )
-            .where(and(eq(subjects.userId, userId), isNull(cardProgress.id), subjectFilter))
+            .where(and(canSeeSubject(userId), isNull(cardProgress.id), subjectFilter))
             .orderBy(asc(cards.id))
             .limit(maxNew)
         : [];
@@ -91,7 +92,7 @@ export class LearningService {
       .select({ subjectId: cards.subjectId })
       .from(cards)
       .innerJoin(subjects, eq(cards.subjectId, subjects.id))
-      .where(and(eq(cards.id, cardId), eq(subjects.userId, userId)))
+      .where(and(eq(cards.id, cardId), canSeeSubject(userId)))
       .limit(1);
     if (!card) throw ApiError.notFound('cards.notFound');
 
@@ -153,12 +154,12 @@ export class LearningService {
     return progress;
   }
 
-  private async assertSubjectOwned(userId: string, subjectId: string): Promise<void> {
-    const [owned] = await this.db
+  private async assertSubjectVisible(userId: string, subjectId: string): Promise<void> {
+    const [visible] = await this.db
       .select({ id: subjects.id })
       .from(subjects)
-      .where(and(eq(subjects.id, subjectId), eq(subjects.userId, userId)))
+      .where(and(eq(subjects.id, subjectId), canSeeSubject(userId)))
       .limit(1);
-    if (!owned) throw ApiError.notFound('subjects.notFound');
+    if (!visible) throw ApiError.notFound('subjects.notFound');
   }
 }

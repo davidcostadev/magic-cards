@@ -8,6 +8,11 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.{test,spec}.ts'],
     root: './',
+    // PGlite (WASM Postgres) boots a fresh instance per suite; give hooks headroom
+    // and cap fork concurrency so parallel suites don't thrash under load.
+    hookTimeout: 30_000,
+    testTimeout: 20_000,
+    poolOptions: { forks: { maxForks: 4 } },
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],

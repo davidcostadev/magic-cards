@@ -10,6 +10,7 @@ import { validateEnv } from './config/env';
 import { DatabaseModule } from './db/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CardsModule } from './modules/cards/cards.module';
+import { CatalogModule } from './modules/catalog/catalog.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
@@ -26,6 +27,7 @@ import { SubjectsModule } from './modules/subjects/subjects.module';
     CardsModule,
     ReviewsModule,
     DashboardModule,
+    CatalogModule,
   ],
   providers: [
     // Validation first, then the global cross-cutting Stripe concerns.

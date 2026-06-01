@@ -46,10 +46,15 @@ export const subjects = pgTable(
     description: text('description'),
     color: text('color'),
     icon: text('icon'),
+    // Public (catalog) subjects are owned by the system user and visible to everyone.
+    isPublic: boolean('is_public').notNull().default(false),
     createdAt: text('created_at').notNull().$defaultFn(isoNow),
     updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
   },
-  (table) => [index('subjects_user_idx').on(table.userId)]
+  (table) => [
+    index('subjects_user_idx').on(table.userId),
+    index('subjects_public_idx').on(table.isPublic),
+  ]
 );
 
 export const cards = pgTable(

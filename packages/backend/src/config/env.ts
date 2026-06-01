@@ -14,6 +14,8 @@ export const envSchema = z
     JWT_SECRET: z.string().min(1).optional(),
     JWT_EXPIRATION: z.string().default('24h'),
     CORS_ORIGIN: z.string().default('http://localhost:5000,http://localhost:5173'),
+    // Publishes public catalog content via /v1/catalog/*. Unset → catalog disabled.
+    CONTENT_API_KEY: z.string().min(16).optional(),
   })
   .superRefine((cfg, ctx) => {
     if (cfg.NODE_ENV !== 'production') return;

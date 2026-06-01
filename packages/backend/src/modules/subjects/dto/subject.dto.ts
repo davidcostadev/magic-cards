@@ -18,6 +18,7 @@ export const subjectResponseSchema = z.object({
   description: z.string().nullable(),
   color: z.string().nullable(),
   icon: z.string().nullable(),
+  isPublic: z.boolean(),
   cardCount: z.number(),
   createdAt: z.string(),
   updatedAt: z.string(),

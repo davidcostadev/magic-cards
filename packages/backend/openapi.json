@@ -748,6 +748,78 @@
           "dashboard"
         ]
       }
+    },
+    "/v1/catalog/subjects": {
+      "post": {
+        "operationId": "CatalogController_createSubject",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/v1/catalog/cards": {
+      "post": {
+        "operationId": "CatalogController_createCard",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
+        "tags": [
+          "catalog"
+        ]
+      }
     }
   },
   "info": {
@@ -979,6 +1051,9 @@
                     }
                   ]
                 },
+                "isPublic": {
+                  "type": "boolean"
+                },
                 "cardCount": {
                   "type": "number"
                 },
@@ -996,6 +1071,7 @@
                 "description",
                 "color",
                 "icon",
+                "isPublic",
                 "cardCount",
                 "createdAt",
                 "updatedAt"
@@ -1077,6 +1153,9 @@
               }
             ]
           },
+          "isPublic": {
+            "type": "boolean"
+          },
           "cardCount": {
             "type": "number"
           },
@@ -1094,6 +1173,7 @@
           "description",
           "color",
           "icon",
+          "isPublic",
           "cardCount",
           "createdAt",
           "updatedAt"

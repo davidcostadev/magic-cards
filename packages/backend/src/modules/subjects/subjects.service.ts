@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import { ApiError } from '../../common/errors/api-error';
 import { cursorWhere, type PaginationQuery } from '../../common/pagination';
+import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
 import { cardProgress, cards, subjects } from '../../db/schema';
 import { Sm2Service } from '../learning/sm2.service';
@@ -30,7 +31,7 @@ export class SubjectsService {
     const rows = await this.db
       .select({ ...getTableColumns(subjects), cardCount: cardCountSql })
       .from(subjects)
-      .where(and(eq(subjects.userId, userId), cursorWhere(subjects.id, query)))
+      .where(and(canSeeSubject(userId), cursorWhere(subjects.id, query)))
       .orderBy(desc(subjects.id))
       .limit(query.limit + 1);
     return { rows, limit: query.limit };
@@ -48,7 +49,7 @@ export class SubjectsService {
     const [subject] = await this.db
       .select({ ...getTableColumns(subjects), cardCount: cardCountSql })
       .from(subjects)
-      .where(and(eq(subjects.id, id), eq(subjects.userId, userId)))
+      .where(and(eq(subjects.id, id), canSeeSubject(userId)))
       .limit(1);
     if (!subject) throw ApiError.notFound('subjects.notFound');
     return subject;
@@ -70,7 +71,7 @@ export class SubjectsService {
   }
 
   async stats(userId: string, id: string): Promise<SubjectStats> {
-    await this.assertOwned(userId, id);
+    await this.assertVisible(userId, id);
 
     const [totalCards] = await this.db
       .select({ value: sql<number>`count(*)::int` })
@@ -105,6 +106,7 @@ export class SubjectsService {
     return { totalCards: total, ...counts, due };
   }
 
+  /** Owner-only (mutations) — public content is read-only to users. */
   private async assertOwned(userId: string, id: string): Promise<void> {
     const [owned] = await this.db
       .select({ id: subjects.id })
@@ -112,5 +114,15 @@ export class SubjectsService {
       .where(and(eq(subjects.id, id), eq(subjects.userId, userId)))
       .limit(1);
     if (!owned) throw ApiError.notFound('subjects.notFound');
+  }
+
+  /** Readable by the user — their own or public catalog content. */
+  private async assertVisible(userId: string, id: string): Promise<void> {
+    const [visible] = await this.db
+      .select({ id: subjects.id })
+      .from(subjects)
+      .where(and(eq(subjects.id, id), canSeeSubject(userId)))
+      .limit(1);
+    if (!visible) throw ApiError.notFound('subjects.notFound');
   }
 }
