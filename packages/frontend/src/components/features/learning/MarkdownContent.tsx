@@ -36,7 +36,7 @@ export function MarkdownContent({ text }: MarkdownContentProps) {
   const { title, body } = splitTitleBody(text);
 
   return (
-    <div className="space-y-3">
+    <div className="learn-prose space-y-3">
       <div className="prose prose-lg dark:prose-invert max-w-none [&>*]:!my-0 [&>p]:text-xl [&>p]:font-bold [&>p]:leading-snug">
         <ReactMarkdown>{title}</ReactMarkdown>
       </div>

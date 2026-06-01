@@ -160,11 +160,25 @@
   background: var(--hl-bg);
 }
 
-.learn-markdown :not(pre) > code {
+/*
+ * Inline code (in the question and the answer) rendered as a subtle bordered chip.
+ * Scoped to the whole MarkdownContent root so it styles the bold title too; block code
+ * lives in <pre> and is excluded via :not(pre).
+ */
+.learn-prose :not(pre) > code {
   background: var(--color-muted);
-  padding: 0.15em 0.35em;
-  border-radius: 0.25rem;
+  border: 1px solid var(--color-border);
+  padding: 0.1em 0.4em;
+  border-radius: 0.375rem;
   font-size: 0.9em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* No typography plugin here, but guard against any backtick pseudo-quotes regardless. */
+.learn-prose :not(pre) > code::before,
+.learn-prose :not(pre) > code::after {
+  content: none;
 }
 
 .hljs-comment,
