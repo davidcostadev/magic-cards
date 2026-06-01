@@ -1,19 +1,19 @@
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Plus, BookOpen, Search, SlidersHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { SubjectCard } from "@/components/features/subjects/SubjectCard";
-import { CreateSubjectModal } from "@/components/features/subjects/CreateSubjectModal";
-import { ManageSubjectsModal } from "@/components/features/subjects/ManageSubjectsModal";
+import { BookOpen, Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   type Subject,
   useCreateSubject,
   useDeleteSubject,
   useSubjects,
   useUpdateSubject,
-} from "@/api/queries/subjects";
+} from '@/api/queries/subjects';
+import { CreateSubjectModal } from '@/components/features/subjects/CreateSubjectModal';
+import { ManageSubjectsModal } from '@/components/features/subjects/ManageSubjectsModal';
+import { SubjectCard } from '@/components/features/subjects/SubjectCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function SubjectsPage() {
   const { t } = useTranslation();
@@ -25,18 +25,22 @@ export function SubjectsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
 
   const filteredSubjects = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return subjects;
     return subjects.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) || (s.description ?? "").toLowerCase().includes(q)
+      (s) => s.title.toLowerCase().includes(q) || (s.description ?? '').toLowerCase().includes(q)
     );
   }, [subjects, query]);
 
-  const handleSave = (data: { title: string; description: string; color: string; icon: string }) => {
+  const handleSave = (data: {
+    title: string;
+    description: string;
+    color: string;
+    icon: string;
+  }) => {
     if (editingSubject) {
       updateSubject.mutate({ id: editingSubject.id, body: data });
     } else {
@@ -57,17 +61,22 @@ export function SubjectsPage() {
   return (
     <div className="p-5 md:p-7">
       <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold">{t("subjects.title")}</h1>
+        <h1 className="text-3xl font-bold">{t('subjects.title')}</h1>
         <div className="flex gap-2">
           {subjects.length > 0 && (
             <Button variant="outline" onClick={() => setManageOpen(true)}>
               <SlidersHorizontal className="mr-2 h-5 w-5" />
-              {t("subjects.manage")}
+              {t('subjects.manage')}
             </Button>
           )}
-          <Button onClick={() => { setEditingSubject(null); setModalOpen(true); }}>
+          <Button
+            onClick={() => {
+              setEditingSubject(null);
+              setModalOpen(true);
+            }}
+          >
             <Plus className="mr-2 h-5 w-5" />
-            {t("subjects.createSubject")}
+            {t('subjects.createSubject')}
           </Button>
         </div>
       </div>
@@ -79,14 +88,14 @@ export function SubjectsPage() {
           ))}
         </div>
       ) : isError ? (
-        <p className="py-20 text-center text-lg text-destructive">{t("errors.internal")}</p>
+        <p className="py-20 text-center text-lg text-destructive">{t('errors.internal')}</p>
       ) : subjects.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-5 py-20 text-center">
           <BookOpen className="h-16 w-16 text-muted-foreground" />
-          <p className="text-lg text-muted-foreground">{t("subjects.noSubjects")}</p>
+          <p className="text-lg text-muted-foreground">{t('subjects.noSubjects')}</p>
           <Button size="lg" onClick={() => setModalOpen(true)}>
             <Plus className="mr-2 h-5 w-5" />
-            {t("subjects.createSubject")}
+            {t('subjects.createSubject')}
           </Button>
         </div>
       ) : (
@@ -97,13 +106,13 @@ export function SubjectsPage() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("subjects.search")}
+              placeholder={t('subjects.search')}
               className="pl-11"
             />
           </div>
           {filteredSubjects.length === 0 ? (
             <p className="py-16 text-center text-lg text-muted-foreground">
-              {t("subjects.noResults")}
+              {t('subjects.noResults')}
             </p>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,5 +1,5 @@
-import { type HTMLAttributes, forwardRef } from "react";
-import { cn } from "@/utils/cn";
+import { forwardRef, type HTMLAttributes } from 'react';
+import { cn } from '@/utils/cn';
 
 interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
   value?: number;
@@ -16,7 +16,7 @@ const Progress = forwardRef<HTMLDivElement, ProgressProps>(
         aria-valuenow={value}
         aria-valuemin={0}
         aria-valuemax={max}
-        className={cn("relative h-5 w-full overflow-hidden rounded-full bg-secondary", className)}
+        className={cn('relative h-5 w-full overflow-hidden rounded-full bg-secondary', className)}
         {...props}
       >
         <div
@@ -27,6 +27,6 @@ const Progress = forwardRef<HTMLDivElement, ProgressProps>(
     );
   }
 );
-Progress.displayName = "Progress";
+Progress.displayName = 'Progress';
 
 export { Progress };

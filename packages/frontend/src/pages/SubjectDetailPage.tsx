@@ -1,18 +1,24 @@
-import { useState } from "react";
-import { useParams, Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { ArrowLeft, Plus, GraduationCap } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/utils/cn";
-import { CardList } from "@/components/features/cards/CardList";
-import { CardForm, type CardFormData } from "@/components/features/cards/CardForm";
-import { getSubjectIcon } from "@/components/features/subjects/subjectIcons";
-import { useSubject } from "@/api/queries/subjects";
-import { type Card, useCards, useCreateCard, useDeleteCard, useUpdateCard } from "@/api/queries/cards";
+import { Link, useParams } from '@tanstack/react-router';
+import { ArrowLeft, GraduationCap, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  type Card,
+  useCards,
+  useCreateCard,
+  useDeleteCard,
+  useUpdateCard,
+} from '@/api/queries/cards';
+import { useSubject } from '@/api/queries/subjects';
+import { CardForm, type CardFormData } from '@/components/features/cards/CardForm';
+import { CardList } from '@/components/features/cards/CardList';
+import { getSubjectIcon } from '@/components/features/subjects/subjectIcons';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/utils/cn';
 
 export function SubjectDetailPage() {
-  const { subjectId } = useParams({ from: "/subjects/$subjectId" });
+  const { subjectId } = useParams({ from: '/subjects/$subjectId' });
   const { t } = useTranslation();
   const { data: subject, isLoading: subjectLoading, isError } = useSubject(subjectId);
   const { data: cards = [] } = useCards(subjectId);
@@ -39,16 +45,16 @@ export function SubjectDetailPage() {
   if (isError || !subject) {
     return (
       <div className="p-5 text-center">
-        <p className="text-lg text-muted-foreground">{t("errors.notFound")}</p>
+        <p className="text-lg text-muted-foreground">{t('errors.notFound')}</p>
         <Link to="/subjects" className="mt-3 inline-block text-primary hover:underline">
-          {t("common.back")}
+          {t('common.back')}
         </Link>
       </div>
     );
   }
 
-  const Icon = getSubjectIcon(subject.icon ?? "code");
-  const color = subject.color ?? "#6366f1";
+  const Icon = getSubjectIcon(subject.icon ?? 'code');
+  const color = subject.color ?? '#6366f1';
 
   const handleSave = (data: CardFormData) => {
     if (editingCard) {
@@ -62,9 +68,12 @@ export function SubjectDetailPage() {
   return (
     <div className="p-5 md:p-7">
       <div className="mb-7">
-        <Link to="/subjects" className="inline-flex items-center gap-1.5 text-base text-muted-foreground hover:text-foreground mb-5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        <Link
+          to="/subjects"
+          className="inline-flex items-center gap-1.5 text-base text-muted-foreground hover:text-foreground mb-5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
           <ArrowLeft className="h-5 w-5" />
-          {t("common.back")}
+          {t('common.back')}
         </Link>
         <div className="flex items-center gap-4 mb-5">
           <div
@@ -76,7 +85,7 @@ export function SubjectDetailPage() {
           <div className="min-w-0">
             <h1 className="text-2xl font-bold truncate sm:text-3xl">{subject.title}</h1>
             <p className="text-sm text-muted-foreground line-clamp-2 sm:text-base">
-              {subject.description ?? ""}
+              {subject.description ?? ''}
             </p>
           </div>
         </div>
@@ -84,19 +93,22 @@ export function SubjectDetailPage() {
           <Button
             variant="outline"
             className="flex-1 sm:flex-none"
-            onClick={() => { setEditingCard(null); setFormOpen(true); }}
+            onClick={() => {
+              setEditingCard(null);
+              setFormOpen(true);
+            }}
           >
             <Plus className="mr-2 h-5 w-5" />
-            {t("cards.createCard")}
+            {t('cards.createCard')}
           </Button>
           {cards.length > 0 && (
             <Link
               to="/learn/$subjectId"
               params={{ subjectId }}
-              className={cn(buttonVariants(), "hidden sm:inline-flex")}
+              className={cn(buttonVariants(), 'hidden sm:inline-flex')}
             >
               <GraduationCap className="mr-2 h-5 w-5" />
-              {t("cards.startStudying")}
+              {t('cards.startStudying')}
             </Link>
           )}
         </div>
@@ -104,7 +116,10 @@ export function SubjectDetailPage() {
 
       <CardList
         cards={cards}
-        onEdit={(card) => { setEditingCard(card); setFormOpen(true); }}
+        onEdit={(card) => {
+          setEditingCard(card);
+          setFormOpen(true);
+        }}
         onDelete={(id) => deleteCard.mutate({ id, subjectId })}
       />
 
@@ -121,12 +136,12 @@ export function SubjectDetailPage() {
           to="/learn/$subjectId"
           params={{ subjectId }}
           className={cn(
-            buttonVariants({ size: "sm" }),
-            "fixed bottom-20 right-5 z-40 shadow-lg sm:hidden"
+            buttonVariants({ size: 'sm' }),
+            'fixed bottom-20 right-5 z-40 shadow-lg sm:hidden'
           )}
         >
           <GraduationCap className="mr-2 h-5 w-5" />
-          {t("cards.startStudying")}
+          {t('cards.startStudying')}
         </Link>
       )}
     </div>

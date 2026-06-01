@@ -1,5 +1,5 @@
-import { type ReactNode, type HTMLAttributes, forwardRef, useEffect, useRef } from "react";
-import { cn } from "@/utils/cn";
+import { forwardRef, type HTMLAttributes, type ReactNode, useEffect, useRef } from 'react';
+import { cn } from '@/utils/cn';
 
 interface DialogProps {
   open: boolean;
@@ -23,7 +23,7 @@ function Dialog({ open, onOpenChange, children, autoFocus = true }: DialogProps)
   useEffect(() => {
     if (!open) return;
     previouslyFocused.current = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
 
     const container = containerRef.current;
     const focusables = () => Array.from(container?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
@@ -36,11 +36,11 @@ function Dialog({ open, onOpenChange, children, autoFocus = true }: DialogProps)
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         onOpenChange(false);
         return;
       }
-      if (e.key !== "Tab") return;
+      if (e.key !== 'Tab') return;
       const items = focusables();
       if (items.length === 0) {
         e.preventDefault();
@@ -62,10 +62,10 @@ function Dialog({ open, onOpenChange, children, autoFocus = true }: DialogProps)
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.body.style.overflow = "";
-      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', handleKeyDown);
       previouslyFocused.current?.focus?.();
     };
   }, [open, onOpenChange, autoFocus]);
@@ -92,7 +92,7 @@ const DialogContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>
     <div
       ref={ref}
       className={cn(
-        "relative z-50 flex h-dvh w-full max-w-none flex-col overflow-y-auto rounded-none border-0 bg-background p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-lg animate-in fade-in sm:h-auto sm:max-h-[90dvh] sm:max-w-lg sm:rounded-2xl sm:border sm:p-8 sm:pb-8 sm:zoom-in-95",
+        'relative z-50 flex h-dvh w-full max-w-none flex-col overflow-y-auto rounded-none border-0 bg-background p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-lg animate-in fade-in sm:h-auto sm:max-h-[90dvh] sm:max-w-lg sm:rounded-2xl sm:border sm:p-8 sm:pb-8 sm:zoom-in-95',
         className
       )}
       onClick={(e) => e.stopPropagation()}
@@ -102,18 +102,27 @@ const DialogContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>
     </div>
   )
 );
-DialogContent.displayName = "DialogContent";
+DialogContent.displayName = 'DialogContent';
 
 function DialogHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col space-y-2 text-center sm:text-left", className)} {...props} />;
+  return (
+    <div className={cn('flex flex-col space-y-2 text-center sm:text-left', className)} {...props} />
+  );
 }
 
 function DialogTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn("text-xl font-bold leading-none tracking-tight", className)} {...props} />;
+  return (
+    <h2 className={cn('text-xl font-bold leading-none tracking-tight', className)} {...props} />
+  );
 }
 
 function DialogFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col-reverse gap-3 sm:flex-row sm:justify-end mt-6", className)} {...props} />;
+  return (
+    <div
+      className={cn('flex flex-col-reverse gap-3 sm:flex-row sm:justify-end mt-6', className)}
+      {...props}
+    />
+  );
 }
 
-export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter };
+export { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle };

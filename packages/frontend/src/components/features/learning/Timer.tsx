@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { cn } from "@/utils/cn";
+import { useEffect, useRef, useState } from 'react';
+import { cn } from '@/utils/cn';
 
 interface TimerProps {
   seconds: number;
@@ -43,15 +43,15 @@ export function Timer({ seconds, running, onTimeout, onTick }: TimerProps) {
     <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
       <div
         className={cn(
-          "h-full transition-all duration-100",
-          isCritical ? "bg-destructive" : isLow ? "bg-warning" : "bg-primary"
+          'h-full transition-all duration-100',
+          isCritical ? 'bg-destructive' : isLow ? 'bg-warning' : 'bg-primary'
         )}
         style={{ width: `${percentage}%` }}
       />
       <span
         className={cn(
-          "absolute right-0 -top-7 text-sm font-mono font-semibold",
-          isCritical ? "text-destructive" : isLow ? "text-warning" : "text-muted-foreground"
+          'absolute right-0 -top-7 text-sm font-mono font-semibold',
+          isCritical ? 'text-destructive' : isLow ? 'text-warning' : 'text-muted-foreground'
         )}
       >
         {Math.ceil(remaining)}s

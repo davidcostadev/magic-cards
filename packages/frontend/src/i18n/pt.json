@@ -23,7 +23,8 @@
     "internal": "Algo deu errado. Tente novamente.",
     "badRequest": "Não foi possível processar essa solicitação",
     "unauthorized": "Sua sessão expirou. Faça login novamente.",
-    "notFound": "Não encontramos o que você procurava"
+    "notFound": "Não encontramos o que você procurava",
+    "rateLimited": "Muitas tentativas. Aguarde um momento e tente novamente."
   },
   "nav": {
     "dashboard": "Painel",

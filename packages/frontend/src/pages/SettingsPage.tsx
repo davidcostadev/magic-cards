@@ -1,19 +1,19 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Check } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "@/context/AuthContext";
-import { useTheme } from "@/context/ThemeContext";
+import { Check } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { user, updatePreferences } = useAuth();
   const { theme, setTheme } = useTheme();
   const [dailyGoal, setDailyGoal] = useState(user?.dailyGoal ?? 20);
   const [saved, setSaved] = useState(false);
-  const cardLanguage = user?.cardLanguage ?? "all";
+  const cardLanguage = user?.cardLanguage ?? 'all';
 
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
@@ -24,7 +24,7 @@ export function SettingsPage() {
     updatePreferences({ cardLanguage: lang });
   };
 
-  const handleThemeChange = (newTheme: "light" | "dark") => {
+  const handleThemeChange = (newTheme: 'light' | 'dark') => {
     setTheme(newTheme);
     updatePreferences({ theme: newTheme });
   };
@@ -40,21 +40,21 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-7 p-5 md:p-7">
-      <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
+      <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t("settings.language")}</CardTitle>
+          <CardTitle className="text-lg">{t('settings.language')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             {[
-              { code: "en", label: t("settings.english") },
-              { code: "pt", label: t("settings.portuguese") },
+              { code: 'en', label: t('settings.english') },
+              { code: 'pt', label: t('settings.portuguese') },
             ].map(({ code, label }) => (
               <Button
                 key={code}
-                variant={i18n.language === code ? "default" : "outline"}
+                variant={i18n.language === code ? 'default' : 'outline'}
                 onClick={() => handleLanguageChange(code)}
                 className="flex-1"
                 size="lg"
@@ -68,19 +68,19 @@ export function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t("settings.cardLanguage")}</CardTitle>
-          <CardDescription>{t("settings.cardLanguageDescription")}</CardDescription>
+          <CardTitle className="text-lg">{t('settings.cardLanguage')}</CardTitle>
+          <CardDescription>{t('settings.cardLanguageDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {[
-              { code: "all", label: t("settings.allLanguages") },
-              { code: "en", label: t("settings.english") },
-              { code: "pt", label: t("settings.portuguese") },
+              { code: 'all', label: t('settings.allLanguages') },
+              { code: 'en', label: t('settings.english') },
+              { code: 'pt', label: t('settings.portuguese') },
             ].map(({ code, label }) => (
               <Button
                 key={code}
-                variant={cardLanguage === code ? "default" : "outline"}
+                variant={cardLanguage === code ? 'default' : 'outline'}
                 onClick={() => handleCardLanguageChange(code)}
                 className="w-full"
                 size="lg"
@@ -94,17 +94,17 @@ export function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t("settings.theme")}</CardTitle>
+          <CardTitle className="text-lg">{t('settings.theme')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             {[
-              { value: "light" as const, label: t("settings.lightMode") },
-              { value: "dark" as const, label: t("settings.darkMode") },
+              { value: 'light' as const, label: t('settings.lightMode') },
+              { value: 'dark' as const, label: t('settings.darkMode') },
             ].map(({ value, label }) => (
               <Button
                 key={value}
-                variant={theme === value ? "default" : "outline"}
+                variant={theme === value ? 'default' : 'outline'}
                 onClick={() => handleThemeChange(value)}
                 className="flex-1"
                 size="lg"
@@ -118,13 +118,13 @@ export function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t("settings.dailyGoal")}</CardTitle>
-          <CardDescription>{t("settings.dailyGoalDescription")}</CardDescription>
+          <CardTitle className="text-lg">{t('settings.dailyGoal')}</CardTitle>
+          <CardDescription>{t('settings.dailyGoalDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
             <Label htmlFor="dailyGoal" className="sr-only">
-              {t("settings.dailyGoal")}
+              {t('settings.dailyGoal')}
             </Label>
             <Input
               id="dailyGoal"
@@ -134,19 +134,21 @@ export function SettingsPage() {
               value={dailyGoal}
               onChange={(e) => setDailyGoal(Number(e.target.value))}
               aria-invalid={!dailyGoalValid}
-              aria-describedby={!dailyGoalValid ? "dailyGoal-error" : undefined}
+              aria-describedby={!dailyGoalValid ? 'dailyGoal-error' : undefined}
               className="w-28"
             />
             <Button onClick={handleDailyGoalSave} disabled={!dailyGoalValid}>
-              {t("common.save")}
+              {t('common.save')}
             </Button>
             {!dailyGoalValid && (
-              <span id="dailyGoal-error" className="text-sm text-destructive">1–100</span>
+              <span id="dailyGoal-error" className="text-sm text-destructive">
+                1–100
+              </span>
             )}
             {saved && (
               <span className="flex items-center gap-1.5 text-base text-success animate-[fadeIn_200ms_ease-in]">
                 <Check className="h-5 w-5" />
-                {t("settings.saved")}
+                {t('settings.saved')}
               </span>
             )}
           </div>

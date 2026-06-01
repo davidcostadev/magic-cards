@@ -1,9 +1,9 @@
-import createClient from "openapi-fetch";
-import type { paths } from "./schema";
+import createClient from 'openapi-fetch';
+import type { paths } from './schema';
 
-export const TOKEN_KEY = "auth_token";
+export const TOKEN_KEY = 'auth_token';
 
-const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 
 export const apiClient = createClient<paths>({ baseUrl });
 
@@ -11,7 +11,7 @@ export const apiClient = createClient<paths>({ baseUrl });
 apiClient.use({
   onRequest({ request }) {
     const token = localStorage.getItem(TOKEN_KEY);
-    if (token) request.headers.set("Authorization", `Bearer ${token}`);
+    if (token) request.headers.set('Authorization', `Bearer ${token}`);
     return request;
   },
 });
@@ -23,5 +23,5 @@ export interface ApiErrorBody {
 /** Extract the i18n error code from the Stripe-style error envelope. */
 export function errorCode(error: unknown): string {
   const code = (error as ApiErrorBody | undefined)?.error?.code;
-  return typeof code === "string" ? code : "errors.internal";
+  return typeof code === 'string' ? code : 'errors.internal';
 }

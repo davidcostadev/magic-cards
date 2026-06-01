@@ -1,10 +1,10 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { apiClient, errorCode, TOKEN_KEY } from "@/api/client";
-import type { User } from "@/mocks/types";
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { apiClient, errorCode, TOKEN_KEY } from '@/api/client';
+import type { User } from '@/mocks/types';
 
-const CARD_LANGUAGE_KEY = "cardLanguage";
+const CARD_LANGUAGE_KEY = 'cardLanguage';
 
-type Preferences = Partial<Pick<User, "language" | "cardLanguage" | "theme" | "dailyGoal">>;
+type Preferences = Partial<Pick<User, 'language' | 'cardLanguage' | 'theme' | 'dailyGoal'>>;
 
 interface AuthContextType {
   user: User | null;
@@ -31,7 +31,7 @@ type ApiUser = {
 
 /** `cardLanguage` is a frontend-only preference (which language cards display in). */
 function toUser(apiUser: ApiUser): User {
-  return { ...apiUser, cardLanguage: localStorage.getItem(CARD_LANGUAGE_KEY) ?? "all" };
+  return { ...apiUser, cardLanguage: localStorage.getItem(CARD_LANGUAGE_KEY) ?? 'all' };
 }
 
 /** Thrown by `login`/`signup` carrying the i18n error code from the API envelope. */
@@ -40,7 +40,7 @@ export class AuthError extends Error {
 
   constructor(code: string) {
     super(code);
-    this.name = "AuthError";
+    this.name = 'AuthError';
     this.code = code;
   }
 }
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     let active = true;
     void (async () => {
-      const { data, error } = await apiClient.GET("/v1/me");
+      const { data, error } = await apiClient.GET('/v1/me');
       if (!active) return;
       if (error || !data) clearSession();
       else {
@@ -88,13 +88,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { data, error } = await apiClient.POST("/v1/auth/login", { body: { email, password } });
+    const { data, error } = await apiClient.POST('/v1/auth/login', { body: { email, password } });
     if (error || !data) throw new AuthError(errorCode(error));
     applySession(data.token, data.user);
   };
 
   const signup = async (email: string, password: string, username: string) => {
-    const { data, error } = await apiClient.POST("/v1/auth/signup", {
+    const { data, error } = await apiClient.POST('/v1/auth/signup', {
       body: { email, password, username },
     });
     if (error || !data) throw new AuthError(errorCode(error));
@@ -104,13 +104,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => clearSession();
 
   const updatePreferences = (prefs: Preferences) => {
-    if (prefs.cardLanguage !== undefined) localStorage.setItem(CARD_LANGUAGE_KEY, prefs.cardLanguage);
+    if (prefs.cardLanguage !== undefined)
+      localStorage.setItem(CARD_LANGUAGE_KEY, prefs.cardLanguage);
     setUser((prev) => (prev ? { ...prev, ...prefs } : prev));
 
     const { language, theme, dailyGoal } = prefs;
     if (language !== undefined || theme !== undefined || dailyGoal !== undefined) {
-      void apiClient.PATCH("/v1/me", {
-        body: { language, theme: theme as "light" | "dark" | undefined, dailyGoal },
+      void apiClient.PATCH('/v1/me', {
+        body: { language, theme: theme as 'light' | 'dark' | undefined, dailyGoal },
       });
     }
   };
@@ -126,6 +127,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }

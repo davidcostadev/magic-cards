@@ -1,22 +1,22 @@
 import {
-  Code,
-  Database,
-  Component,
-  GitBranch,
+  Binary,
   Braces,
+  Code,
+  Code2,
+  Component,
+  Container,
+  Database,
+  GitBranch,
   Palette,
   Server,
-  Container,
-  Code2,
-  Binary,
-} from "lucide-react";
-import type { ElementType } from "react";
+} from 'lucide-react';
+import type { ElementType } from 'react';
 
 const subjectIconMap: Record<string, ElementType> = {
   code: Code,
   database: Database,
   component: Component,
-  "git-branch": GitBranch,
+  'git-branch': GitBranch,
   javascript: Braces,
   css: Palette,
   node: Server,

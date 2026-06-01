@@ -23,7 +23,8 @@
     "internal": "Something went wrong. Please try again.",
     "badRequest": "That request couldn't be processed",
     "unauthorized": "Your session has expired. Please log in again.",
-    "notFound": "We couldn't find what you were looking for"
+    "notFound": "We couldn't find what you were looking for",
+    "rateLimited": "Too many attempts. Please wait a moment and try again."
   },
   "nav": {
     "dashboard": "Dashboard",

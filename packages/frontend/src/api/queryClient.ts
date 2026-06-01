@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient } from '@tanstack/react-query';
 
 // Mutations never auto-retry, so a double-submit can't advance server state twice
 // (architecture §6). Forms additionally disable submit while pending.

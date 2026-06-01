@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
-import { Calendar } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface UpcomingReviewsProps {
   today: number;
@@ -12,9 +12,9 @@ export function UpcomingReviews({ today, tomorrow, thisWeek }: UpcomingReviewsPr
   const { t } = useTranslation();
 
   const items = [
-    { label: t("dashboard.today"), count: today },
-    { label: t("dashboard.tomorrow"), count: tomorrow },
-    { label: t("dashboard.thisWeek"), count: thisWeek },
+    { label: t('dashboard.today'), count: today },
+    { label: t('dashboard.tomorrow'), count: tomorrow },
+    { label: t('dashboard.thisWeek'), count: thisWeek },
   ];
 
   return (
@@ -22,7 +22,7 @@ export function UpcomingReviews({ today, tomorrow, thisWeek }: UpcomingReviewsPr
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2.5 text-lg">
           <Calendar className="h-6 w-6 text-primary" />
-          {t("dashboard.upcomingReviews")}
+          {t('dashboard.upcomingReviews')}
         </CardTitle>
       </CardHeader>
       <CardContent>

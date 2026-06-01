@@ -1,46 +1,56 @@
-import {
-  createRouter,
-  createRootRoute,
-  createRoute,
-  redirect,
-} from "@tanstack/react-router";
-import { AppLayout } from "./App";
-import { LoginPage } from "./pages/LoginPage";
-import { SignupPage } from "./pages/SignupPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { SubjectsPage } from "./pages/SubjectsPage";
-import { SubjectDetailPage } from "./pages/SubjectDetailPage";
-import { LearningSessionPage } from "./pages/LearningSessionPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { OnboardingPage } from "./pages/OnboardingPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
-import { isOnboarded } from "./context/PreferencesContext";
+import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router';
+import { lazy } from 'react';
+import { AppLayout } from './App';
+import { isOnboarded } from './context/PreferencesContext';
+import { LoginPage } from './pages/LoginPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { SignupPage } from './pages/SignupPage';
+
+// Code-split the authenticated pages so the initial (auth) bundle stays small.
+const DashboardPage = lazy(() =>
+  import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage }))
+);
+const SubjectsPage = lazy(() =>
+  import('./pages/SubjectsPage').then((m) => ({ default: m.SubjectsPage }))
+);
+const SubjectDetailPage = lazy(() =>
+  import('./pages/SubjectDetailPage').then((m) => ({ default: m.SubjectDetailPage }))
+);
+const LearningSessionPage = lazy(() =>
+  import('./pages/LearningSessionPage').then((m) => ({ default: m.LearningSessionPage }))
+);
+const SettingsPage = lazy(() =>
+  import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
+);
+const OnboardingPage = lazy(() =>
+  import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage }))
+);
 
 function isAuthenticated() {
-  return localStorage.getItem("auth_token") !== null;
+  return localStorage.getItem('auth_token') !== null;
 }
 
 function requireAuth() {
   if (!isAuthenticated()) {
-    throw redirect({ to: "/login" });
+    throw redirect({ to: '/login' });
   }
   if (!isOnboarded()) {
-    throw redirect({ to: "/onboarding" });
+    throw redirect({ to: '/onboarding' });
   }
 }
 
 function requireGuest() {
   if (isAuthenticated()) {
-    throw redirect({ to: "/dashboard" });
+    throw redirect({ to: '/dashboard' });
   }
 }
 
 function requireOnboardingPending() {
   if (!isAuthenticated()) {
-    throw redirect({ to: "/login" });
+    throw redirect({ to: '/login' });
   }
   if (isOnboarded()) {
-    throw redirect({ to: "/dashboard" });
+    throw redirect({ to: '/dashboard' });
   }
 }
 
@@ -51,71 +61,71 @@ const rootRoute = createRootRoute({
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/",
+  path: '/',
   beforeLoad: () => {
-    throw redirect({ to: isAuthenticated() ? "/dashboard" : "/login" });
+    throw redirect({ to: isAuthenticated() ? '/dashboard' : '/login' });
   },
 });
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/login",
+  path: '/login',
   beforeLoad: requireGuest,
   component: LoginPage,
 });
 
 const signupRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/signup",
+  path: '/signup',
   beforeLoad: requireGuest,
   component: SignupPage,
 });
 
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/dashboard",
+  path: '/dashboard',
   beforeLoad: requireAuth,
   component: DashboardPage,
 });
 
 const subjectsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/subjects",
+  path: '/subjects',
   beforeLoad: requireAuth,
   component: SubjectsPage,
 });
 
 const subjectDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/subjects/$subjectId",
+  path: '/subjects/$subjectId',
   beforeLoad: requireAuth,
   component: SubjectDetailPage,
 });
 
 const learnRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/learn",
+  path: '/learn',
   beforeLoad: requireAuth,
   component: LearningSessionPage,
 });
 
 const learnSubjectRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/learn/$subjectId",
+  path: '/learn/$subjectId',
   beforeLoad: requireAuth,
   component: LearningSessionPage,
 });
 
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/settings",
+  path: '/settings',
   beforeLoad: requireAuth,
   component: SettingsPage,
 });
 
 const onboardingRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/onboarding",
+  path: '/onboarding',
   beforeLoad: requireOnboardingPending,
   component: OnboardingPage,
 });
@@ -135,7 +145,7 @@ const routeTree = rootRoute.addChildren([
 
 export const router = createRouter({ routeTree });
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;
   }

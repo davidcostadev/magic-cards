@@ -1,14 +1,14 @@
-import { Link, useLocation } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { LayoutDashboard, BookOpen, GraduationCap, Settings } from "lucide-react";
-import { cn } from "@/utils/cn";
-import { useLearningSessions } from "@/context/LearningContext";
+import { Link, useLocation } from '@tanstack/react-router';
+import { BookOpen, GraduationCap, LayoutDashboard, Settings } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useLearningSessions } from '@/context/LearningContext';
+import { cn } from '@/utils/cn';
 
 const navItems = [
-  { path: "/dashboard" as const, icon: LayoutDashboard, labelKey: "nav.dashboard" },
-  { path: "/subjects" as const, icon: BookOpen, labelKey: "nav.subjects" },
-  { path: "/learn" as const, icon: GraduationCap, labelKey: "nav.learn" },
-  { path: "/settings" as const, icon: Settings, labelKey: "nav.settings" },
+  { path: '/dashboard' as const, icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+  { path: '/subjects' as const, icon: BookOpen, labelKey: 'nav.subjects' },
+  { path: '/learn' as const, icon: GraduationCap, labelKey: 'nav.learn' },
+  { path: '/settings' as const, icon: Settings, labelKey: 'nav.settings' },
 ];
 
 export function Sidebar() {
@@ -28,10 +28,10 @@ export function Sidebar() {
               key={path}
               to={path}
               className={cn(
-                "flex items-center gap-3.5 rounded-xl px-4 py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                'flex items-center gap-3.5 rounded-xl px-4 py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               )}
             >
               <Icon className="h-6 w-6" />

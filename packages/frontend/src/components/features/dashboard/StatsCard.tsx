@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import type { ReactNode } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface StatsCardProps {
   icon: ReactNode;

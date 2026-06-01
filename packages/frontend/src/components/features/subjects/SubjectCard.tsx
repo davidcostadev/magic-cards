@@ -1,13 +1,13 @@
-import { Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { MoreVertical, Pencil, Trash2, GraduationCap } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/utils/cn";
-import { getSubjectIcon } from "@/components/features/subjects/subjectIcons";
-import type { Subject } from "@/api/queries/subjects";
-import { useState, useRef, useEffect } from "react";
+import { Link } from '@tanstack/react-router';
+import { GraduationCap, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { Subject } from '@/api/queries/subjects';
+import { getSubjectIcon } from '@/components/features/subjects/subjectIcons';
+import { Badge } from '@/components/ui/badge';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { cn } from '@/utils/cn';
 
 interface SubjectCardProps {
   subject: Subject;
@@ -16,12 +16,12 @@ interface SubjectCardProps {
   onDelete: (id: string) => void;
 }
 
-const DEFAULT_COLOR = "#6366f1";
+const DEFAULT_COLOR = '#6366f1';
 
 export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCardProps) {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const Icon = getSubjectIcon(subject.icon ?? "code");
+  const Icon = getSubjectIcon(subject.icon ?? 'code');
   const color = subject.color ?? DEFAULT_COLOR;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstItemRef = useRef<HTMLButtonElement>(null);
@@ -43,7 +43,7 @@ export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCar
             ref={triggerRef}
             variant="ghost"
             size="icon"
-            aria-label={t("common.options")}
+            aria-label={t('common.options')}
             aria-haspopup="true"
             aria-expanded={menuOpen}
             className="h-10 w-10 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
@@ -56,26 +56,36 @@ export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCar
               <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => closeMenu()} />
               <div
                 role="menu"
-                aria-label={t("common.options")}
+                aria-label={t('common.options')}
                 className="absolute right-0 z-20 mt-1 w-44 rounded-xl border bg-popover p-1.5 shadow-md"
-                onKeyDown={(e) => { if (e.key === "Escape") closeMenu(true); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') closeMenu(true);
+                }}
               >
                 <button
+                  type="button"
                   ref={firstItemRef}
                   role="menuitem"
                   className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-base transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-                  onClick={() => { onEdit(subject); closeMenu(); }}
+                  onClick={() => {
+                    onEdit(subject);
+                    closeMenu();
+                  }}
                 >
                   <Pencil className="h-5 w-5" />
-                  {t("common.edit")}
+                  {t('common.edit')}
                 </button>
                 <button
+                  type="button"
                   role="menuitem"
                   className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-base text-destructive transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-                  onClick={() => { onDelete(subject.id); closeMenu(); }}
+                  onClick={() => {
+                    onDelete(subject.id);
+                    closeMenu();
+                  }}
                 >
                   <Trash2 className="h-5 w-5" />
-                  {t("common.delete")}
+                  {t('common.delete')}
                 </button>
               </div>
             </>
@@ -98,13 +108,13 @@ export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCar
             <div className="min-w-0 flex-1">
               <h3 className="text-base font-bold truncate">{subject.title}</h3>
               <Badge variant="secondary" className="mt-1">
-                {t("subjects.cardCount", { count: cardCount })}
+                {t('subjects.cardCount', { count: cardCount })}
               </Badge>
             </div>
           </div>
         </CardHeader>
         <CardContent className="px-5 pb-4 pt-0">
-          <p className="text-sm text-muted-foreground line-clamp-2">{subject.description ?? ""}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">{subject.description ?? ''}</p>
         </CardContent>
       </Link>
       {cardCount > 0 && (
@@ -112,10 +122,10 @@ export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCar
           <Link
             to="/learn/$subjectId"
             params={{ subjectId: subject.id }}
-            className={cn(buttonVariants({ size: "sm" }), "w-full")}
+            className={cn(buttonVariants({ size: 'sm' }), 'w-full')}
           >
             <GraduationCap className="mr-2 h-5 w-5" />
-            {t("cards.startStudying")}
+            {t('cards.startStudying')}
           </Link>
         </div>
       )}

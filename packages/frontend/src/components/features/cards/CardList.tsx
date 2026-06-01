@@ -1,9 +1,9 @@
-import { useTranslation } from "react-i18next";
-import { Pencil, Trash2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import type { Card as CardType } from "@/api/queries/cards";
+import { Pencil, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { Card as CardType } from '@/api/queries/cards';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface CardListProps {
   cards: CardType[];
@@ -15,11 +15,7 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
   const { t } = useTranslation();
 
   if (cards.length === 0) {
-    return (
-      <p className="py-10 text-center text-lg text-muted-foreground">
-        {t("cards.noCards")}
-      </p>
-    );
+    return <p className="py-10 text-center text-lg text-muted-foreground">{t('cards.noCards')}</p>;
   }
 
   return (
@@ -31,7 +27,7 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
                   <p className="text-base font-semibold line-clamp-2">
-                    {card.question.split("\n")[0].replace(/[#`*]/g, "")}
+                    {card.question.split('\n')[0].replace(/[#`*]/g, '')}
                   </p>
                 </div>
                 {card.tags.length > 0 && (
@@ -45,7 +41,7 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
                 )}
                 {card.hints.length > 0 && (
                   <p className="mt-1.5 text-sm text-muted-foreground">
-                    {t("cards.hintCount", { count: card.hints.length })}
+                    {t('cards.hintCount', { count: card.hints.length })}
                   </p>
                 )}
               </div>
@@ -53,7 +49,7 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={t("common.edit")}
+                  aria-label={t('common.edit')}
                   className="h-10 w-10"
                   onClick={() => onEdit(card)}
                 >
@@ -62,7 +58,7 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={t("common.delete")}
+                  aria-label={t('common.delete')}
                   className="h-10 w-10 text-destructive"
                   onClick={() => onDelete(card.id)}
                 >

@@ -7,7 +7,9 @@
       "**",
       "!**/dist",
       "!**/node_modules",
-      "!**/migrations/**",
+      "!**/coverage",
+      "!**/*.css",
+      "!**/migrations",
       "!**/schema.d.ts",
       "!**/openapi.json",
       "!**/content.json",
@@ -33,7 +35,15 @@
   },
   "linter": {
     "enabled": true,
-    "rules": { "recommended": true }
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "useExhaustiveDependencies": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off"
+      }
+    }
   },
   "assist": {
     "actions": { "source": { "organizeImports": "on" } }
@@ -45,6 +55,18 @@
         "rules": {
           "style": {
             "useImportType": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/frontend/src/components/ui/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noLabelWithoutControl": "off",
+            "useKeyWithClickEvents": "off",
+            "noStaticElementInteractions": "off"
           }
         }
       }

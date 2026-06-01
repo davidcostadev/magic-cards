@@ -1,22 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/api/client";
-import type { components } from "@/api/schema";
-import { subjectKeys } from "./subjects";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/api/client';
+import type { components } from '@/api/schema';
+import { subjectKeys } from './subjects';
 
-export type Card = components["schemas"]["CardResponseDto"];
-export type CreateCardInput = components["schemas"]["CreateCardDto"];
-export type UpdateCardInput = components["schemas"]["UpdateCardDto"];
+export type Card = components['schemas']['CardResponseDto'];
+export type CreateCardInput = components['schemas']['CreateCardDto'];
+export type UpdateCardInput = components['schemas']['UpdateCardDto'];
 
 export const cardKeys = {
-  all: ["cards"] as const,
-  list: (subjectId: string) => [...cardKeys.all, "list", subjectId] as const,
+  all: ['cards'] as const,
+  list: (subjectId: string) => [...cardKeys.all, 'list', subjectId] as const,
 };
 
 export function useCards(subjectId: string) {
   return useQuery({
     queryKey: cardKeys.list(subjectId),
     queryFn: async () => {
-      const { data, error } = await apiClient.GET("/v1/cards", {
+      const { data, error } = await apiClient.GET('/v1/cards', {
         params: { query: { subject: subjectId } },
       });
       if (error || !data) throw error;
@@ -38,7 +38,7 @@ export function useCreateCard() {
   const invalidate = useCardInvalidation();
   return useMutation({
     mutationFn: async (body: CreateCardInput) => {
-      const { data, error } = await apiClient.POST("/v1/cards", { body });
+      const { data, error } = await apiClient.POST('/v1/cards', { body });
       if (error || !data) throw error;
       return data;
     },
@@ -50,7 +50,7 @@ export function useUpdateCard() {
   const invalidate = useCardInvalidation();
   return useMutation({
     mutationFn: async ({ id, body }: { id: string; body: UpdateCardInput }) => {
-      const { data, error } = await apiClient.PATCH("/v1/cards/{id}", {
+      const { data, error } = await apiClient.PATCH('/v1/cards/{id}', {
         params: { path: { id } },
         body,
       });
@@ -65,7 +65,7 @@ export function useDeleteCard() {
   const invalidate = useCardInvalidation();
   return useMutation({
     mutationFn: async ({ id }: { id: string; subjectId: string }) => {
-      const { error } = await apiClient.DELETE("/v1/cards/{id}", {
+      const { error } = await apiClient.DELETE('/v1/cards/{id}', {
         params: { path: { id } },
       });
       if (error) throw error;

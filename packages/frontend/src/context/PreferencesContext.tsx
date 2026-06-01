@@ -1,10 +1,10 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, type ReactNode, useContext, useState } from 'react';
 
-const ONBOARDED_KEY = "onboarded";
-const SUBJECTS_KEY = "selectedSubjects";
+const ONBOARDED_KEY = 'onboarded';
+const SUBJECTS_KEY = 'selectedSubjects';
 
 export function isOnboarded() {
-  return localStorage.getItem(ONBOARDED_KEY) === "true";
+  return localStorage.getItem(ONBOARDED_KEY) === 'true';
 }
 
 function readSelectedSubjects(): string[] | null {
@@ -46,7 +46,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   const completeOnboarding = (subjectIds: string[]) => {
     persist(subjectIds);
-    localStorage.setItem(ONBOARDED_KEY, "true");
+    localStorage.setItem(ONBOARDED_KEY, 'true');
     setOnboarded(true);
   };
 
@@ -80,6 +80,6 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
 export function usePreferences() {
   const ctx = useContext(PreferencesContext);
-  if (!ctx) throw new Error("usePreferences must be used within PreferencesProvider");
+  if (!ctx) throw new Error('usePreferences must be used within PreferencesProvider');
   return ctx;
 }

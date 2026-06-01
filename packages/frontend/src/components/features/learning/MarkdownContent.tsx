@@ -1,6 +1,6 @@
-import ReactMarkdown from "react-markdown";
-import rehypeHighlight from "rehype-highlight";
-import { Card } from "@/components/ui/card";
+import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
+import { Card } from '@/components/ui/card';
 
 interface MarkdownContentProps {
   text: string;
@@ -8,8 +8,8 @@ interface MarkdownContentProps {
 
 function splitTitleBody(text: string): { title: string; body: string } {
   const trimmed = text.trim();
-  const codeBlockIndex = trimmed.indexOf("```");
-  const doubleNewline = trimmed.indexOf("\n\n");
+  const codeBlockIndex = trimmed.indexOf('```');
+  const doubleNewline = trimmed.indexOf('\n\n');
 
   let splitAt = -1;
   if (codeBlockIndex >= 0 && doubleNewline >= 0) {
@@ -21,10 +21,13 @@ function splitTitleBody(text: string): { title: string; body: string } {
   }
 
   if (splitAt <= 0) {
-    return { title: trimmed.replace(/^#+\s*/, ""), body: "" };
+    return { title: trimmed.replace(/^#+\s*/, ''), body: '' };
   }
 
-  const title = trimmed.slice(0, splitAt).trim().replace(/^#+\s*/, "");
+  const title = trimmed
+    .slice(0, splitAt)
+    .trim()
+    .replace(/^#+\s*/, '');
   const body = trimmed.slice(splitAt).trim();
   return { title, body };
 }
@@ -40,9 +43,7 @@ export function MarkdownContent({ text }: MarkdownContentProps) {
       {body && (
         <Card className="overflow-hidden">
           <div className="learn-markdown prose prose-lg dark:prose-invert max-w-none">
-            <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
-              {body}
-            </ReactMarkdown>
+            <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{body}</ReactMarkdown>
           </div>
         </Card>
       )}

@@ -21,7 +21,7 @@ export interface Subject {
   updatedAt: string;
 }
 
-export type CardType = "open" | "quiz" | "type-answer" | "match";
+export type CardType = 'open' | 'quiz' | 'type-answer' | 'match';
 
 export interface Choice {
   id: string;
@@ -50,7 +50,7 @@ export interface Card {
   updatedAt: string;
 }
 
-export type CardStatus = "new" | "learning" | "reviewing" | "mastered";
+export type CardStatus = 'new' | 'learning' | 'reviewing' | 'mastered';
 
 export interface CardProgress {
   id: string;
