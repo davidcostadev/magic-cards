@@ -13,8 +13,12 @@ import type {
   UpdateSubjectDto,
 } from './dto/subject.dto';
 
-// count(*) is bigint (returned as a string by pg) — cast to int so it comes back as a number.
-const cardCountSql = sql<number>`(select count(*)::int from ${cards} where ${cards.subjectId} = ${subjects.id})`;
+// Counted via a LEFT JOIN + GROUP BY rather than a correlated subquery: in drizzle's
+// single-table .select() builder, a subquery's column refs render unqualified, so a bare
+// `id` binds to cards.id inside the subquery (not subjects.id) and the count is always 0.
+// count(cards.id) over the join is 0 when a subject has no cards (the LEFT side is NULL).
+// count(*) is bigint (string in pg) — cast to int so it comes back as a number.
+const cardCountSql = sql<number>`count(${cards.id})::int`;
 
 @Injectable()
 export class SubjectsService {
@@ -31,7 +35,9 @@ export class SubjectsService {
     const rows = await this.db
       .select({ ...getTableColumns(subjects), cardCount: cardCountSql })
       .from(subjects)
+      .leftJoin(cards, eq(cards.subjectId, subjects.id))
       .where(and(canSeeSubject(userId), cursorWhere(subjects.id, query)))
+      .groupBy(subjects.id)
       .orderBy(desc(subjects.id))
       .limit(query.limit + 1);
     return { rows, limit: query.limit };
@@ -49,7 +55,9 @@ export class SubjectsService {
     const [subject] = await this.db
       .select({ ...getTableColumns(subjects), cardCount: cardCountSql })
       .from(subjects)
+      .leftJoin(cards, eq(cards.subjectId, subjects.id))
       .where(and(eq(subjects.id, id), canSeeSubject(userId)))
+      .groupBy(subjects.id)
       .limit(1);
     if (!subject) throw ApiError.notFound('subjects.notFound');
     return subject;

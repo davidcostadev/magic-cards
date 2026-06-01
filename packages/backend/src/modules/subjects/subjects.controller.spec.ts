@@ -38,6 +38,30 @@ describe('Subjects CRUD', () => {
     expect(res.body.id).toEqual(expect.any(String));
   });
 
+  it('reports cardCount once cards exist (single + list)', async () => {
+    const subject = await auth(
+      request(app.getHttpServer()).post('/v1/subjects').send({ title: 'Counted' })
+    );
+    const id = subject.body.id;
+    await auth(
+      request(app.getHttpServer())
+        .post('/v1/cards')
+        .send({ subjectId: id, question: 'q1', answer: 'a1' })
+    );
+    await auth(
+      request(app.getHttpServer())
+        .post('/v1/cards')
+        .send({ subjectId: id, question: 'q2', answer: 'a2' })
+    );
+
+    const single = await auth(request(app.getHttpServer()).get(`/v1/subjects/${id}`));
+    expect(single.body.cardCount).toBe(2);
+
+    const list = await auth(request(app.getHttpServer()).get('/v1/subjects'));
+    const listed = list.body.data.find((s: { id: string }) => s.id === id);
+    expect(listed.cardCount).toBe(2);
+  });
+
   it('lists the user subjects in the Stripe list envelope', async () => {
     await auth(request(app.getHttpServer()).post('/v1/subjects').send({ title: 'A' }));
     await auth(request(app.getHttpServer()).post('/v1/subjects').send({ title: 'B' }));
