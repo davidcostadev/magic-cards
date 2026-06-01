@@ -19,6 +19,9 @@ export async function createApp(): Promise<NestFastifyApplication> {
       .split(',')
       .map((origin) => origin.trim()),
     credentials: true,
+    // @fastify/cors defaults to GET,HEAD,POST — without this, browser preflight for
+    // PATCH/PUT/DELETE (e.g. editing or deleting a card) is rejected cross-origin.
+    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   });
   return app;
 }
