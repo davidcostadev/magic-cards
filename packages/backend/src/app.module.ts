@@ -7,11 +7,19 @@ import { ListInterceptor } from './common/interceptors/list.interceptor';
 import { DatabaseModule } from './db/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CardsModule } from './modules/cards/cards.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, SubjectsModule, CardsModule, ReviewsModule],
+  imports: [
+    DatabaseModule,
+    AuthModule,
+    SubjectsModule,
+    CardsModule,
+    ReviewsModule,
+    DashboardModule,
+  ],
   providers: [
     // Validation first, then the global cross-cutting Stripe concerns.
     { provide: APP_PIPE, useClass: ZodValidationPipe },

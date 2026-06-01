@@ -180,6 +180,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/dashboard/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DashboardController_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dashboard/weak_cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DashboardController_weakCards"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dashboard/upcoming": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DashboardController_upcoming"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -353,6 +401,37 @@ export interface components {
             status: "new" | "learning" | "reviewing" | "mastered";
             createdAt: string;
             updatedAt: string;
+        };
+        DashboardStatsDto: {
+            reviewedToday: number;
+            dailyGoal: number;
+            streak: number;
+            accuracy7d: number;
+            accuracy30d: number;
+            cardsByStatus: {
+                new: number;
+                learning: number;
+                reviewing: number;
+                mastered: number;
+            };
+        };
+        WeakCardListDto: {
+            /** @constant */
+            object: "list";
+            url: string;
+            has_more: boolean;
+            data: {
+                id: string;
+                question: string;
+                easeFactor: number;
+                subjectId: string;
+                subjectTitle: string;
+            }[];
+        };
+        UpcomingDto: {
+            today: number;
+            tomorrow: number;
+            thisWeek: number;
         };
     };
     responses: never;
@@ -756,6 +835,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardProgressResponseDto"];
+                };
+            };
+        };
+    };
+    DashboardController_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardStatsDto"];
+                };
+            };
+        };
+    };
+    DashboardController_weakCards: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeakCardListDto"];
+                };
+            };
+        };
+    };
+    DashboardController_upcoming: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpcomingDto"];
                 };
             };
         };

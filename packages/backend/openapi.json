@@ -658,6 +658,96 @@
           "reviews"
         ]
       }
+    },
+    "/v1/dashboard/stats": {
+      "get": {
+        "operationId": "DashboardController_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardStatsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/v1/dashboard/weak_cards": {
+      "get": {
+        "operationId": "DashboardController_weakCards",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeakCardListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/v1/dashboard/upcoming": {
+      "get": {
+        "operationId": "DashboardController_upcoming",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpcomingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "dashboard"
+        ]
+      }
     }
   },
   "info": {
@@ -1438,6 +1528,127 @@
           "status",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "DashboardStatsDto": {
+        "type": "object",
+        "properties": {
+          "reviewedToday": {
+            "type": "number"
+          },
+          "dailyGoal": {
+            "type": "number"
+          },
+          "streak": {
+            "type": "number"
+          },
+          "accuracy7d": {
+            "type": "number"
+          },
+          "accuracy30d": {
+            "type": "number"
+          },
+          "cardsByStatus": {
+            "type": "object",
+            "properties": {
+              "new": {
+                "type": "number"
+              },
+              "learning": {
+                "type": "number"
+              },
+              "reviewing": {
+                "type": "number"
+              },
+              "mastered": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "new",
+              "learning",
+              "reviewing",
+              "mastered"
+            ]
+          }
+        },
+        "required": [
+          "reviewedToday",
+          "dailyGoal",
+          "streak",
+          "accuracy7d",
+          "accuracy30d",
+          "cardsByStatus"
+        ]
+      },
+      "WeakCardListDto": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "list"
+          },
+          "url": {
+            "type": "string"
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "question": {
+                  "type": "string"
+                },
+                "easeFactor": {
+                  "type": "number"
+                },
+                "subjectId": {
+                  "type": "string"
+                },
+                "subjectTitle": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "question",
+                "easeFactor",
+                "subjectId",
+                "subjectTitle"
+              ]
+            }
+          }
+        },
+        "required": [
+          "object",
+          "url",
+          "has_more",
+          "data"
+        ]
+      },
+      "UpcomingDto": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "number"
+          },
+          "tomorrow": {
+            "type": "number"
+          },
+          "thisWeek": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "today",
+          "tomorrow",
+          "thisWeek"
         ]
       }
     }
