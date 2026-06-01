@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { uuidv7 } from 'uuidv7';
 
 /**
@@ -25,31 +25,39 @@ export const users = sqliteTable('users', {
   updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
 });
 
-export const subjects = sqliteTable('subjects', {
-  id: primaryId(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  title: text('title').notNull(),
-  description: text('description'),
-  color: text('color'),
-  icon: text('icon'),
-  createdAt: text('created_at').notNull().$defaultFn(isoNow),
-  updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
-});
+export const subjects = sqliteTable(
+  'subjects',
+  {
+    id: primaryId(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    color: text('color'),
+    icon: text('icon'),
+    createdAt: text('created_at').notNull().$defaultFn(isoNow),
+    updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
+  },
+  (table) => [index('subjects_user_idx').on(table.userId)]
+);
 
-export const cards = sqliteTable('cards', {
-  id: primaryId(),
-  subjectId: text('subject_id')
-    .notNull()
-    .references(() => subjects.id, { onDelete: 'cascade' }),
-  question: text('question').notNull(),
-  answer: text('answer').notNull(),
-  hints: text('hints', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
-  tags: text('tags', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
-  createdAt: text('created_at').notNull().$defaultFn(isoNow),
-  updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
-});
+export const cards = sqliteTable(
+  'cards',
+  {
+    id: primaryId(),
+    subjectId: text('subject_id')
+      .notNull()
+      .references(() => subjects.id, { onDelete: 'cascade' }),
+    question: text('question').notNull(),
+    answer: text('answer').notNull(),
+    hints: text('hints', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
+    tags: text('tags', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
+    createdAt: text('created_at').notNull().$defaultFn(isoNow),
+    updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
+  },
+  (table) => [index('cards_subject_idx').on(table.subjectId)]
+);
 
 export const cardProgress = sqliteTable(
   'card_progress',
@@ -74,25 +82,32 @@ export const cardProgress = sqliteTable(
     createdAt: text('created_at').notNull().$defaultFn(isoNow),
     updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
   },
-  (table) => [uniqueIndex('card_progress_user_card_unique').on(table.userId, table.cardId)]
+  (table) => [
+    uniqueIndex('card_progress_user_card_unique').on(table.userId, table.cardId),
+    index('card_progress_user_next_idx').on(table.userId, table.nextReviewDate),
+  ]
 );
 
-export const reviewHistory = sqliteTable('review_history', {
-  id: primaryId(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  cardId: text('card_id')
-    .notNull()
-    .references(() => cards.id, { onDelete: 'cascade' }),
-  subjectId: text('subject_id')
-    .notNull()
-    .references(() => subjects.id, { onDelete: 'cascade' }),
-  quality: integer('quality').notNull(),
-  reviewedAt: text('reviewed_at').notNull().$defaultFn(isoNow),
-  timeSpent: integer('time_spent').notNull(),
-  wasHintUsed: integer('was_hint_used', { mode: 'boolean' }).notNull().default(false),
-});
+export const reviewHistory = sqliteTable(
+  'review_history',
+  {
+    id: primaryId(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    cardId: text('card_id')
+      .notNull()
+      .references(() => cards.id, { onDelete: 'cascade' }),
+    subjectId: text('subject_id')
+      .notNull()
+      .references(() => subjects.id, { onDelete: 'cascade' }),
+    quality: integer('quality').notNull(),
+    reviewedAt: text('reviewed_at').notNull().$defaultFn(isoNow),
+    timeSpent: integer('time_spent').notNull(),
+    wasHintUsed: integer('was_hint_used', { mode: 'boolean' }).notNull().default(false),
+  },
+  (table) => [index('review_history_user_reviewed_idx').on(table.userId, table.reviewedAt)]
+);
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;

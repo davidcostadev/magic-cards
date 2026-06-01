@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -13,6 +14,8 @@ import { SubjectsModule } from './modules/subjects/subjects.module';
 
 @Module({
   imports: [
+    // Default rate limit: 300 requests / minute / IP (auth endpoints are stricter).
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     DatabaseModule,
     AuthModule,
     SubjectsModule,
@@ -25,6 +28,8 @@ import { SubjectsModule } from './modules/subjects/subjects.module';
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ListInterceptor },
+    // Rate limit before authenticating so public endpoints are protected too.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })

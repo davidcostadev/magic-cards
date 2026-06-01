@@ -20,6 +20,7 @@ const DEFAULT_CODES: Record<number, string> = {
   [HttpStatus.BAD_REQUEST]: 'errors.badRequest',
   [HttpStatus.UNAUTHORIZED]: 'errors.unauthorized',
   [HttpStatus.NOT_FOUND]: 'errors.notFound',
+  [HttpStatus.TOO_MANY_REQUESTS]: 'errors.rateLimited',
 };
 
 /**

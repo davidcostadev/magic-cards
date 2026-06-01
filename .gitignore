@@ -16,3 +16,6 @@ data/
 test-results/
 playwright-report/
 e2e/.last-run.json
+
+# coverage
+coverage/

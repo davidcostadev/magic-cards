@@ -1,5 +1,6 @@
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { AppModule } from '../../app.module';
@@ -21,6 +22,8 @@ beforeAll(async () => {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(DRIZZLE)
     .useValue(db)
+    .overrideGuard(ThrottlerGuard)
+    .useValue({ canActivate: () => true })
     .compile();
 
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());

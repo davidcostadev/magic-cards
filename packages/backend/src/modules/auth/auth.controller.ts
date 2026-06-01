@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Inject, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { eq } from 'drizzle-orm';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
@@ -29,6 +30,7 @@ export class AuthController {
   ) {}
 
   @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @Post('auth/signup')
   @HttpCode(201)
   @ApiCreatedResponse({ type: AuthResponseDto })
@@ -48,6 +50,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @Post('auth/login')
   @HttpCode(200)
   @ApiOkResponse({ type: AuthResponseDto })

@@ -1,5 +1,6 @@
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import request from 'supertest';
 import { AppModule } from '../app.module';
 import { createDatabase, DRIZZLE, type DrizzleDB, runMigrations } from '../db/client';
@@ -18,6 +19,9 @@ export async function createTestApp(): Promise<TestApp> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(DRIZZLE)
     .useValue(db)
+    // Don't rate-limit the test/integration suite.
+    .overrideGuard(ThrottlerGuard)
+    .useValue({ canActivate: () => true })
     .compile();
 
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
