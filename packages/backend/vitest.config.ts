@@ -3,16 +3,20 @@ import { defineConfig } from 'vitest/config';
 
 // SWC transforms TS with decorator metadata so NestJS DI works under Vitest.
 export default defineConfig({
+  // The SWC plugin handles transformation; disable Vite's built-in Oxc transform so it
+  // doesn't run twice (Vitest 4: `esbuild: false` no longer has this effect — use `oxc`).
+  oxc: false,
   test: {
     globals: true,
     environment: 'node',
     include: ['src/**/*.{test,spec}.ts'],
     root: './',
     // PGlite (WASM Postgres) boots a fresh instance per suite; give hooks headroom
-    // and cap fork concurrency so parallel suites don't thrash under load.
+    // and cap worker concurrency so parallel suites don't thrash under load
+    // (Vitest 4: poolOptions.forks.maxForks → top-level maxWorkers).
     hookTimeout: 30_000,
     testTimeout: 20_000,
-    poolOptions: { forks: { maxForks: 4 } },
+    maxWorkers: 4,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
@@ -20,6 +24,7 @@ export default defineConfig({
         'src/**/*.{test,spec}.ts',
         'src/**/dto/**',
         'src/test-support/**',
+        'src/scripts/**',
         'src/main.ts',
         'src/openapi.ts',
         'src/app.factory.ts',
