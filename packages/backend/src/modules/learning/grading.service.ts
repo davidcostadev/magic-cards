@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { CardChoice, MatchPair } from '../../db/schema';
+import { MATCH_DISPLAY_LIMIT } from '../cards/card-mapper';
 
 /** SM-2 quality assigned to auto-graded cards. Correct = passing/neutral ease; */
 /** incorrect = a lapse (<3 resets the interval in SM-2). Hint cap (≤3) is applied later. */
@@ -42,12 +43,16 @@ export class GradingService {
     };
   }
 
-  /** All-or-nothing: every pair must match (order-independent), with no missing/extra pairs. */
+  /**
+   * All-or-nothing over the same first-N pairs the learner was shown (see MATCH_DISPLAY_LIMIT):
+   * every shown pair must match (order-independent), with no missing/extra pairs.
+   */
   gradeMatch(pairs: MatchPair[], submitted: MatchPair[]): MatchGrade {
+    const shown = pairs.slice(0, MATCH_DISPLAY_LIMIT);
     const answer = new Map(submitted.map((p) => [p.left, p.right]));
     const correct =
-      submitted.length === pairs.length && pairs.every((p) => answer.get(p.left) === p.right);
-    return { correct, correctPairs: pairs };
+      submitted.length === shown.length && shown.every((p) => answer.get(p.left) === p.right);
+    return { correct, correctPairs: shown };
   }
 
   qualityForCorrectness(correct: boolean): number {

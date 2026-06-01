@@ -35,6 +35,9 @@ export function MatchReview({
   const answered = grade !== null;
   const allAssigned = lefts.length > 0 && lefts.every((l) => assignments[l]);
 
+  // After grading, the correct right for each left (to colour tiles green/red).
+  const correctRight = (left: string) => grade?.correctPairs?.find((p) => p.left === left)?.right;
+
   const { elapsedMs } = useReviewSession({
     currentIndex,
     totalCards,
@@ -60,6 +63,10 @@ export function MatchReview({
     setSubmitting(false);
   }
 
+  // Keyboard shortcuts: left items use numbers (1–9), right items use letters (A, B, C…).
+  const leftKey = (i: number) => (i < 9 ? String(i + 1) : null);
+  const rightKey = (i: number) => (i < 26 ? String.fromCharCode(65 + i) : null);
+
   const rightOwner = (right: string) =>
     Object.keys(assignments).find((l) => assignments[l] === right) ?? null;
 
@@ -84,25 +91,58 @@ export function MatchReview({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (exitRequested || isTypingTarget(e.target)) return;
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      if (isInteractiveTarget(document.activeElement)) return;
-      if (answered) {
-        e.preventDefault();
-        onAdvance(grade.correct);
-      } else if (allAssigned && !submitting) {
-        e.preventDefault();
-        void submit();
+
+      // Enter/Space advances when graded, or submits once everything is paired.
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (isInteractiveTarget(document.activeElement)) return;
+        if (answered) {
+          e.preventDefault();
+          onAdvance(grade.correct);
+        } else if (allAssigned && !submitting) {
+          e.preventDefault();
+          void submit();
+        }
+        return;
+      }
+      if (answered || submitting) return;
+
+      // A number picks a left item; a letter assigns a right to the selected left.
+      if (/^[1-9]$/.test(e.key)) {
+        const left = lefts[Number(e.key) - 1];
+        if (left) {
+          e.preventDefault();
+          pickLeft(left);
+        }
+        return;
+      }
+      const letter = e.key.toLowerCase();
+      if (/^[a-z]$/.test(letter) && selectedLeft) {
+        const right = rights[letter.charCodeAt(0) - 97];
+        if (right) {
+          e.preventDefault();
+          pickRight(right);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [answered, allAssigned, submitting, grade, exitRequested, onAdvance]);
+  }, [
+    answered,
+    allAssigned,
+    submitting,
+    grade,
+    exitRequested,
+    onAdvance,
+    selectedLeft,
+    lefts,
+    rights,
+  ]);
 
   const matchedCount = lefts.filter((l) => assignments[l]).length;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <h2 className="text-xl font-bold">{card.question}</h2>
+      <MarkdownContent text={card.question} />
 
       {!answered && (
         <p className="text-sm text-muted-foreground">
@@ -112,8 +152,9 @@ export function MatchReview({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2.5">
-          {lefts.map((left) => {
+          {lefts.map((left, index) => {
             const assigned = assignments[left];
+            const key = leftKey(index);
             return (
               <button
                 key={left}
@@ -121,37 +162,54 @@ export function MatchReview({
                 onClick={() => pickLeft(left)}
                 disabled={answered}
                 aria-pressed={selectedLeft === left}
+                aria-keyshortcuts={!answered && key ? key : undefined}
                 className={cn(
-                  'flex w-full flex-col items-start gap-0.5 rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100 disabled:cursor-not-allowed',
+                  'flex w-full items-center gap-3 rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100 disabled:cursor-not-allowed',
                   answered
-                    ? 'border-border bg-muted'
+                    ? assigned === correctRight(left)
+                      ? 'border-success bg-success text-white'
+                      : 'border-destructive bg-destructive text-white'
                     : selectedLeft === left
                       ? 'border-primary bg-primary text-primary-foreground cursor-pointer'
                       : 'border-border bg-secondary hover:border-primary cursor-pointer'
                 )}
               >
-                <span>{left}</span>
-                {assigned && <span className="text-xs font-normal opacity-80">→ {assigned}</span>}
+                {!answered && key && (
+                  <span aria-hidden="true">
+                    <Kbd className="h-7 w-7 shrink-0 text-xs">{key}</Kbd>
+                  </span>
+                )}
+                <span className="flex flex-col items-start gap-0.5">
+                  <span>{left}</span>
+                  {assigned && <span className="text-xs font-normal opacity-80">→ {assigned}</span>}
+                </span>
               </button>
             );
           })}
         </div>
         <div className="space-y-2.5">
-          {rights.map((right) => {
+          {rights.map((right, index) => {
             const used = rightOwner(right) !== null;
+            const key = rightKey(index);
             return (
               <button
                 key={right}
                 type="button"
                 onClick={() => pickRight(right)}
                 disabled={answered || !selectedLeft}
+                aria-keyshortcuts={!answered && key ? key : undefined}
                 className={cn(
-                  'flex w-full items-center rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100 disabled:cursor-not-allowed',
+                  'flex w-full items-center gap-3 rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100 disabled:cursor-not-allowed',
                   used ? 'border-primary/40 bg-accent opacity-60' : 'border-border bg-secondary',
                   !answered && selectedLeft ? 'hover:border-primary cursor-pointer' : ''
                 )}
               >
-                {right}
+                {!answered && key && (
+                  <span aria-hidden="true">
+                    <Kbd className="h-7 w-7 shrink-0 text-xs">{key}</Kbd>
+                  </span>
+                )}
+                <span>{right}</span>
               </button>
             );
           })}

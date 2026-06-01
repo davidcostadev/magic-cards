@@ -2,6 +2,13 @@ import type { Card, CardChoice, CardPayload, MatchPair } from '../../db/schema';
 import type { CardResponse } from './dto/card.dto';
 
 /**
+ * How many pairs a `match` card shows (and is graded on) during study, regardless of how many
+ * are authored — a smaller board is easier to scan and keyboard-navigate. The grader
+ * (`grading.service`) must use the same first-N subset so the study payload and grading agree.
+ */
+export const MATCH_DISPLAY_LIMIT = 4;
+
+/**
  * Maps a stored card row to its API response, un-nesting the `payload` jsonb into the
  * type-specific fields. `reveal` is true only for the owner (authoring); for everyone
  * else — including the owner while studying via the review queue — the grading data is
@@ -42,13 +49,14 @@ export function toCardResponse(card: Card, reveal: boolean): CardResponse {
   }
   if (card.type === 'match') {
     const pairs = (payload as { matchPairs: MatchPair[] } | null)?.matchPairs ?? [];
+    const shown = pairs.slice(0, MATCH_DISPLAY_LIMIT);
     return {
       ...base,
       answer: '',
       matchItems: {
-        lefts: pairs.map((p) => p.left),
+        lefts: shown.map((p) => p.left),
         rights: seededShuffle(
-          pairs.map((p) => p.right),
+          shown.map((p) => p.right),
           card.id
         ),
       },
