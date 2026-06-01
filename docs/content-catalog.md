@@ -127,27 +127,6 @@ curl -sS -X DELETE http://localhost:3001/v1/catalog/subjects/019e... \
 
 ---
 
-## 4b. Seeding example content (idempotent)
-
-Instead of hand-rolling `curl` calls, there's a built-in seed that loads the curated dataset
-in `packages/backend/src/scripts/catalog-content.json` — **10 subjects** (TypeScript, SQL, React,
-Git, JavaScript, CSS, Node.js, Docker, Python, Algorithms) and **77 cards across all four types**
-(open 28 / quiz 19 / type-answer 19 / match 11). It's **idempotent** — every row carries the
-dataset's stable id and is upserted, so re-running converges to the file's content and never
-duplicates:
-
-```bash
-pnpm --filter backend seed:catalog
-```
-
-- **Dev (PGlite):** the embedded Postgres is single-connection — **stop the dev backend first**
-  or the seed can't open the data dir. (With a real `DATABASE_URL` it runs alongside the server.)
-- Refuses to run when `NODE_ENV=production` unless `SEED_FORCE=1` is set.
-- Edit `catalog-content.json` to change the content; re-running syncs the edits onto the same rows.
-  Cards are validated against the same rules as the API (e.g. a quiz needs exactly one correct choice).
-
----
-
 ## 5. What learners see
 
 - The shared subject appears in **every** learner's `GET /v1/subjects` list, marked **Shared**

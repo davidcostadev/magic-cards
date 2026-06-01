@@ -25,7 +25,7 @@ table is the accurate state.)
 | **2 — Frontend Polish** | Markdown + syntax highlighting, review animations, dark/light theme, mobile-first responsive, i18n (en/pt) | ✅ |
 | **3 — Dashboard & Analytics** | Stats, streaks, accuracy (7d/30d), status breakdown, weak cards, upcoming-reviews forecast, daily-goal bar | ✅ |
 | **4 — Production Ready** | PostgreSQL migration (pg + PGlite), security audit, Dockerfiles (backend+frontend), CI (lint→type→unit→E2E), coverage gates, hardened Playwright E2E | ✅ except deployment wiring (see gaps) |
-| **+ Shared Content Catalog** | `isPublic` subjects owned by a system user; `x-api-key` publish + delete endpoints; idempotent seed; read/write authorization split (`canSeeSubject`/`ownsSubject`) | ✅ (ADR 0007) |
+| **+ Shared Content Catalog** | `isPublic` subjects owned by a system user; `x-api-key` publish + delete endpoints; read/write authorization split (`canSeeSubject`/`ownsSubject`) | ✅ (ADR 0007) |
 
 ### Backend modules (`packages/backend/src/modules/`)
 `auth` · `subjects` · `cards` · `learning` (SM-2 + sessions) · `reviews` · `dashboard` · `catalog`
@@ -56,7 +56,6 @@ server secret **`CONTENT_API_KEY`** via the `x-api-key` header — **not** a use
 [`content-catalog.md`](./content-catalog.md), design: [ADR 0007](./adr/0007-shared-content-catalog-via-api-key.md).
 
 - `POST /v1/catalog/subjects` · `POST /v1/catalog/cards` · `DELETE /v1/catalog/subjects/:id`
-- Idempotent seed: `pnpm --filter backend seed:catalog` — loads `catalog-content.json` (10 subjects, 77 cards across all 4 types: open 28 / quiz 19 / type-answer 19 / match 11).
 - The key is **catalog-only** (public, system-owned content); it can never touch a user's deck.
 
 ## 6. Database
@@ -70,7 +69,7 @@ timestamps, `jsonb` hints/tags. Cascade FKs from subjects → cards → progress
 > `cardCount` uses LEFT JOIN + GROUP BY, **not** a correlated subquery (drizzle's single-table
 > `.select()` renders subquery columns unqualified → `id` would bind to `cards.id`). Fixed 2026-06-01.
 
-## 7. Run / test / seed
+## 7. Run / test
 
 ```bash
 pnpm dev                          # frontend :5173 + backend :3001 (Swagger at /docs)
@@ -78,7 +77,6 @@ pnpm test                         # Vitest — in-memory PGlite, never touches t
 pnpm test:e2e                     # Playwright full-stack E2E (Docker postgres+backend+frontend)
 pnpm gen:api                      # regenerate openapi.json + frontend client types (CI drift-checked)
 pnpm lint  /  pnpm type:check
-pnpm --filter backend seed:catalog   # idempotent example public content (stop dev backend first on PGlite)
 ```
 
 Tests use a disposable in-memory Postgres per run — **running tests never dirties the dev DB and
@@ -93,7 +91,7 @@ needs no cleanup**.
   and the study (`QuizReview`/`TypeAnswerReview`/`MatchReview` dispatched by `CardReview`) + authoring
   (`CardForm` type selector) UI. Decisions: jsonb payload, server grading, no per-card `language`,
   match all-or-nothing.
-- **Shared content catalog** added (publish/delete/seed + `x-api-key` guard, ADR 0007).
+- **Shared content catalog** added (publish/delete + `x-api-key` guard, ADR 0007).
 - **Bug fix:** subject `cardCount` was always 0 (correlated-subquery column-qualification trap) →
   LEFT JOIN + GROUP BY, with a regression test.
 - **Config:** deterministic test config (ignore `.env` under test); Vitest 4 cleanup
