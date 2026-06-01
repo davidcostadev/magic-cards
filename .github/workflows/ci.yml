@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint · Type-check · Test · Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint (Biome)
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm type:check
+
+      - name: Backend tests + coverage gate
+        run: pnpm --filter backend test:coverage
+
+      - name: Frontend tests
+        run: pnpm --filter frontend test
+
+      - name: OpenAPI spec / client are up to date
+        run: |
+          pnpm gen:api
+          git diff --exit-code packages/backend/openapi.json packages/frontend/src/api/schema.d.ts
+
+      - name: Frontend build
+        run: pnpm --filter frontend build
+
+  e2e:
+    name: E2E (Playwright · Dockerized stack)
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Full-stack E2E (docker compose + Playwright)
+        run: pnpm test:e2e
+        env:
+          CI: 'true'
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
