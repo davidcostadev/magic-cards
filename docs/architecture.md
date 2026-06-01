@@ -393,6 +393,21 @@ and updates the card's progress via SM-2.
 | `GET /v1/dashboard/weak_cards` | protected | `?limit` | `200` list of `Card` (with progress) |
 | `GET /v1/dashboard/upcoming` | protected | — | `200` `{ today: number, tomorrow: number, thisWeek: number }` |
 
+### Catalog (shared content)
+
+Publishes **public** subjects/cards (owned by the system user, auto-available read-only to
+every learner). Authorized by `x-api-key: <CONTENT_API_KEY>` instead of a JWT; disabled when
+the key is unset. Publish-only (see ADR 0007).
+
+| Method & Path | Auth | Body / Query | Response |
+|---|---|---|---|
+| `POST /v1/catalog/subjects` | `x-api-key` | `{ title, description?, color?, icon? }` | `201` public `Subject` |
+| `POST /v1/catalog/cards` | `x-api-key` | `{ subjectId, question, answer, hints?, tags? }` | `201` `Card` (into a public subject) |
+
+Reads are visibility-scoped: every read returns the user's own **or** public content
+(`canSeeSubject`), while every mutation stays owner-only — so public content is read-only to
+users.
+
 ---
 
 ## 7. Spaced Repetition Algorithm (SM-2)

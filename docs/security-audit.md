@@ -16,6 +16,7 @@ access control — plus the FRD-006 §41 checklist.
 | 8 | Auth on all non-public routes | ✅ | Global `JwtAuthGuard`; only `signup`/`login` opt out via `@Public()`. Missing/invalid token → `401`. |
 | 9 | SQL injection | ✅ | Drizzle parameterised queries throughout; no string-built SQL. |
 | 10 | Secrets not committed | ✅ | `.env` git-ignored; only `.env.example` committed. |
+| 11 | Catalog API key (shared content) | ✅ | `POST /v1/catalog/*` is gated by `ApiKeyGuard` (constant-time `x-api-key` compare against `CONTENT_API_KEY`); disabled when the key is unset. Publish-only scope; grants no user-data access. Public content is read-only to users (mutations stay owner-only). See ADR 0007. |
 
 ## Notes & residual risks
 

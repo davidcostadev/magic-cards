@@ -25,6 +25,7 @@ services:
       JWT_EXPIRATION: 24h
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/magic_cards
       CORS_ORIGIN: http://localhost:5100
+      CONTENT_API_KEY: e2e-content-key-1234567890
     # Dedicated host ports so the E2E stack never collides with the local dev servers
     # (frontend :5000, backend :3001). Container ports are unchanged.
     ports:
