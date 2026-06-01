@@ -1,11 +1,8 @@
 # Built from the repo root context: docker build -f packages/backend/Dockerfile .
+# Pure-JS/WASM deps (pg + PGlite) — no native build toolchain needed.
 FROM node:22-slim
 ENV HUSKY=0
-# Build toolchain for the native better-sqlite3 addon.
-RUN corepack enable \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
+RUN corepack enable
 WORKDIR /app
 
 # Install backend deps against the frozen lockfile (needs all workspace manifests).

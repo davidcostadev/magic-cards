@@ -2,6 +2,18 @@
 # The browser runs on the host, so the frontend calls the backend at the host-mapped
 # port — VITE_API_URL and CORS_ORIGIN both use localhost.
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: magic_cards
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d magic_cards"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
   backend:
     build:
       context: .
@@ -11,12 +23,15 @@ services:
       PORT: "3001"
       JWT_SECRET: e2e-secret
       JWT_EXPIRATION: 24h
-      DATABASE_PATH: /app/packages/backend/data/e2e.db
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/magic_cards
       CORS_ORIGIN: http://localhost:5100
     # Dedicated host ports so the E2E stack never collides with the local dev servers
     # (frontend :5000, backend :3001). Container ports are unchanged.
     ports:
       - "3100:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test:
         - CMD
