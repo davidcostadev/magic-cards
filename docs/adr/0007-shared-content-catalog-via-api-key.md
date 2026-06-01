@@ -22,11 +22,14 @@ user endpoints to public writes.
 
 - Subjects gain an **`isPublic`** flag. Public content is owned by a seeded **system user**
   (`SYSTEM_USER_ID`, an unusable password hash — it can't log in).
-- A static **`CONTENT_API_KEY`** (env) authorizes the publish endpoints via an `x-api-key`
+- A static **`CONTENT_API_KEY`** (env) authorizes the catalog endpoints via an `x-api-key`
   header (`ApiKeyGuard`, constant-time compare). If the key is unset, the catalog is
-  disabled (all catalog requests denied). The key scope is **publish-only**:
-  `POST /v1/catalog/subjects` and `POST /v1/catalog/cards`. These routes are `@Public()` to
-  the JWT guard and gated solely by the API key.
+  disabled (all catalog requests denied). The key scope is **catalog content only**:
+  `POST /v1/catalog/subjects`, `POST /v1/catalog/cards`, and
+  `DELETE /v1/catalog/subjects/:id` (scoped to public, system-owned subjects, so it can
+  never delete a user's content). These routes are `@Public()` to the JWT guard and gated
+  solely by the API key. A repeatable, idempotent `seed:catalog` script publishes example
+  content through the same data path (fixed ids + upsert).
 - **Reads union public content.** Authorization split into two predicates
   (`common/visibility.ts`): `ownsSubject` for mutations and `canSeeSubject` (own **or**
   public) for reads. Applied to subjects/cards reads, the learning session + review

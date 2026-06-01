@@ -58,9 +58,14 @@ Catalog disabled (no key configured) → `401 { "error": { "code": "catalog.disa
 |---|---|---|---|
 | `POST /v1/catalog/subjects` | `x-api-key` | `{ title, description?, color?, icon? }` | `201` public `Subject` (`isPublic: true`) |
 | `POST /v1/catalog/cards` | `x-api-key` | `{ subjectId, question, answer, hints?, tags? }` | `201` `Card` (must target a public subject) |
+| `DELETE /v1/catalog/subjects/:id` | `x-api-key` | — | `204` (removes a public subject **and its cards**); `404` if it isn't a public catalog subject |
 
 Cards can only be added to a **public** subject id (one returned by `POST /catalog/subjects`).
 Targeting a private/non-existent subject → `404`.
+
+`DELETE` is scoped to public, system-owned content: deleting a regular user's subject (or a
+missing id) returns `404` — the key can never remove a user's own deck. The delete cascades to
+the subject's cards (and any per-user progress/history on them).
 
 ---
 
@@ -113,6 +118,31 @@ publish_card "What does WHERE filter?" "Rows matching a condition."
 Question and answer accept **Markdown** (including fenced code blocks), exactly like
 user-authored cards.
 
+**Remove a published subject** (and its cards):
+
+```bash
+curl -sS -X DELETE http://localhost:3001/v1/catalog/subjects/019e... \
+  -H "x-api-key: $CONTENT_API_KEY" -i   # → HTTP/1.1 204 No Content
+```
+
+---
+
+## 4b. Seeding example content (idempotent)
+
+Instead of hand-rolling `curl` calls, there's a built-in seed of example public content
+(Git + HTTP subjects). It's **idempotent** — every row has a fixed id and is upserted, so
+re-running converges to the defined content and never duplicates:
+
+```bash
+pnpm --filter backend seed:catalog
+```
+
+- **Dev (PGlite):** the embedded Postgres is single-connection — **stop the dev backend first**
+  or the seed can't open the data dir. (With a real `DATABASE_URL` it runs alongside the server.)
+- Refuses to run when `NODE_ENV=production` unless `SEED_FORCE=1` is set.
+- Edit the `CATALOG` array in `packages/backend/src/scripts/seed-catalog.ts` to change the content;
+  re-running syncs the edits onto the same rows.
+
 ---
 
 ## 5. What learners see
@@ -129,7 +159,8 @@ user-authored cards.
 ## 6. Security notes
 
 - The key is checked in **constant time**; rotate it by changing the env var and restarting.
-- Scope is **publish-only** — the key grants no access to user data and cannot read/delete.
+- Scope is **catalog-only** — publish and delete **public** content (system-owned). The key
+  grants no access to user data and cannot touch a user's own subjects/cards.
 - This is a **curated** model (one trusted key publishes). It is **not** user-generated
   content: there is no per-user public publishing and no moderation. Adding that later would
   build on the `isPublic` flag but needs its own authorization + review (ADR 0007).
