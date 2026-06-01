@@ -1,43 +1,26 @@
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { AppModule } from '../../app.module';
-import { createDatabase, DRIZZLE, type DrizzleDB, runMigrations } from '../../db/client';
 import { users } from '../../db/schema';
+import { createTestApp } from '../../test-support/create-test-app';
 
 let app: NestFastifyApplication;
-let db: DrizzleDB;
+let db: Awaited<ReturnType<typeof createTestApp>>['db'];
 
 async function signup(body: Record<string, unknown>) {
   return request(app.getHttpServer()).post('/v1/auth/signup').send(body);
 }
 
 beforeAll(async () => {
-  process.env.JWT_SECRET = 'test-secret';
-  ({ db } = createDatabase(':memory:'));
-  runMigrations(db);
-
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-    .overrideProvider(DRIZZLE)
-    .useValue(db)
-    .overrideGuard(ThrottlerGuard)
-    .useValue({ canActivate: () => true })
-    .compile();
-
-  app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
-  app.setGlobalPrefix('v1');
-  await app.init();
-  await app.getHttpAdapter().getInstance().ready();
+  ({ app, db } = await createTestApp());
 });
 
 afterAll(async () => {
   await app.close();
 });
 
-beforeEach(() => {
-  db.delete(users).run();
+beforeEach(async () => {
+  await db.delete(users);
 });
 
 describe('POST /v1/auth/signup', () => {

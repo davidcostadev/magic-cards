@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import type { Env } from '../../config/env';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -17,8 +19,13 @@ export interface JwtPayload {
  */
 @Injectable()
 export class AuthService {
-  private readonly secret = process.env.JWT_SECRET ?? 'dev-secret-change-me';
-  private readonly expiration = process.env.JWT_EXPIRATION ?? '24h';
+  private readonly secret: string;
+  private readonly expiration: string;
+
+  constructor(config: ConfigService<Env, true>) {
+    this.secret = config.get('JWT_SECRET', { infer: true }) ?? 'dev-secret-change-me';
+    this.expiration = config.get('JWT_EXPIRATION', { infer: true });
+  }
 
   hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, BCRYPT_ROUNDS);

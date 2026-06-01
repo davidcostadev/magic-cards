@@ -22,24 +22,24 @@ export class CardsController {
 
   @Get()
   @ApiOkResponse({ type: CardListDto })
-  list(
+  async list(
     @CurrentUser() user: AuthUser,
     @Query() query: CardListQueryDto
-  ): ListResponse<CardResponse> {
-    const { rows, limit } = this.cards.list(user.id, query);
+  ): Promise<ListResponse<CardResponse>> {
+    const { rows, limit } = await this.cards.list(user.id, query);
     return toListResponse(rows, limit);
   }
 
   @Post()
   @HttpCode(201)
   @ApiOkResponse({ type: CardResponseDto })
-  create(@CurrentUser() user: AuthUser, @Body() body: CreateCardDto): CardResponse {
+  create(@CurrentUser() user: AuthUser, @Body() body: CreateCardDto): Promise<CardResponse> {
     return this.cards.create(user.id, body);
   }
 
   @Get(':id')
   @ApiOkResponse({ type: CardResponseDto })
-  get(@CurrentUser() user: AuthUser, @Param('id') id: string): CardResponse {
+  get(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<CardResponse> {
     return this.cards.get(user.id, id);
   }
 
@@ -49,13 +49,13 @@ export class CardsController {
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
     @Body() body: UpdateCardDto
-  ): CardResponse {
+  ): Promise<CardResponse> {
     return this.cards.update(user.id, id, body);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@CurrentUser() user: AuthUser, @Param('id') id: string): void {
-    this.cards.remove(user.id, id);
+  async remove(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<void> {
+    await this.cards.remove(user.id, id);
   }
 }

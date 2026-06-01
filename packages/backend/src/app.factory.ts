@@ -1,21 +1,25 @@
 import type { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { AppModule } from './app.module';
-
-function corsOrigins(): string[] {
-  return (process.env.CORS_ORIGIN ?? 'http://localhost:5000,http://localhost:5173')
-    .split(',')
-    .map((origin) => origin.trim());
-}
+import type { Env } from './config/env';
 
 /** Builds the Nest app on the Fastify adapter with the global `/v1` prefix + CORS. */
 export async function createApp(): Promise<NestFastifyApplication> {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const config = app.get(ConfigService<Env, true>);
   app.setGlobalPrefix('v1');
-  app.enableCors({ origin: corsOrigins(), credentials: true });
+  app.enableShutdownHooks();
+  app.enableCors({
+    origin: config
+      .get('CORS_ORIGIN', { infer: true })
+      .split(',')
+      .map((origin) => origin.trim()),
+    credentials: true,
+  });
   return app;
 }
 

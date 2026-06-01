@@ -9,6 +9,7 @@ import {
   SubjectListDto,
   type SubjectResponse,
   SubjectResponseDto,
+  type SubjectStats,
   SubjectStatsDto,
   UpdateSubjectDto,
 } from './dto/subject.dto';
@@ -22,24 +23,24 @@ export class SubjectsController {
 
   @Get()
   @ApiOkResponse({ type: SubjectListDto })
-  list(
+  async list(
     @CurrentUser() user: AuthUser,
     @Query() query: PaginationQueryDto
-  ): ListResponse<SubjectResponse> {
-    const { rows, limit } = this.subjects.list(user.id, query);
+  ): Promise<ListResponse<SubjectResponse>> {
+    const { rows, limit } = await this.subjects.list(user.id, query);
     return toListResponse(rows, limit);
   }
 
   @Post()
   @HttpCode(201)
   @ApiOkResponse({ type: SubjectResponseDto })
-  create(@CurrentUser() user: AuthUser, @Body() body: CreateSubjectDto): SubjectResponse {
+  create(@CurrentUser() user: AuthUser, @Body() body: CreateSubjectDto): Promise<SubjectResponse> {
     return this.subjects.create(user.id, body);
   }
 
   @Get(':id')
   @ApiOkResponse({ type: SubjectResponseDto })
-  get(@CurrentUser() user: AuthUser, @Param('id') id: string): SubjectResponse {
+  get(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<SubjectResponse> {
     return this.subjects.get(user.id, id);
   }
 
@@ -49,19 +50,19 @@ export class SubjectsController {
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
     @Body() body: UpdateSubjectDto
-  ): SubjectResponse {
+  ): Promise<SubjectResponse> {
     return this.subjects.update(user.id, id, body);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@CurrentUser() user: AuthUser, @Param('id') id: string): void {
-    this.subjects.remove(user.id, id);
+  async remove(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<void> {
+    await this.subjects.remove(user.id, id);
   }
 
   @Get(':id/stats')
   @ApiOkResponse({ type: SubjectStatsDto })
-  stats(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+  stats(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<SubjectStats> {
     return this.subjects.stats(user.id, id);
   }
 }

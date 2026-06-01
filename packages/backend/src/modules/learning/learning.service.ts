@@ -27,17 +27,20 @@ export class LearningService {
    * Builds the study batch: every overdue card (most overdue first), then new
    * (never-reviewed) cards capped at 30% of the daily goal (architecture §7).
    */
-  getSessionCards(userId: string, subjectId?: string): SessionCards {
-    if (subjectId) this.assertSubjectOwned(userId, subjectId);
+  async getSessionCards(userId: string, subjectId?: string): Promise<SessionCards> {
+    if (subjectId) await this.assertSubjectOwned(userId, subjectId);
 
     const now = new Date().toISOString();
-    const dailyGoal =
-      this.db.select({ goal: users.dailyGoal }).from(users).where(eq(users.id, userId)).get()
-        ?.goal ?? DEFAULT_DAILY_GOAL;
+    const [user] = await this.db
+      .select({ goal: users.dailyGoal })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    const dailyGoal = user?.goal ?? DEFAULT_DAILY_GOAL;
     const maxNew = Math.floor(NEW_CARD_RATIO * dailyGoal);
     const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
 
-    const due = this.db
+    const due = await this.db
       .select(getTableColumns(cards))
       .from(cardProgress)
       .innerJoin(cards, eq(cardProgress.cardId, cards.id))
@@ -50,12 +53,11 @@ export class LearningService {
           subjectFilter
         )
       )
-      .orderBy(asc(cardProgress.nextReviewDate))
-      .all();
+      .orderBy(asc(cardProgress.nextReviewDate));
 
     const newCards =
       maxNew > 0
-        ? this.db
+        ? await this.db
             .select(getTableColumns(cards))
             .from(cards)
             .innerJoin(subjects, eq(cards.subjectId, subjects.id))
@@ -66,40 +68,39 @@ export class LearningService {
             .where(and(eq(subjects.userId, userId), isNull(cardProgress.id), subjectFilter))
             .orderBy(asc(cards.id))
             .limit(maxNew)
-            .all()
         : [];
 
     return { due, new: newCards };
   }
 
   /** The single next card to study: most overdue, else the next new card, else null. */
-  getNextCard(userId: string, subjectId?: string): CardResponse | null {
-    const { due, new: newCards } = this.getSessionCards(userId, subjectId);
+  async getNextCard(userId: string, subjectId?: string): Promise<CardResponse | null> {
+    const { due, new: newCards } = await this.getSessionCards(userId, subjectId);
     return due[0] ?? newCards[0] ?? null;
   }
 
   /** Applies SM-2, upserts the card's progress, and logs an immutable review. */
-  submitReview(
+  async submitReview(
     userId: string,
     cardId: string,
     quality: number,
     timeSpent: number,
     wasHintUsed: boolean
-  ): CardProgressResponse {
-    const card = this.db
+  ): Promise<CardProgressResponse> {
+    const [card] = await this.db
       .select({ subjectId: cards.subjectId })
       .from(cards)
       .innerJoin(subjects, eq(cards.subjectId, subjects.id))
       .where(and(eq(cards.id, cardId), eq(subjects.userId, userId)))
-      .get();
+      .limit(1);
     if (!card) throw ApiError.notFound('cards.notFound');
 
     const effectiveQuality = this.sm2.applyHintCap(quality, wasHintUsed);
-    const existing = this.db
+    const [existing] = await this.db
       .select()
       .from(cardProgress)
       .where(and(eq(cardProgress.userId, userId), eq(cardProgress.cardId, cardId)))
-      .get();
+      .limit(1);
 
     const { newInterval, newEaseFactor, newRepetitions } = this.sm2.calculateNextReview(
       effectiveQuality,
@@ -113,7 +114,7 @@ export class LearningService {
     const nextReviewDate = new Date(now.getTime() + newInterval * DAY_MS).toISOString();
     const status = this.sm2.deriveStatus(newRepetitions, newInterval, newEaseFactor);
 
-    const progress = this.db
+    const [progress] = await this.db
       .insert(cardProgress)
       .values({
         userId,
@@ -137,31 +138,27 @@ export class LearningService {
           updatedAt: nowIso,
         },
       })
-      .returning()
-      .get();
+      .returning();
 
-    this.db
-      .insert(reviewHistory)
-      .values({
-        userId,
-        cardId,
-        subjectId: card.subjectId,
-        quality: effectiveQuality,
-        reviewedAt: nowIso,
-        timeSpent,
-        wasHintUsed,
-      })
-      .run();
+    await this.db.insert(reviewHistory).values({
+      userId,
+      cardId,
+      subjectId: card.subjectId,
+      quality: effectiveQuality,
+      reviewedAt: nowIso,
+      timeSpent,
+      wasHintUsed,
+    });
 
     return progress;
   }
 
-  private assertSubjectOwned(userId: string, subjectId: string): void {
-    const owned = this.db
+  private async assertSubjectOwned(userId: string, subjectId: string): Promise<void> {
+    const [owned] = await this.db
       .select({ id: subjects.id })
       .from(subjects)
       .where(and(eq(subjects.id, subjectId), eq(subjects.userId, userId)))
-      .get();
+      .limit(1);
     if (!owned) throw ApiError.notFound('subjects.notFound');
   }
 }

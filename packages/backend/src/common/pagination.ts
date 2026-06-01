@@ -1,5 +1,5 @@
 import { gt, lt, type SQL } from 'drizzle-orm';
-import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { ListResponse } from './interceptors/list.interceptor';
@@ -44,7 +44,7 @@ export function toListResponse<T>(rows: T[], limit: number): ListResponse<T> {
  * Cursor condition for a list ordered by `id DESC` (newest first). `starting_after`
  * pages forward (older ids), `ending_before` pages backward (newer ids).
  */
-export function cursorWhere(idColumn: SQLiteColumn, query: PaginationQuery): SQL | undefined {
+export function cursorWhere(idColumn: PgColumn, query: PaginationQuery): SQL | undefined {
   if (query.starting_after) return lt(idColumn, query.starting_after);
   if (query.ending_before) return gt(idColumn, query.ending_before);
   return undefined;

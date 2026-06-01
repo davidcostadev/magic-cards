@@ -12,7 +12,8 @@ import type {
   UpdateSubjectDto,
 } from './dto/subject.dto';
 
-const cardCountSql = sql<number>`(select count(*) from ${cards} where ${cards.subjectId} = ${subjects.id})`;
+// count(*) is bigint (returned as a string by pg) — cast to int so it comes back as a number.
+const cardCountSql = sql<number>`(select count(*)::int from ${cards} where ${cards.subjectId} = ${subjects.id})`;
 
 @Injectable()
 export class SubjectsService {
@@ -22,62 +23,61 @@ export class SubjectsService {
   ) {}
 
   /** Lists the user's subjects (newest first) with on-demand card counts. */
-  list(userId: string, query: PaginationQuery): { rows: SubjectResponse[]; limit: number } {
-    const rows = this.db
+  async list(
+    userId: string,
+    query: PaginationQuery
+  ): Promise<{ rows: SubjectResponse[]; limit: number }> {
+    const rows = await this.db
       .select({ ...getTableColumns(subjects), cardCount: cardCountSql })
       .from(subjects)
       .where(and(eq(subjects.userId, userId), cursorWhere(subjects.id, query)))
       .orderBy(desc(subjects.id))
-      .limit(query.limit + 1)
-      .all();
+      .limit(query.limit + 1);
     return { rows, limit: query.limit };
   }
 
-  create(userId: string, dto: CreateSubjectDto): SubjectResponse {
-    const subject = this.db
+  async create(userId: string, dto: CreateSubjectDto): Promise<SubjectResponse> {
+    const [subject] = await this.db
       .insert(subjects)
       .values({ userId, ...dto })
-      .returning()
-      .get();
+      .returning();
     return { ...subject, cardCount: 0 };
   }
 
-  get(userId: string, id: string): SubjectResponse {
-    const subject = this.db
+  async get(userId: string, id: string): Promise<SubjectResponse> {
+    const [subject] = await this.db
       .select({ ...getTableColumns(subjects), cardCount: cardCountSql })
       .from(subjects)
       .where(and(eq(subjects.id, id), eq(subjects.userId, userId)))
-      .get();
+      .limit(1);
     if (!subject) throw ApiError.notFound('subjects.notFound');
     return subject;
   }
 
-  update(userId: string, id: string, dto: UpdateSubjectDto): SubjectResponse {
-    this.assertOwned(userId, id);
-    this.db
+  async update(userId: string, id: string, dto: UpdateSubjectDto): Promise<SubjectResponse> {
+    await this.assertOwned(userId, id);
+    await this.db
       .update(subjects)
       .set({ ...dto, updatedAt: new Date().toISOString() })
-      .where(eq(subjects.id, id))
-      .run();
+      .where(eq(subjects.id, id));
     return this.get(userId, id);
   }
 
-  remove(userId: string, id: string): void {
-    this.assertOwned(userId, id);
+  async remove(userId: string, id: string): Promise<void> {
+    await this.assertOwned(userId, id);
     // Cascades to cards, cardProgress, and reviewHistory via FK constraints.
-    this.db.delete(subjects).where(eq(subjects.id, id)).run();
+    await this.db.delete(subjects).where(eq(subjects.id, id));
   }
 
-  stats(userId: string, id: string): SubjectStats {
-    this.assertOwned(userId, id);
+  async stats(userId: string, id: string): Promise<SubjectStats> {
+    await this.assertOwned(userId, id);
 
-    const totalCards = this.db
-      .select({ value: sql<number>`count(*)` })
+    const [totalCards] = await this.db
+      .select({ value: sql<number>`count(*)::int` })
       .from(cards)
-      .where(eq(cards.subjectId, id))
-      .get();
+      .where(eq(cards.subjectId, id));
 
-    const progressRows = this.db
+    const progressRows = await this.db
       .select({
         interval: cardProgress.interval,
         repetitions: cardProgress.repetitions,
@@ -86,8 +86,7 @@ export class SubjectsService {
       })
       .from(cardProgress)
       .innerJoin(cards, eq(cardProgress.cardId, cards.id))
-      .where(and(eq(cards.subjectId, id), eq(cardProgress.userId, userId)))
-      .all();
+      .where(and(eq(cards.subjectId, id), eq(cardProgress.userId, userId)));
 
     const now = new Date().toISOString();
     const counts = { new: 0, learning: 0, reviewing: 0, mastered: 0 };
@@ -98,19 +97,20 @@ export class SubjectsService {
     }
 
     // Cards the user has never reviewed are new and immediately available to study.
-    const neverReviewed = (totalCards?.value ?? 0) - progressRows.length;
+    const total = totalCards?.value ?? 0;
+    const neverReviewed = total - progressRows.length;
     counts.new += neverReviewed;
     due += neverReviewed;
 
-    return { totalCards: totalCards?.value ?? 0, ...counts, due };
+    return { totalCards: total, ...counts, due };
   }
 
-  private assertOwned(userId: string, id: string): void {
-    const owned = this.db
+  private async assertOwned(userId: string, id: string): Promise<void> {
+    const [owned] = await this.db
       .select({ id: subjects.id })
       .from(subjects)
       .where(and(eq(subjects.id, id), eq(subjects.userId, userId)))
-      .get();
+      .limit(1);
     if (!owned) throw ApiError.notFound('subjects.notFound');
   }
 }

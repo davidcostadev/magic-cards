@@ -22,19 +22,22 @@ export class ReviewsController {
 
   @Get('review_queue')
   @ApiOkResponse({ type: ReviewQueueResponseDto })
-  queue(@CurrentUser() user: AuthUser, @Query() query: ReviewQueueQueryDto): ReviewQueueResponse {
-    const { due, new: newCards } = this.learning.getSessionCards(user.id, query.subject);
+  async queue(
+    @CurrentUser() user: AuthUser,
+    @Query() query: ReviewQueueQueryDto
+  ): Promise<ReviewQueueResponse> {
+    const { due, new: newCards } = await this.learning.getSessionCards(user.id, query.subject);
     return { due, new: newCards, total: due.length + newCards.length };
   }
 
   @Get('review_queue/next')
   @ApiOkResponse({ type: CardResponseDto })
-  next(
+  async next(
     @CurrentUser() user: AuthUser,
     @Query() query: ReviewQueueQueryDto,
     @Res() reply: FastifyReply
-  ): void {
-    const card = this.learning.getNextCard(user.id, query.subject);
+  ): Promise<void> {
+    const card = await this.learning.getNextCard(user.id, query.subject);
     // 204 when the queue is empty, otherwise the next card to study.
     if (!card) {
       reply.status(204).send();
@@ -46,7 +49,10 @@ export class ReviewsController {
   @Post('reviews')
   @HttpCode(201)
   @ApiOkResponse({ type: CardProgressResponseDto })
-  submit(@CurrentUser() user: AuthUser, @Body() body: CreateReviewDto): CardProgressResponse {
+  submit(
+    @CurrentUser() user: AuthUser,
+    @Body() body: CreateReviewDto
+  ): Promise<CardProgressResponse> {
     return this.learning.submitReview(
       user.id,
       body.cardId,

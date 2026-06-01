@@ -23,23 +23,23 @@ export class DashboardController {
 
   @Get('stats')
   @ApiOkResponse({ type: DashboardStatsDto })
-  stats(@CurrentUser() user: AuthUser): DashboardStats {
+  stats(@CurrentUser() user: AuthUser): Promise<DashboardStats> {
     return this.dashboard.getStats(user.id);
   }
 
   @Get('weak_cards')
   @ApiOkResponse({ type: WeakCardListDto })
-  weakCards(
+  async weakCards(
     @CurrentUser() user: AuthUser,
     @Query() query: WeakCardsQueryDto
-  ): ListResponse<WeakCard> {
-    const rows = this.dashboard.getWeakCards(user.id, query.limit);
+  ): Promise<ListResponse<WeakCard>> {
+    const rows = await this.dashboard.getWeakCards(user.id, query.limit);
     return toListResponse(rows, query.limit);
   }
 
   @Get('upcoming')
   @ApiOkResponse({ type: UpcomingDto })
-  upcoming(@CurrentUser() user: AuthUser): Upcoming {
+  upcoming(@CurrentUser() user: AuthUser): Promise<Upcoming> {
     return this.dashboard.getUpcoming(user.id);
   }
 }

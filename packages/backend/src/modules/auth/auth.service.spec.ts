@@ -1,8 +1,14 @@
+import type { ConfigService } from '@nestjs/config';
 import { describe, expect, it } from 'vitest';
+import type { Env } from '../../config/env';
 import { AuthService } from './auth.service';
 
+const fakeConfig = {
+  get: (key: keyof Env) => (key === 'JWT_EXPIRATION' ? '24h' : undefined),
+} as unknown as ConfigService<Env, true>;
+
 describe('AuthService', () => {
-  const service = new AuthService();
+  const service = new AuthService(fakeConfig);
 
   it('hashes a password and verifies the round-trip', async () => {
     const hash = await service.hashPassword('s3cret-pw');

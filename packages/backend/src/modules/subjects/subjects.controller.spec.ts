@@ -17,7 +17,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  db.delete(users).run();
+  await db.delete(users);
   token = await signupAndToken(app, 'owner@test.com', 'owner');
 });
 

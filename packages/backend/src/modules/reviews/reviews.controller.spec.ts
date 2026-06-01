@@ -31,7 +31,7 @@ async function addCard(question: string): Promise<string> {
 }
 
 beforeEach(async () => {
-  db.delete(users).run();
+  await db.delete(users);
   token = await signupAndToken(app, 'owner@test.com', 'owner');
   const subject = await auth(
     request(app.getHttpServer()).post('/v1/subjects').send({ title: 'S' })

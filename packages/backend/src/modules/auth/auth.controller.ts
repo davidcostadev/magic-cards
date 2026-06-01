@@ -35,15 +35,18 @@ export class AuthController {
   @HttpCode(201)
   @ApiCreatedResponse({ type: AuthResponseDto })
   async signup(@Body() body: SignupDto): Promise<AuthResponse> {
-    const existing = this.db.select().from(users).where(eq(users.email, body.email)).get();
+    const [existing] = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.email, body.email))
+      .limit(1);
     if (existing) throw ApiError.badRequest('auth.emailAlreadyExists', 'email');
 
     const passwordHash = await this.auth.hashPassword(body.password);
-    const user = this.db
+    const [user] = await this.db
       .insert(users)
       .values({ email: body.email, passwordHash, username: body.username })
-      .returning()
-      .get();
+      .returning();
 
     const token = this.auth.signToken({ sub: user.id, email: user.email });
     return { user: toUserResponse(user), token };
@@ -55,7 +58,7 @@ export class AuthController {
   @HttpCode(200)
   @ApiOkResponse({ type: AuthResponseDto })
   async login(@Body() body: LoginDto): Promise<AuthResponse> {
-    const user = this.db.select().from(users).where(eq(users.email, body.email)).get();
+    const [user] = await this.db.select().from(users).where(eq(users.email, body.email)).limit(1);
     if (!user) throw ApiError.unauthorized('auth.invalidCredentials');
 
     const valid = await this.auth.verifyPassword(body.password, user.passwordHash);
@@ -68,8 +71,8 @@ export class AuthController {
   @Get('me')
   @ApiBearerAuth()
   @ApiOkResponse({ type: UserResponseDto })
-  me(@CurrentUser() current: AuthUser): UserResponse {
-    const user = this.db.select().from(users).where(eq(users.id, current.id)).get();
+  async me(@CurrentUser() current: AuthUser): Promise<UserResponse> {
+    const [user] = await this.db.select().from(users).where(eq(users.id, current.id)).limit(1);
     if (!user) throw ApiError.unauthorized('auth.invalidToken');
     return toUserResponse(user);
   }
@@ -77,13 +80,15 @@ export class AuthController {
   @Patch('me')
   @ApiBearerAuth()
   @ApiOkResponse({ type: UserResponseDto })
-  updateMe(@CurrentUser() current: AuthUser, @Body() body: UpdateMeDto): UserResponse {
-    const user = this.db
+  async updateMe(
+    @CurrentUser() current: AuthUser,
+    @Body() body: UpdateMeDto
+  ): Promise<UserResponse> {
+    const [user] = await this.db
       .update(users)
       .set({ ...body, updatedAt: new Date().toISOString() })
       .where(eq(users.id, current.id))
-      .returning()
-      .get();
+      .returning();
     if (!user) throw ApiError.unauthorized('auth.invalidToken');
     return toUserResponse(user);
   }

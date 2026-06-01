@@ -1,36 +1,63 @@
 import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import BetterSqlite3 from 'better-sqlite3';
-import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { resolve } from 'node:path';
+import { PGlite } from '@electric-sql/pglite';
+import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { migrate as migratePg } from 'drizzle-orm/node-postgres/migrator';
+import { drizzle as drizzlePglite, type PgliteDatabase } from 'drizzle-orm/pglite';
+import { migrate as migratePglite } from 'drizzle-orm/pglite/migrator';
+import { Pool } from 'pg';
 import * as schema from './schema';
 
-/** DI token for the Drizzle database instance. */
+/** DI tokens for the Drizzle instance and its underlying handle (for shutdown). */
 export const DRIZZLE = Symbol('DRIZZLE');
+export const DB_HANDLE = Symbol('DB_HANDLE');
 
-export type DrizzleDB = BetterSQLite3Database<typeof schema>;
+// PGlite and node-postgres share the same query API; services type against this.
+export type DrizzleDB = NodePgDatabase<typeof schema>;
 
 export interface DatabaseHandle {
   db: DrizzleDB;
-  sqlite: BetterSqlite3.Database;
+  close: () => Promise<void>;
 }
 
-export function createDatabase(path: string): DatabaseHandle {
-  if (path !== ':memory:') {
-    mkdirSync(dirname(resolve(path)), { recursive: true });
-  }
-  const sqlite = new BetterSqlite3(path);
-  if (path !== ':memory:') {
-    sqlite.pragma('journal_mode = WAL');
-  }
-  sqlite.pragma('foreign_keys = ON');
-  const db = drizzle(sqlite, { schema });
-  return { db, sqlite };
+function migrationsFolder(): string {
+  return process.env.MIGRATIONS_DIR ?? resolve(process.cwd(), 'src/db/migrations');
 }
 
-export function runMigrations(
-  db: DrizzleDB,
-  migrationsFolder = process.env.MIGRATIONS_DIR ?? resolve(process.cwd(), 'src/db/migrations')
-): void {
-  migrate(db, { migrationsFolder });
+export interface DatabaseOptions {
+  /** Real Postgres connection string (production, E2E, or local override). */
+  url?: string;
+  /** PGlite data dir for zero-setup local dev when no `url` is given. */
+  path?: string;
+}
+
+/**
+ * Real Postgres via `pg` when a `url` is provided; otherwise an embedded Postgres
+ * (PGlite) so local dev needs no database server. Both run the same migrations.
+ */
+export async function createDatabase(options: DatabaseOptions): Promise<DatabaseHandle> {
+  if (options.url) {
+    const pool = new Pool({ connectionString: options.url });
+    const db = drizzlePg(pool, { schema });
+    await migratePg(db, { migrationsFolder: migrationsFolder() });
+    return { db, close: () => pool.end() };
+  }
+
+  const dataDir = options.path && options.path !== ':memory:' ? resolve(options.path) : undefined;
+  if (dataDir) mkdirSync(dataDir, { recursive: true });
+  return pgliteHandle(new PGlite(dataDir));
+}
+
+/** In-memory embedded Postgres for the test suite. */
+export async function createTestDatabase(): Promise<DatabaseHandle> {
+  return pgliteHandle(new PGlite());
+}
+
+async function pgliteHandle(client: PGlite): Promise<DatabaseHandle> {
+  await client.waitReady;
+  const db = drizzlePglite(client as never, { schema }) as unknown as DrizzleDB;
+  await migratePglite(db as unknown as PgliteDatabase<typeof schema>, {
+    migrationsFolder: migrationsFolder(),
+  });
+  return { db, close: () => client.close() };
 }

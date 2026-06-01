@@ -1,22 +1,16 @@
 import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SwaggerModule } from '@nestjs/swagger';
 import { buildOpenApiDocument, createApp } from './app.factory';
-
-/** Refuse to boot in production with insecure defaults. */
-function assertProductionConfig(): void {
-  if (process.env.NODE_ENV !== 'production') return;
-  if (!process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET must be set in production');
-  }
-}
+import type { Env } from './config/env';
 
 async function bootstrap(): Promise<void> {
-  assertProductionConfig();
+  // ConfigModule validates env during create(); production requires JWT_SECRET + DATABASE_URL.
   const app = await createApp();
   SwaggerModule.setup('docs', app, buildOpenApiDocument(app));
 
-  const port = Number(process.env.PORT ?? 3001);
+  const port = app.get(ConfigService<Env, true>).get('PORT', { infer: true });
   await app.listen({ port, host: '0.0.0.0' });
   new Logger('Bootstrap').log(`Listening on http://localhost:${port} — docs at /docs`);
 }

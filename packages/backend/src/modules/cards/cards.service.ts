@@ -11,21 +11,23 @@ export class CardsService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   /** Lists cards in a subject the user owns (newest first). 404 if not their subject. */
-  list(userId: string, query: CardListQuery): { rows: CardResponse[]; limit: number } {
-    this.assertSubjectOwned(userId, query.subject);
-    const rows = this.db
+  async list(
+    userId: string,
+    query: CardListQuery
+  ): Promise<{ rows: CardResponse[]; limit: number }> {
+    await this.assertSubjectOwned(userId, query.subject);
+    const rows = await this.db
       .select()
       .from(cards)
       .where(and(eq(cards.subjectId, query.subject), cursorWhere(cards.id, query)))
       .orderBy(desc(cards.id))
-      .limit(query.limit + 1)
-      .all();
+      .limit(query.limit + 1);
     return { rows, limit: query.limit };
   }
 
-  create(userId: string, dto: CreateCardDto): CardResponse {
-    this.assertSubjectOwned(userId, dto.subjectId);
-    return this.db
+  async create(userId: string, dto: CreateCardDto): Promise<CardResponse> {
+    await this.assertSubjectOwned(userId, dto.subjectId);
+    const [card] = await this.db
       .insert(cards)
       .values({
         subjectId: dto.subjectId,
@@ -34,42 +36,41 @@ export class CardsService {
         hints: dto.hints ?? [],
         tags: dto.tags ?? [],
       })
-      .returning()
-      .get();
+      .returning();
+    return card;
   }
 
-  get(userId: string, id: string): CardResponse {
-    const card = this.db
+  async get(userId: string, id: string): Promise<CardResponse> {
+    const [card] = await this.db
       .select(getTableColumns(cards))
       .from(cards)
       .innerJoin(subjects, eq(cards.subjectId, subjects.id))
       .where(and(eq(cards.id, id), eq(subjects.userId, userId)))
-      .get();
+      .limit(1);
     if (!card) throw ApiError.notFound('cards.notFound');
     return card;
   }
 
-  update(userId: string, id: string, dto: UpdateCardDto): CardResponse {
-    this.get(userId, id); // ownership check (throws 404 if not owned)
-    this.db
+  async update(userId: string, id: string, dto: UpdateCardDto): Promise<CardResponse> {
+    await this.get(userId, id); // ownership check (throws 404 if not owned)
+    await this.db
       .update(cards)
       .set({ ...dto, updatedAt: new Date().toISOString() })
-      .where(eq(cards.id, id))
-      .run();
+      .where(eq(cards.id, id));
     return this.get(userId, id);
   }
 
-  remove(userId: string, id: string): void {
-    this.get(userId, id);
-    this.db.delete(cards).where(eq(cards.id, id)).run();
+  async remove(userId: string, id: string): Promise<void> {
+    await this.get(userId, id);
+    await this.db.delete(cards).where(eq(cards.id, id));
   }
 
-  private assertSubjectOwned(userId: string, subjectId: string): void {
-    const owned = this.db
+  private async assertSubjectOwned(userId: string, subjectId: string): Promise<void> {
+    const [owned] = await this.db
       .select({ id: subjects.id })
       .from(subjects)
       .where(and(eq(subjects.id, subjectId), eq(subjects.userId, userId)))
-      .get();
+      .limit(1);
     if (!owned) throw ApiError.notFound('subjects.notFound');
   }
 }

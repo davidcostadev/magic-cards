@@ -3,22 +3,23 @@ import { Test } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import request from 'supertest';
 import { AppModule } from '../app.module';
-import { createDatabase, DRIZZLE, type DrizzleDB, runMigrations } from '../db/client';
+import { createTestDatabase, DB_HANDLE, DRIZZLE, type DrizzleDB } from '../db/client';
 
 export interface TestApp {
   app: NestFastifyApplication;
   db: DrizzleDB;
 }
 
-/** Boots the full Nest app against a fresh in-memory, migrated SQLite database. */
+/** Boots the full Nest app against a fresh in-memory, migrated PGlite (Postgres) database. */
 export async function createTestApp(): Promise<TestApp> {
   process.env.JWT_SECRET = 'test-secret';
-  const { db } = createDatabase(':memory:');
-  runMigrations(db);
+  const handle = await createTestDatabase();
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(DB_HANDLE)
+    .useValue(handle)
     .overrideProvider(DRIZZLE)
-    .useValue(db)
+    .useValue(handle.db)
     // Don't rate-limit the test/integration suite.
     .overrideGuard(ThrottlerGuard)
     .useValue({ canActivate: () => true })
@@ -28,7 +29,7 @@ export async function createTestApp(): Promise<TestApp> {
   app.setGlobalPrefix('v1');
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
-  return { app, db };
+  return { app, db: handle.db };
 }
 
 /** Signs up a user and returns the bearer token for authenticating later requests. */
