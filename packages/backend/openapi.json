@@ -563,6 +563,20 @@
               "minLength": 1,
               "type": "string"
             }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "quiz",
+                "type-answer",
+                "match"
+              ]
+            }
           }
         ],
         "responses": {
@@ -572,6 +586,56 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReviewQueueResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/v1/review_queue/counts": {
+      "get": {
+        "operationId": "ReviewsController_counts",
+        "parameters": [
+          {
+            "name": "subject",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "quiz",
+                "type-answer",
+                "match"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewQueueCountsResponseDto"
                 }
               }
             }
@@ -598,6 +662,20 @@
             "schema": {
               "minLength": 1,
               "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "quiz",
+                "type-answer",
+                "match"
+              ]
             }
           }
         ],
@@ -2026,6 +2104,41 @@
           "due",
           "new",
           "total"
+        ]
+      },
+      "ReviewQueueCountsResponseDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "byType": {
+            "type": "object",
+            "properties": {
+              "open": {
+                "type": "number"
+              },
+              "quiz": {
+                "type": "number"
+              },
+              "type-answer": {
+                "type": "number"
+              },
+              "match": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "open",
+              "quiz",
+              "type-answer",
+              "match"
+            ]
+          }
+        },
+        "required": [
+          "total",
+          "byType"
         ]
       },
       "CreateReviewDto": {

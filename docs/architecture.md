@@ -501,9 +501,9 @@ Mastered (interval > 21 days, high ease factor)
 ```
 
 ### Session Card Selection
-1. Overdue cards first, ordered by staleness (most overdue first)
-2. New cards to fill remaining capacity — capped at 30% of session total
-3. Daily Goal (default: 20) is a visual target, not a hard limit
+1. Overdue cards first, ordered by staleness (most overdue first), capped at the Daily Goal
+2. New cards then top the session up to the Daily Goal (so a session holds at most `dailyGoal` cards)
+3. Daily Goal (default: 20) is the per-session target/cap; overdue cards beyond it roll into the next session
 4. Session ends when no eligible cards remain or learner stops
 
 ---

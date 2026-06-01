@@ -41,11 +41,23 @@ afterEach(async () => {
 });
 
 describe('LearningService.getSessionCards', () => {
-  it('caps new cards at 30% of the daily goal (20 → 6)', async () => {
-    for (let i = 1; i <= 10; i++) await addCard(`c${i}`);
+  it('fills new cards up to the daily goal (default 20) when nothing is due', async () => {
+    for (let i = 1; i <= 25; i++) await addCard(`c${i}`);
     const { due, new: newCards } = await service().getSessionCards('u1');
     expect(due).toHaveLength(0);
-    expect(newCards).toHaveLength(6);
+    expect(newCards).toHaveLength(20);
+  });
+
+  it('counts due cards against the daily goal — due first, new fills the rest', async () => {
+    for (let i = 1; i <= 25; i++) await addCard(`c${i}`);
+    await addDueProgress('c1', 1);
+    await addDueProgress('c2', 2);
+    await addDueProgress('c3', 3);
+
+    const { due, new: newCards } = await service().getSessionCards('u1');
+    expect(due).toHaveLength(3);
+    expect(newCards).toHaveLength(17);
+    expect(due.length + newCards.length).toBe(20);
   });
 
   it('orders overdue cards most-overdue first', async () => {

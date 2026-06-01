@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, getTableColumns, isNull, lte } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns, isNull, lte, sql } from 'drizzle-orm';
 import { ApiError } from '../../common/errors/api-error';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
@@ -20,7 +20,6 @@ import { GradingService } from './grading.service';
 import { Sm2Service } from './sm2.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const NEW_CARD_RATIO = 0.3;
 const DEFAULT_DAILY_GOAL = 20;
 
 export interface SessionCards {
@@ -37,10 +36,16 @@ export class LearningService {
   ) {}
 
   /**
-   * Builds the study batch: every overdue card (most overdue first), then new
-   * (never-reviewed) cards capped at 30% of the daily goal (architecture §7).
+   * Builds the study batch to fill the daily goal: overdue cards first (most overdue first,
+   * capped at the goal), then new (never-reviewed) cards to top the session up to the goal.
+   * So a session holds at most `dailyGoal` cards. An optional `type` restricts the batch to a
+   * single card type (e.g. only quizzes).
    */
-  async getSessionCards(userId: string, subjectId?: string): Promise<SessionCards> {
+  async getSessionCards(
+    userId: string,
+    subjectId?: string,
+    type?: Card['type']
+  ): Promise<SessionCards> {
     if (subjectId) await this.assertSubjectVisible(userId, subjectId);
 
     const now = new Date().toISOString();
@@ -50,8 +55,8 @@ export class LearningService {
       .where(eq(users.id, userId))
       .limit(1);
     const dailyGoal = user?.goal ?? DEFAULT_DAILY_GOAL;
-    const maxNew = Math.floor(NEW_CARD_RATIO * dailyGoal);
     const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
+    const typeFilter = type ? eq(cards.type, type) : undefined;
 
     const due = await this.db
       .select(getTableColumns(cards))
@@ -63,11 +68,15 @@ export class LearningService {
           eq(cardProgress.userId, userId),
           canSeeSubject(userId),
           lte(cardProgress.nextReviewDate, now),
-          subjectFilter
+          subjectFilter,
+          typeFilter
         )
       )
-      .orderBy(asc(cardProgress.nextReviewDate));
+      .orderBy(asc(cardProgress.nextReviewDate))
+      .limit(dailyGoal);
 
+    // New cards top the session up to the daily goal after due reviews take their share.
+    const maxNew = Math.max(0, dailyGoal - due.length);
     const newCards =
       maxNew > 0
         ? await this.db
@@ -78,7 +87,7 @@ export class LearningService {
               cardProgress,
               and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
             )
-            .where(and(canSeeSubject(userId), isNull(cardProgress.id), subjectFilter))
+            .where(and(canSeeSubject(userId), isNull(cardProgress.id), subjectFilter, typeFilter))
             .orderBy(asc(cards.id))
             .limit(maxNew)
         : [];
@@ -90,9 +99,43 @@ export class LearningService {
     };
   }
 
+  /**
+   * Counts the visible cards of each type (optionally within one subject) — powers the
+   * "choose what to study" screen, which needs a per-type total and to disable empty modes.
+   */
+  async getTypeCounts(
+    userId: string,
+    subjectId?: string
+  ): Promise<{ total: number; byType: Record<Card['type'], number> }> {
+    const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
+    const rows = await this.db
+      .select({ type: cards.type, count: sql<number>`count(*)::int` })
+      .from(cards)
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      .where(and(canSeeSubject(userId), subjectFilter))
+      .groupBy(cards.type);
+
+    const byType: Record<Card['type'], number> = {
+      open: 0,
+      quiz: 0,
+      'type-answer': 0,
+      match: 0,
+    };
+    let total = 0;
+    for (const row of rows) {
+      byType[row.type] = row.count;
+      total += row.count;
+    }
+    return { total, byType };
+  }
+
   /** The single next card to study: most overdue, else the next new card, else null. */
-  async getNextCard(userId: string, subjectId?: string): Promise<CardResponse | null> {
-    const { due, new: newCards } = await this.getSessionCards(userId, subjectId);
+  async getNextCard(
+    userId: string,
+    subjectId?: string,
+    type?: Card['type']
+  ): Promise<CardResponse | null> {
+    const { due, new: newCards } = await this.getSessionCards(userId, subjectId, type);
     return due[0] ?? newCards[0] ?? null;
   }
 

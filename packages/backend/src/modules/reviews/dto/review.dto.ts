@@ -1,5 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { CARD_TYPES } from '../../../db/schema';
 import { cardResponseSchema } from '../../cards/dto/card.dto';
 
 const matchPairSchema = z.object({ left: z.string().min(1), right: z.string().min(1) });
@@ -36,6 +37,8 @@ export const createReviewSchema = z
 
 export const reviewQueueQuerySchema = z.object({
   subject: z.string().min(1).optional(),
+  // Optionally restrict the session to a single card type (e.g. only quizzes).
+  type: z.enum(CARD_TYPES).optional(),
 });
 
 export const cardProgressResponseSchema = z.object({
@@ -72,14 +75,29 @@ export const reviewQueueResponseSchema = z.object({
   total: z.number(),
 });
 
+/** How many visible cards of each type exist (for the "choose what to study" screen). */
+export const cardTypeCountsSchema = z.object({
+  open: z.number(),
+  quiz: z.number(),
+  'type-answer': z.number(),
+  match: z.number(),
+});
+
+export const reviewQueueCountsResponseSchema = z.object({
+  total: z.number(),
+  byType: cardTypeCountsSchema,
+});
+
 export class CreateReviewDto extends createZodDto(createReviewSchema) {}
 export class ReviewQueueQueryDto extends createZodDto(reviewQueueQuerySchema) {}
 export class CardProgressResponseDto extends createZodDto(cardProgressResponseSchema) {}
 export class SubmitReviewResponseDto extends createZodDto(submitReviewResponseSchema) {}
 export class ReviewQueueResponseDto extends createZodDto(reviewQueueResponseSchema) {}
+export class ReviewQueueCountsResponseDto extends createZodDto(reviewQueueCountsResponseSchema) {}
 
 export type CardProgressResponse = z.infer<typeof cardProgressResponseSchema>;
 export type ReviewQueueResponse = z.infer<typeof reviewQueueResponseSchema>;
+export type ReviewQueueCountsResponse = z.infer<typeof reviewQueueCountsResponseSchema>;
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;
 export type GradeResult = z.infer<typeof gradeResultSchema>;
 export type SubmitReviewResult = z.infer<typeof submitReviewResponseSchema>;

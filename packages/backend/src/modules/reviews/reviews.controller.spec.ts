@@ -305,3 +305,99 @@ describe('GET /v1/review_queue — sanitization', () => {
     expect(res.body).not.toHaveProperty('matchPairs');
   });
 });
+
+describe('GET /v1/review_queue — type filter', () => {
+  async function seedOneOfEach() {
+    await addCard('Open Q'); // type defaults to 'open'
+    await addTypedCard({
+      type: 'quiz',
+      question: 'Quiz Q',
+      answer: 'because',
+      choices: [
+        { id: 'a', text: 'A', isCorrect: false },
+        { id: 'b', text: 'B', isCorrect: true },
+      ],
+    });
+    await addTypedCard({
+      type: 'match',
+      question: 'Match Q',
+      matchPairs: [
+        { left: 'TS', right: 'TypeScript' },
+        { left: 'PY', right: 'Python' },
+      ],
+    });
+  }
+
+  it('returns every card type when no type is given', async () => {
+    await seedOneOfEach();
+    const res = await auth(request(app.getHttpServer()).get('/v1/review_queue'));
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(3);
+  });
+
+  it('restricts the queue to a single requested type', async () => {
+    await seedOneOfEach();
+    const res = await auth(
+      request(app.getHttpServer()).get('/v1/review_queue').query({ type: 'quiz' })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(1);
+    expect(res.body.new).toHaveLength(1);
+    expect(res.body.new[0].type).toBe('quiz');
+  });
+
+  it('applies the type filter to review_queue/next too', async () => {
+    await seedOneOfEach();
+    const res = await auth(
+      request(app.getHttpServer()).get('/v1/review_queue/next').query({ type: 'match' })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.type).toBe('match');
+  });
+
+  it('rejects an unknown type with 400', async () => {
+    const res = await auth(
+      request(app.getHttpServer()).get('/v1/review_queue').query({ type: 'bogus' })
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('GET /v1/review_queue/counts', () => {
+  // One test (each test signs up a user, and the suite's per-IP signup throttle caps the
+  // file at ~20 such tests) covering per-type counts, zero types, and subject scoping.
+  it('returns per-type counts (zeros included) and scopes them to a subject', async () => {
+    await addCard('Open A'); // open in `subjectId`
+    await addCard('Open B'); // open in `subjectId`
+    await addTypedCard({
+      type: 'quiz',
+      question: 'Quiz Q',
+      answer: 'because',
+      choices: [
+        { id: 'a', text: 'A', isCorrect: false },
+        { id: 'b', text: 'B', isCorrect: true },
+      ],
+    });
+    // A second subject with one card, to prove the (un)scoped totals differ.
+    const other = await auth(
+      request(app.getHttpServer()).post('/v1/subjects').send({ title: 'Other' })
+    );
+    await auth(
+      request(app.getHttpServer())
+        .post('/v1/cards')
+        .send({ subjectId: other.body.id, question: 'Elsewhere', answer: 'a' })
+    );
+
+    const all = await auth(request(app.getHttpServer()).get('/v1/review_queue/counts'));
+    expect(all.status).toBe(200);
+    expect(all.body.total).toBe(4);
+    expect(all.body.byType).toEqual({ open: 3, quiz: 1, 'type-answer': 0, match: 0 });
+
+    const scoped = await auth(
+      request(app.getHttpServer()).get('/v1/review_queue/counts').query({ subject: subjectId })
+    );
+    expect(scoped.status).toBe(200);
+    expect(scoped.body.total).toBe(3); // only the 3 cards in `subjectId`, not the other subject's
+    expect(scoped.body.byType).toEqual({ open: 2, quiz: 1, 'type-answer': 0, match: 0 });
+  });
+});

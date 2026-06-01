@@ -7,6 +7,8 @@ import { CardResponseDto } from '../cards/dto/card.dto';
 import { LearningService } from '../learning/learning.service';
 import {
   CreateReviewDto,
+  type ReviewQueueCountsResponse,
+  ReviewQueueCountsResponseDto,
   ReviewQueueQueryDto,
   type ReviewQueueResponse,
   ReviewQueueResponseDto,
@@ -26,8 +28,21 @@ export class ReviewsController {
     @CurrentUser() user: AuthUser,
     @Query() query: ReviewQueueQueryDto
   ): Promise<ReviewQueueResponse> {
-    const { due, new: newCards } = await this.learning.getSessionCards(user.id, query.subject);
+    const { due, new: newCards } = await this.learning.getSessionCards(
+      user.id,
+      query.subject,
+      query.type
+    );
     return { due, new: newCards, total: due.length + newCards.length };
+  }
+
+  @Get('review_queue/counts')
+  @ApiOkResponse({ type: ReviewQueueCountsResponseDto })
+  counts(
+    @CurrentUser() user: AuthUser,
+    @Query() query: ReviewQueueQueryDto
+  ): Promise<ReviewQueueCountsResponse> {
+    return this.learning.getTypeCounts(user.id, query.subject);
   }
 
   @Get('review_queue/next')
@@ -37,7 +52,7 @@ export class ReviewsController {
     @Query() query: ReviewQueueQueryDto,
     @Res() reply: FastifyReply
   ): Promise<void> {
-    const card = await this.learning.getNextCard(user.id, query.subject);
+    const card = await this.learning.getNextCard(user.id, query.subject, query.type);
     // 204 when the queue is empty, otherwise the next card to study.
     if (!card) {
       reply.status(204).send();
