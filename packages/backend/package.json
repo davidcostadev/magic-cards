@@ -12,7 +12,8 @@
     "type:check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "gen:api": "nest build && node dist/openapi.js"
+    "gen:api": "nest build && node dist/openapi.js",
+    "seed:catalog": "nest build && node dist/scripts/seed-catalog.js"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.4.6",

@@ -820,6 +820,34 @@
           "catalog"
         ]
       }
+    },
+    "/v1/catalog/subjects/{id}": {
+      "delete": {
+        "operationId": "CatalogController_deleteSubject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
+        "tags": [
+          "catalog"
+        ]
+      }
     }
   },
   "info": {
@@ -836,6 +864,11 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "type": "http"
+      },
+      "x-api-key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
       }
     },
     "schemas": {

@@ -29,6 +29,8 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .setDescription('Stripe-style REST API for the Magic Cards learning platform.')
     .setVersion('1.0.0')
     .addBearerAuth()
+    // Catalog publish/delete endpoints authorize via a static API key, not the JWT.
+    .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
     .build();
   // nestjs-zod DTOs self-describe via _OPENAPI_METADATA_FACTORY; cleanup emits valid 3.1.
   const document = cleanupOpenApiDoc(SwaggerModule.createDocument(app, config), { version: '3.1' });

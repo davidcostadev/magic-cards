@@ -50,6 +50,18 @@ export class CatalogService implements OnModuleInit {
     return card;
   }
 
+  /** Removes a public catalog subject (and its cards/progress via cascade). */
+  async deleteSubject(id: string): Promise<void> {
+    // Scoped to public, system-owned content so the key can never delete a user's subject.
+    const deleted = await this.db
+      .delete(subjects)
+      .where(
+        and(eq(subjects.id, id), eq(subjects.isPublic, true), eq(subjects.userId, SYSTEM_USER_ID))
+      )
+      .returning({ id: subjects.id });
+    if (deleted.length === 0) throw ApiError.notFound('subjects.notFound');
+  }
+
   /** The system user owns all public content; created once and never logs in. */
   private async ensureSystemUser(): Promise<void> {
     await this.db

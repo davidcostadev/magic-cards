@@ -81,6 +81,68 @@ describe('POST /v1/catalog/* (API key)', () => {
   });
 });
 
+describe('DELETE /v1/catalog/subjects/:id (API key)', () => {
+  it('deletes a public catalog subject (204) and removes it for users', async () => {
+    const subject = await publishSubject('Deletable');
+    await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/cards')
+        .send({ subjectId: subject.id, question: 'Q', answer: 'A' })
+    );
+    const token = await signupAndToken(app, 'reader@test.com', 'reader');
+    const auth = (req: request.Test) => req.set('Authorization', `Bearer ${token}`);
+
+    // Visible before the delete.
+    const before = await auth(request(app.getHttpServer()).get('/v1/subjects'));
+    expect(before.body.data.some((s: { id: string }) => s.id === subject.id)).toBe(true);
+
+    const del = await withKey(
+      request(app.getHttpServer()).delete(`/v1/catalog/subjects/${subject.id}`)
+    );
+    expect(del.status).toBe(204);
+
+    // Gone from the list and the study queue (cards cascade-deleted).
+    const after = await auth(request(app.getHttpServer()).get('/v1/subjects'));
+    expect(after.body.data.some((s: { id: string }) => s.id === subject.id)).toBe(false);
+    const queue = await auth(request(app.getHttpServer()).get('/v1/review_queue'));
+    expect(queue.body.new.some((c: { question: string }) => c.question === 'Q')).toBe(false);
+  });
+
+  it("refuses to delete a regular user's private subject (404)", async () => {
+    const token = await signupAndToken(app, 'owner@test.com', 'owner');
+    const priv = await request(app.getHttpServer())
+      .post('/v1/subjects')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'Private' });
+
+    const del = await withKey(
+      request(app.getHttpServer()).delete(`/v1/catalog/subjects/${priv.body.id}`)
+    );
+    expect(del.status).toBe(404);
+
+    // The user's subject is untouched.
+    const still = await request(app.getHttpServer())
+      .get(`/v1/subjects/${priv.body.id}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(still.status).toBe(200);
+  });
+
+  it('returns 404 deleting a missing subject', async () => {
+    const del = await withKey(
+      request(app.getHttpServer()).delete(
+        '/v1/catalog/subjects/01900000-0000-7000-8000-000000000000'
+      )
+    );
+    expect(del.status).toBe(404);
+  });
+
+  it('requires the API key to delete (401)', async () => {
+    const subject = await publishSubject('Guarded');
+    const del = await request(app.getHttpServer()).delete(`/v1/catalog/subjects/${subject.id}`);
+    expect(del.status).toBe(401);
+  });
+});
+
 describe('public content is visible + studyable by any user', () => {
   it('appears in a fresh user’s subject list and study queue, but is read-only', async () => {
     const subject = await publishSubject('Public Algorithms');

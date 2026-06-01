@@ -1,5 +1,5 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
-import { ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiNoContentResponse, ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { type CardResponse, CardResponseDto, CreateCardDto } from '../cards/dto/card.dto';
@@ -31,5 +31,12 @@ export class CatalogController {
   @ApiOkResponse({ type: CardResponseDto })
   createCard(@Body() body: CreateCardDto): Promise<CardResponse> {
     return this.catalog.createCard(body);
+  }
+
+  @Delete('subjects/:id')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  deleteSubject(@Param('id') id: string): Promise<void> {
+    return this.catalog.deleteSubject(id);
   }
 }
