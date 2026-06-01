@@ -148,6 +148,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/review_queue/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewsController_counts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/review_queue/next": {
         parameters: {
             query?: never;
@@ -552,6 +568,15 @@ export interface components {
                 updatedAt: string;
             }[];
             total: number;
+        };
+        ReviewQueueCountsResponseDto: {
+            total: number;
+            byType: {
+                open: number;
+                quiz: number;
+                "type-answer": number;
+                match: number;
+            };
         };
         CreateReviewDto: {
             cardId: string;
@@ -1056,6 +1081,7 @@ export interface operations {
         parameters: {
             query?: {
                 subject?: string;
+                type?: "open" | "quiz" | "type-answer" | "match";
             };
             header?: never;
             path?: never;
@@ -1073,10 +1099,33 @@ export interface operations {
             };
         };
     };
+    ReviewsController_counts: {
+        parameters: {
+            query?: {
+                subject?: string;
+                type?: "open" | "quiz" | "type-answer" | "match";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewQueueCountsResponseDto"];
+                };
+            };
+        };
+    };
     ReviewsController_next: {
         parameters: {
             query?: {
                 subject?: string;
+                type?: "open" | "quiz" | "type-answer" | "match";
             };
             header?: never;
             path?: never;

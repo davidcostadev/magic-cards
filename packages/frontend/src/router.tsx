@@ -26,6 +26,21 @@ const OnboardingPage = lazy(() =>
   import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage }))
 );
 
+/**
+ * Study modes the Learn page understands. The chooser screen is shown until `mode` is set;
+ * `all` studies every type, the rest narrow to one card type (mirrors the backend `CARD_TYPES`).
+ */
+const STUDY_MODES = ['all', 'open', 'quiz', 'type-answer', 'match'] as const;
+export type StudyMode = (typeof STUDY_MODES)[number];
+
+/** Parses `?mode=` for the learn routes; an absent/unknown value shows the chooser. */
+function validateLearnSearch(search: Record<string, unknown>): { mode?: StudyMode } {
+  const mode = search.mode;
+  return typeof mode === 'string' && (STUDY_MODES as readonly string[]).includes(mode)
+    ? { mode: mode as StudyMode }
+    : {};
+}
+
 function isAuthenticated() {
   return localStorage.getItem('auth_token') !== null;
 }
@@ -106,6 +121,7 @@ const learnRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/learn',
   beforeLoad: requireAuth,
+  validateSearch: validateLearnSearch,
   component: LearningSessionPage,
 });
 
@@ -113,6 +129,7 @@ const learnSubjectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/learn/$subjectId',
   beforeLoad: requireAuth,
+  validateSearch: validateLearnSearch,
   component: LearningSessionPage,
 });
 

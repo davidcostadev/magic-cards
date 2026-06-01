@@ -1,12 +1,19 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { GraduationCap } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card } from '@/api/queries/cards';
-import { type ReviewQueue, useReviewQueue, useSubmitReview } from '@/api/queries/reviews';
+import {
+  type CardType,
+  type ReviewQueue,
+  useReviewQueue,
+  useSubmitReview,
+  useTypeCounts,
+} from '@/api/queries/reviews';
 import { Kbd } from '@/components/common/Kbd';
 import { CardReview, type ReviewSubmission } from '@/components/features/learning/CardReview';
 import { SessionSummary } from '@/components/features/learning/SessionSummary';
+import { type StudyMode, StudyModeModal } from '@/components/features/learning/StudyModeModal';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,16 +32,74 @@ function orderedSession(queue: ReviewQueue): Card[] {
   return [...queue.due, ...queue.new];
 }
 
+/**
+ * Shows the "How do you want to study?" chooser until a mode is picked, then mounts a fresh
+ * session for it. The session is keyed by (subject, mode) so switching modes remounts it
+ * instead of reusing the previous mode's snapshotted deck.
+ */
 export function LearningSessionPage() {
   const params = useParams({ strict: false });
   const subjectId = (params as { subjectId?: string }).subjectId;
+  const { mode } = useSearch({ strict: false }) as { mode?: StudyMode };
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const counts = useTypeCounts(subjectId, !mode);
+
+  const chooseMode = useCallback(
+    (picked: StudyMode) => {
+      navigate({
+        to: subjectId ? '/learn/$subjectId' : '/learn',
+        params: subjectId ? { subjectId } : {},
+        search: { mode: picked },
+      });
+    },
+    [navigate, subjectId]
+  );
+
+  if (!mode) {
+    if (counts.isLoading || !counts.data) {
+      return (
+        <div className="flex min-h-[60vh] items-center justify-center p-5">
+          <p className="text-lg text-muted-foreground">{t('common.loading')}</p>
+        </div>
+      );
+    }
+    if (counts.data.total === 0) {
+      return (
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center p-5">
+          <GraduationCap className="h-16 w-16 text-muted-foreground" />
+          <p className="text-lg text-muted-foreground">{t('learn.noCardsToReview')}</p>
+          <Button variant="outline" onClick={() => navigate({ to: '/dashboard' })}>
+            {t('common.back')}
+          </Button>
+        </div>
+      );
+    }
+    return (
+      <StudyModeModal counts={counts.data.byType} total={counts.data.total} onSelect={chooseMode} />
+    );
+  }
+
+  const type: CardType | undefined = mode === 'all' ? undefined : mode;
+  return (
+    <LearningSession key={`${subjectId ?? 'all'}:${mode}`} subjectId={subjectId} type={type} />
+  );
+}
+
+interface LearningSessionProps {
+  subjectId?: string;
+  type?: CardType;
+}
+
+/** Runs one study session: snapshots the deck, tracks progress, and handles the exit dialog. */
+function LearningSession({ subjectId, type }: LearningSessionProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { setInSession, exitRequested, requestExit, cancelExit } = useLearningSessions();
   const { user } = useAuth();
   const dailyGoal = user?.dailyGoal ?? DEFAULT_DAILY_GOAL;
 
-  const { data: queue, isLoading } = useReviewQueue(subjectId);
+  const { data: queue, isLoading } = useReviewQueue(subjectId, type);
   const submitReview = useSubmitReview();
 
   // Snapshot the queue once so mid-session invalidations don't reshuffle the deck.
