@@ -127,6 +127,49 @@ curl -sS -X DELETE http://localhost:3001/v1/catalog/subjects/019e... \
 
 ---
 
+## 4b. Bulk import / export (JSON)
+
+For loading or editing many cards at once — e.g. an **AI authoring a JSON file** — the catalog
+has a symmetric import/export pair (same `x-api-key`). The document shape is
+`{ "subjects": [...], "cards": [...] }`; **export returns exactly what import accepts**, so you
+can export → edit the JSON → re-import.
+
+**Import** — `POST /v1/catalog/import`. Subjects are upserted (give each a stable `id` so cards can
+reference it and so re-importing updates instead of duplicating). Each card is validated against the
+same per-type rules as the single-card API (a quiz needs exactly one correct choice, type-answer
+needs a `shortAnswer`, match needs ≥2 pairs). **Invalid cards are skipped and reported** in `errors`
+(with their array `index`) so one bad card never sinks the whole batch:
+
+```bash
+curl -sS -X POST http://localhost:3001/v1/catalog/import \
+  -H "x-api-key: $CONTENT_API_KEY" -H 'Content-Type: application/json' \
+  --data @docs/examples/catalog-import.example.json
+# → { "subjects": {"created":1,"updated":0}, "cards": {"created":4,"updated":0}, "errors": [] }
+```
+
+A ready-to-use template lives at [`examples/catalog-import.example.json`](./examples/catalog-import.example.json)
+(one subject + one card of every type). Card fields per type:
+
+- `open` → `question`, `answer`
+- `quiz` → `question`, `answer` (explanation), `choices: [{ id, text, isCorrect }]` (exactly one correct)
+- `type-answer` → `question`, `answer` (explanation), `shortAnswer` (matched case/accent/space-insensitive)
+- `match` → `question`, `matchPairs: [{ left, right }]` (`answer`/explanation optional)
+- any type also accepts `hints: string[]`, `tags: string[]`, and an optional `id` (upsert key).
+
+**Export** — `GET /v1/catalog/export` (optionally `?subject=<id>`) dumps all public content as the
+same JSON, ids included:
+
+```bash
+curl -sS http://localhost:3001/v1/catalog/export -H "x-api-key: $CONTENT_API_KEY" > catalog.json
+# edit catalog.json, then re-import it (idempotent — ids upsert)
+```
+
+> **AI workflow:** the contract is in `openapi.json` (tag `catalog`). An agent generates a JSON file
+> in the shape above and `POST`s it to `/v1/catalog/import`; the `errors[]` array tells it exactly
+> which cards to fix and re-send. A future MCP server could wrap these two endpoints as tools.
+
+---
+
 ## 5. What learners see
 
 - The shared subject appears in **every** learner's `GET /v1/subjects` list, marked **Shared**

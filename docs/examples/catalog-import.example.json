@@ -1,0 +1,58 @@
+{
+  "subjects": [
+    {
+      "id": "example-ts",
+      "title": "TypeScript (example)",
+      "description": "Sample catalog import covering every card type.",
+      "color": "#3178c6",
+      "icon": "code"
+    }
+  ],
+  "cards": [
+    {
+      "id": "example-open-1",
+      "subjectId": "example-ts",
+      "type": "open",
+      "question": "What is the `unknown` type, and how is it safer than `any`?",
+      "answer": "`unknown` is the type-safe top type: any value is assignable to it, but you must narrow it (via a type guard) before using it. `any` disables type checking entirely.",
+      "hints": ["It is the counterpart to `never` (the bottom type)."],
+      "tags": ["types", "fundamentals"]
+    },
+    {
+      "id": "example-quiz-1",
+      "subjectId": "example-ts",
+      "type": "quiz",
+      "question": "What does the `readonly` modifier do on a property?",
+      "answer": "It prevents reassignment of the property after initialization.",
+      "choices": [
+        { "id": "a", "text": "Makes the property optional", "isCorrect": false },
+        { "id": "b", "text": "Prevents reassignment after init", "isCorrect": true },
+        { "id": "c", "text": "Makes the property private", "isCorrect": false }
+      ],
+      "tags": ["types"]
+    },
+    {
+      "id": "example-type-1",
+      "subjectId": "example-ts",
+      "type": "type-answer",
+      "question": "Which utility type makes all properties of `T` optional?",
+      "answer": "`Partial<T>` maps every property to optional.",
+      "shortAnswer": "Partial",
+      "hints": ["Its opposite is `Required<T>`."],
+      "tags": ["utility-types"]
+    },
+    {
+      "id": "example-match-1",
+      "subjectId": "example-ts",
+      "type": "match",
+      "question": "Match each utility type to what it does.",
+      "matchPairs": [
+        { "left": "Partial<T>", "right": "All properties optional" },
+        { "left": "Required<T>", "right": "All properties required" },
+        { "left": "Readonly<T>", "right": "All properties readonly" },
+        { "left": "Pick<T, K>", "right": "Select specific properties" }
+      ],
+      "tags": ["utility-types"]
+    }
+  ]
+}

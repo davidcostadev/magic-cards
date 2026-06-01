@@ -143,6 +143,128 @@ describe('DELETE /v1/catalog/subjects/:id (API key)', () => {
   });
 });
 
+describe('POST /v1/catalog/import + GET /v1/catalog/export (API key)', () => {
+  const sample = () => ({
+    subjects: [{ id: 'io-ts', title: 'TS', description: 'TypeScript', color: '#3178c6' }],
+    cards: [
+      {
+        id: 'io-c1',
+        subjectId: 'io-ts',
+        type: 'open',
+        question: 'What is `unknown`?',
+        answer: 'Top type',
+      },
+      {
+        id: 'io-c2',
+        subjectId: 'io-ts',
+        type: 'quiz',
+        question: 'readonly does what?',
+        answer: 'Prevents reassignment',
+        choices: [
+          { id: 'a', text: 'Optional', isCorrect: false },
+          { id: 'b', text: 'No reassignment', isCorrect: true },
+        ],
+      },
+      {
+        id: 'io-c3',
+        subjectId: 'io-ts',
+        type: 'type-answer',
+        question: 'Utility making all props optional?',
+        answer: 'Partial<T>',
+        shortAnswer: 'Partial',
+      },
+      {
+        id: 'io-c4',
+        subjectId: 'io-ts',
+        type: 'match',
+        question: 'Match',
+        matchPairs: [
+          { left: 'Partial', right: 'optional' },
+          { left: 'Required', right: 'required' },
+        ],
+      },
+    ],
+  });
+
+  it('imports subjects + cards of every type and exports them back (round-trip)', async () => {
+    const res = await withKey(
+      request(app.getHttpServer()).post('/v1/catalog/import').send(sample())
+    );
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      subjects: { created: 1, updated: 0 },
+      cards: { created: 4, updated: 0 },
+      errors: [],
+    });
+
+    const exp = await withKey(request(app.getHttpServer()).get('/v1/catalog/export'));
+    expect(exp.status).toBe(200);
+    expect(exp.body.subjects.some((s: { id: string }) => s.id === 'io-ts')).toBe(true);
+    expect(exp.body.cards).toHaveLength(4);
+    const quiz = exp.body.cards.find((c: { id: string }) => c.id === 'io-c2');
+    expect(quiz.type).toBe('quiz');
+    expect(quiz.choices.find((ch: { id: string }) => ch.id === 'b').isCorrect).toBe(true);
+
+    // The exported document re-imports cleanly (idempotent: everything is now updated).
+    const round = await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/import')
+        .send({ subjects: exp.body.subjects, cards: exp.body.cards })
+    );
+    expect(round.body.cards.updated).toBe(4);
+    expect(round.body.cards.created).toBe(0);
+  });
+
+  it('re-importing the same payload updates rather than duplicates', async () => {
+    await withKey(request(app.getHttpServer()).post('/v1/catalog/import').send(sample()));
+    const again = await withKey(
+      request(app.getHttpServer()).post('/v1/catalog/import').send(sample())
+    );
+    expect(again.body).toMatchObject({
+      subjects: { created: 0, updated: 1 },
+      cards: { created: 0, updated: 4 },
+    });
+    const exp = await withKey(request(app.getHttpServer()).get('/v1/catalog/export'));
+    expect(exp.body.cards).toHaveLength(4); // not 8
+  });
+
+  it('skips invalid cards (per-item errors) but imports the valid ones', async () => {
+    const res = await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/import')
+        .send({
+          subjects: [{ id: 'io-x', title: 'X' }],
+          cards: [
+            { subjectId: 'io-x', type: 'open', question: 'Good', answer: 'A' },
+            {
+              subjectId: 'io-x',
+              type: 'quiz',
+              question: 'No correct choice',
+              answer: 'expl',
+              choices: [
+                { id: 'a', text: 'A', isCorrect: false },
+                { id: 'b', text: 'B', isCorrect: false },
+              ],
+            },
+            { subjectId: 'does-not-exist', question: 'Orphan', answer: 'A' },
+          ],
+        })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.cards.created).toBe(1); // only the valid open card
+    expect(res.body.errors).toHaveLength(2);
+    expect(res.body.errors[0].error).toContain('choices');
+    expect(res.body.errors[1].error).toBe('subjects.notFound');
+  });
+
+  it('requires the API key for import and export (401)', async () => {
+    const imp = await request(app.getHttpServer()).post('/v1/catalog/import').send(sample());
+    expect(imp.status).toBe(401);
+    const exp = await request(app.getHttpServer()).get('/v1/catalog/export');
+    expect(exp.status).toBe(401);
+  });
+});
+
 describe('public content is visible + studyable by any user', () => {
   it('appears in a fresh user’s subject list and study queue, but is read-only', async () => {
     const subject = await publishSubject('Public Algorithms');

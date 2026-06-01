@@ -260,6 +260,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/catalog/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CatalogController_importContent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/catalog/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CatalogController_exportContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/catalog/subjects/{id}": {
         parameters: {
             query?: never;
@@ -599,6 +631,85 @@ export interface components {
             today: number;
             tomorrow: number;
             thisWeek: number;
+        };
+        CatalogImportDto: {
+            subjects?: {
+                id?: string;
+                title: string;
+                description?: string | null;
+                color?: string | null;
+                icon?: string | null;
+            }[];
+            cards?: {
+                id?: string;
+                subjectId: string;
+                /** @enum {string} */
+                type?: "open" | "quiz" | "type-answer" | "match";
+                question: string;
+                answer?: string;
+                choices?: {
+                    id: string;
+                    text: string;
+                    isCorrect: boolean;
+                }[];
+                shortAnswer?: string;
+                matchPairs?: {
+                    left: string;
+                    right: string;
+                }[];
+                hints?: string[];
+                tags?: string[];
+            }[];
+        };
+        ImportResultDto: {
+            subjects: {
+                created: number;
+                updated: number;
+            };
+            cards: {
+                created: number;
+                updated: number;
+            };
+            errors: {
+                index: number;
+                id?: string;
+                error: string;
+            }[];
+        };
+        CatalogExportDto: {
+            subjects: {
+                id: string;
+                title: string;
+                description?: string | null;
+                color?: string | null;
+                icon?: string | null;
+            }[];
+            cards: {
+                id: string;
+                subjectId: string;
+                /** @enum {string} */
+                type: "open" | "quiz" | "type-answer" | "match";
+                question: string;
+                answer: string;
+                hints: string[];
+                tags: string[];
+                choices?: {
+                    id: string;
+                    text: string;
+                    isCorrect?: boolean;
+                }[];
+                shortAnswer?: string;
+                matchPairs?: {
+                    left: string;
+                    right: string;
+                }[];
+                matchItems?: {
+                    lefts: string[];
+                    rights: string[];
+                };
+                createdAt: string;
+                updatedAt: string;
+            }[];
         };
     };
     responses: never;
@@ -1107,6 +1218,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardResponseDto"];
+                };
+            };
+        };
+    };
+    CatalogController_importContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogImportDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultDto"];
+                };
+            };
+        };
+    };
+    CatalogController_exportContent: {
+        parameters: {
+            query?: {
+                subject?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogExportDto"];
                 };
             };
         };

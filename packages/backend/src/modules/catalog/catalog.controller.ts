@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiNoContentResponse, ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
@@ -9,6 +19,14 @@ import {
   SubjectResponseDto,
 } from '../subjects/dto/subject.dto';
 import { CatalogService } from './catalog.service';
+import {
+  type CatalogExport,
+  CatalogExportDto,
+  CatalogExportQueryDto,
+  CatalogImportDto,
+  type ImportResult,
+  ImportResultDto,
+} from './dto/catalog-io.dto';
 
 @ApiTags('catalog')
 @ApiSecurity('x-api-key')
@@ -31,6 +49,19 @@ export class CatalogController {
   @ApiOkResponse({ type: CardResponseDto })
   createCard(@Body() body: CreateCardDto): Promise<CardResponse> {
     return this.catalog.createCard(body);
+  }
+
+  @Post('import')
+  @HttpCode(200)
+  @ApiOkResponse({ type: ImportResultDto })
+  importContent(@Body() body: CatalogImportDto): Promise<ImportResult> {
+    return this.catalog.import(body);
+  }
+
+  @Get('export')
+  @ApiOkResponse({ type: CatalogExportDto })
+  exportContent(@Query() query: CatalogExportQueryDto): Promise<CatalogExport> {
+    return this.catalog.export(query.subject);
   }
 
   @Delete('subjects/:id')

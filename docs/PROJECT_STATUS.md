@@ -56,6 +56,7 @@ server secret **`CONTENT_API_KEY`** via the `x-api-key` header — **not** a use
 [`content-catalog.md`](./content-catalog.md), design: [ADR 0007](./adr/0007-shared-content-catalog-via-api-key.md).
 
 - `POST /v1/catalog/subjects` · `POST /v1/catalog/cards` · `DELETE /v1/catalog/subjects/:id`
+- Bulk **`POST /v1/catalog/import`** / **`GET /v1/catalog/export`** — `{ subjects, cards }` JSON (round-trips; per-item validation errors). For loading many cards at once or an AI authoring content. See [`content-catalog.md` §4b](./content-catalog.md).
 - The key is **catalog-only** (public, system-owned content); it can never touch a user's deck.
 
 ## 6. Database
