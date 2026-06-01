@@ -1,0 +1,1433 @@
+{
+  "subjects": [
+    {
+      "id": "sub-3",
+      "title": "React",
+      "description": "React hooks, patterns, and performance optimization",
+      "color": "#61DAFB",
+      "icon": "component"
+    }
+  ],
+  "cards": [
+    {
+      "id": "react-open-001",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is JSX?",
+      "answer": "JSX is a syntax extension that lets you write HTML-like markup inside JavaScript. A compiler (Babel/SWC) turns it into `React.createElement` calls (or the automatic runtime's `jsx()`), producing the element tree React renders. It isn't HTML — attributes are camelCase (`className`, `onClick`).",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-open-002",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is the Virtual DOM and reconciliation?",
+      "answer": "The Virtual DOM is an in-memory tree of React elements. Each render builds a new tree, and **reconciliation** diffs it against the previous one to compute the minimal set of real-DOM mutations. Element type and `key` drive how the diff matches nodes.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-open-003",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is the difference between props and state?",
+      "answer": "**Props** are inputs passed from a parent and are read-only to the component. **State** is data the component owns and updates via its setter, triggering a re-render. Props flow down; state is local.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-open-004",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What does \"lifting state up\" mean?",
+      "answer": "Moving shared state to the closest common ancestor of the components that need it, then passing it down via props (with callbacks to update it). It keeps a single source of truth instead of duplicating state.",
+      "tags": ["patterns"]
+    },
+    {
+      "id": "react-open-005",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "Why are React state updates batched?",
+      "answer": "React groups state updates that happen in the same event (and, since React 18, in promises/timeouts) into a single re-render for performance. So `setA(); setB();` re-renders once, and reading state right after a setter still shows the old value.",
+      "tags": ["state"]
+    },
+    {
+      "id": "react-open-006",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "Why use the functional updater `setCount(c => c + 1)`?",
+      "answer": "Because updates are asynchronous and batched, reading `count` directly can be stale. The updater receives the latest pending state, so successive updates compose correctly — three `+1`s actually add three.",
+      "tags": ["state"]
+    },
+    {
+      "id": "react-open-007",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is lazy initialization of `useState`?",
+      "answer": "Passing a function — `useState(() => expensiveInit())` — runs the initializer only on the **first** render instead of every render. Use it when computing the initial value is expensive.",
+      "tags": ["hooks", "performance"]
+    },
+    {
+      "id": "react-open-008",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What do the different `useEffect` dependency arrays mean?",
+      "answer": "No array → the effect runs after **every** render. `[]` → runs **once** after mount (cleanup on unmount). `[a, b]` → runs after mount and whenever `a` or `b` changes (compared with `Object.is`).",
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-open-009",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "How do `useEffect` and `useLayoutEffect` differ?",
+      "answer": "`useEffect` runs **asynchronously after** the browser paints — fine for most side effects. `useLayoutEffect` runs **synchronously after** DOM mutations but **before** paint — use it to measure layout or avoid a visible flicker.",
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-open-010",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "Why must you never mutate state directly?",
+      "answer": "React decides whether to re-render by comparing references. Mutating in place (`state.x = 1`, `arr.push()`) keeps the same reference, so React may skip the update. Always create a new value: `{ ...state, x: 1 }`, `[...arr, item]`.",
+      "tags": ["state"]
+    },
+    {
+      "id": "react-open-011",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is a custom hook, and why write one?",
+      "answer": "A function whose name starts with `use` that calls other hooks to encapsulate reusable stateful logic (e.g. `useFetch`, `useLocalStorage`). It shares **logic**, not state — each call gets its own independent state.",
+      "tags": ["hooks", "patterns"]
+    },
+    {
+      "id": "react-open-012",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is `useContext` for?",
+      "answer": "It reads the current value of a Context, letting a component consume data from a `Provider` above it without prop drilling. The component re-renders when the consumed context value changes.",
+      "tags": ["hooks", "context"]
+    },
+    {
+      "id": "react-open-013",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is prop drilling, and how does Context help?",
+      "answer": "**Prop drilling** is threading props through intermediate components that don't use them just to reach a deep child. **Context** provides a value to a subtree so deep consumers read it directly, eliminating the drilling.",
+      "tags": ["context", "patterns"]
+    },
+    {
+      "id": "react-open-014",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is `forwardRef` and why is it needed?",
+      "answer": "Function components don't receive a `ref` like DOM elements do. `forwardRef` wraps a component so a parent's `ref` is passed through to a child DOM node (or imperative handle) — e.g. to focus an input from the parent.",
+      "tags": ["refs"]
+    },
+    {
+      "id": "react-open-015",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What does `useImperativeHandle` do?",
+      "answer": "Used with `forwardRef`, it customizes the value the parent's ref receives — exposing specific methods (like `focus()` or `scrollToTop()`) instead of the raw DOM node.",
+      "tags": ["refs"]
+    },
+    {
+      "id": "react-open-016",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "Why does React favor composition over inheritance?",
+      "answer": "Components are composed by nesting and passing `children`/props rather than extending base classes. Composition (slots, wrappers, render props) is more flexible for UI reuse and avoids fragile class hierarchies.",
+      "tags": ["patterns"]
+    },
+    {
+      "id": "react-open-017",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is the `children` prop?",
+      "answer": "Whatever you place between a component's opening and closing tags is passed as `props.children`. It powers wrapper/layout components like `<Card>...</Card>` and composition.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-open-018",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is the render-props pattern?",
+      "answer": "A component takes a function as a prop (often `children` or `render`) and calls it with data, letting the consumer decide what to render. It shares behavior while inverting control of the UI — largely superseded by custom hooks.",
+      "tags": ["patterns"]
+    },
+    {
+      "id": "react-open-019",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is a higher-order component (HOC)?",
+      "answer": "A function that takes a component and returns a new one with extra props/behavior, e.g. `withAuth(Component)`. A reuse pattern for cross-cutting concerns; today custom hooks often replace HOCs.",
+      "tags": ["patterns"]
+    },
+    {
+      "id": "react-open-020",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is an error boundary?",
+      "answer": "A component (currently a class with `getDerivedStateFromError`/`componentDidCatch`) that catches render-time errors in its child tree, shows a fallback UI, and keeps the app alive. It does **not** catch errors in event handlers or async code.",
+      "tags": ["patterns"]
+    },
+    {
+      "id": "react-open-021",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What are `React.lazy` and `Suspense`?",
+      "answer": "`React.lazy(() => import('./X'))` code-splits a component so it loads on demand. `<Suspense fallback={...}>` wraps lazy children and shows the fallback while they load — together they enable route/component-level code splitting.",
+      "tags": ["performance"]
+    },
+    {
+      "id": "react-open-022",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is a React Portal?",
+      "answer": "`createPortal(children, domNode)` renders children into a DOM node **outside** the parent's hierarchy (e.g. `document.body`) while keeping them in the React tree, so events still bubble through React parents. Used for modals, tooltips, and popovers.",
+      "tags": ["patterns"]
+    },
+    {
+      "id": "react-open-023",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What are Fragments and why use them?",
+      "answer": "`<React.Fragment>` (shorthand `<>...</>`) groups children without adding an extra DOM node — useful when a component must return several elements but you don't want a wrapper `<div>`.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-open-024",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What does React's Strict Mode do?",
+      "answer": "A dev-only wrapper that surfaces problems: it double-invokes renders and effects (mount → cleanup → mount) and some functions to catch impure logic and missing cleanups. It renders no UI and is a no-op in production.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-open-025",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "Why is using the array index as a `key` risky?",
+      "answer": "If the list can reorder, insert, or delete, index keys make React mismatch items to elements, reusing the wrong state/DOM (e.g. an input keeping the wrong value). Use a stable, unique id from the data instead.",
+      "tags": ["lists"]
+    },
+    {
+      "id": "react-open-026",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is \"derived state,\" and why avoid storing it?",
+      "answer": "State computed from existing props/state (e.g. a filtered list). Storing it duplicates the source of truth and can go stale. Compute it during render instead — wrap in `useMemo` only if it's expensive.",
+      "tags": ["state", "patterns"]
+    },
+    {
+      "id": "react-open-027",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What are the pitfalls of fetching data in `useEffect`?",
+      "answer": "Effects run after render and can **race** when dependencies change quickly (an older request resolves last). Guard with a cleanup flag or `AbortController`, handle loading/error states, and list correct dependencies. Many apps use a data library (React Query) instead.",
+      "tags": ["hooks", "data"]
+    },
+    {
+      "id": "react-open-028",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "When should you NOT use `useMemo` / `useCallback`?",
+      "answer": "They add memory and comparison overhead. For cheap computations, or when the memoized value isn't a dependency/prop of a memoized child, they add complexity for no gain. Memoize to avoid expensive recompute or to stabilize a reference a `memo`/effect depends on.",
+      "tags": ["performance"]
+    },
+    {
+      "id": "react-open-029",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is a \"stale closure\" in an effect or callback?",
+      "answer": "A function captures the variables from the render that created it. If it isn't re-created (missing dependency), it keeps reading old state/props — a stale closure. Fix by adding dependencies, or use the functional updater / a ref.",
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-open-030",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is automatic batching in React 18?",
+      "answer": "React 18 batches multiple state updates into one re-render even inside promises, `setTimeout`, and native handlers — not just React events as before. Use `flushSync` to opt out when you need a synchronous update.",
+      "tags": ["state"]
+    },
+    {
+      "id": "react-open-031",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What do `useTransition` and `startTransition` do?",
+      "answer": "They mark a state update as **non-urgent** (a transition), so React keeps the UI responsive by deferring the heavy re-render while urgent updates (typing) go first. `useTransition` also returns an `isPending` flag.",
+      "tags": ["concurrent"]
+    },
+    {
+      "id": "react-open-032",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is `useDeferredValue`?",
+      "answer": "It returns a copy of a value that lags behind during urgent updates, so expensive renders driven by that value don't block typing. Handy for keeping an input responsive while a heavy list re-renders.",
+      "tags": ["concurrent"]
+    },
+    {
+      "id": "react-open-033",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What is `useId` for?",
+      "answer": "It generates a unique, stable id that matches between server and client renders — used to link form controls and labels (`htmlFor`/`id`) without collisions, especially with SSR. Not for list keys.",
+      "tags": ["hooks", "a11y"]
+    },
+    {
+      "id": "react-open-034",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "How do you build a controlled form input?",
+      "answer": "Bind `value` to state and update it in `onChange`:\n\n```jsx\n<input value={text} onChange={(e) => setText(e.target.value)} />\n```\nState is the single source of truth, so the input both reflects and is driven by it.",
+      "tags": ["forms"]
+    },
+    {
+      "id": "react-open-035",
+      "subjectId": "sub-3",
+      "type": "open",
+      "question": "What triggers a component to re-render?",
+      "answer": "A change to its own state (via a setter), a change in the props it receives, a change in a context value it consumes, or its parent re-rendering. React re-runs the function and reconciles the output; `memo`/`useMemo` can skip unnecessary work.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-quiz-001",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "What does `useState` return?",
+      "answer": "An array: the current state value and a setter function — usually destructured `const [count, setCount] = useState(0)`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[state, setState] — a value and its updater",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Just the current state value",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Only a setter function",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "An object { state, setState }",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-quiz-002",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "With `useEffect(fn, [])`, when does `fn` run?",
+      "answer": "An empty dependency array means it runs once, after the first mount (and its cleanup on unmount).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Once, after the initial mount",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "After every render",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Before the first render",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Only on unmount",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-quiz-003",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "With `useEffect(fn)` and no dependency array, when does it run?",
+      "answer": "Omitting the array runs the effect after every render.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "After every render",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Once after mount",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Never",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Before render",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-quiz-004",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "How does `React.memo` compare props by default?",
+      "answer": "It does a shallow comparison of props; if they're shallowly equal it skips the re-render.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Shallow comparison of props",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Deep comparison",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Reference equality of the whole props object",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "It never re-renders",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["performance"]
+    },
+    {
+      "id": "react-quiz-005",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "Can you call a hook inside an `if` block?",
+      "answer": "No — hooks must run unconditionally, in the same order on every render.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "No — hooks must run in the same order every render",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Yes, anywhere",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Only useEffect",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Only at the end of the component",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks", "rules"]
+    },
+    {
+      "id": "react-quiz-006",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "When does a `useEffect` cleanup function run?",
+      "answer": "Before the effect runs again (deps changed) and once more on unmount.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Before the effect re-runs and on unmount",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Only on unmount",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "After every render unconditionally",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Before the first render",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-quiz-007",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "What does `useRef` return?",
+      "answer": "A mutable object `{ current }` that persists across renders; writing `.current` doesn't re-render.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A mutable { current } object that persists across renders",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A state value and a setter",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A memoized callback",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A fresh value every render",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks", "refs"]
+    },
+    {
+      "id": "react-quiz-008",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "What does `useReducer` return?",
+      "answer": "A pair: the current state and a `dispatch` function.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[state, dispatch]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[state, setState]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Just dispatch",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The reducer function",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-quiz-009",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "What is the shorthand for a React Fragment?",
+      "answer": "`<>...</>` groups children without an extra DOM node.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "<>...</>",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "<Fragment.Short>",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "<div fragment>",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[...]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-quiz-010",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "Mutating a `useRef` object's `.current`...",
+      "answer": "...does not trigger a re-render — refs are an escape hatch from the render cycle.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "does NOT trigger a re-render",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "triggers a re-render",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "throws an error",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "resets the ref",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["refs"]
+    },
+    {
+      "id": "react-quiz-011",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "In React, an event handler receives...",
+      "answer": "A SyntheticEvent — a cross-browser wrapper around the native event.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "a SyntheticEvent (cross-browser wrapper)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "the raw native DOM event only",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "no argument",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "the component instance",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["events"]
+    },
+    {
+      "id": "react-quiz-012",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "`React.lazy` expects its import to resolve to...",
+      "answer": "A module with a **default**-exported component.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "a module with a default-exported component",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "a named export",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "a JSX element",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "a promise of a string",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["performance"]
+    },
+    {
+      "id": "react-quiz-013",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "Calling a state setter with the same value (Object.is equal)...",
+      "answer": "...may bail out and skip the re-render (React compares with Object.is).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "may bail out and skip re-rendering",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "always re-renders",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "throws",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "clears the state",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["state"]
+    },
+    {
+      "id": "react-quiz-014",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "What does passing a function to `useState(() => f())` do?",
+      "answer": "It runs the initializer once, on the first render only (lazy initialization).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Runs the initializer once, on the first render",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Runs f on every render",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Stores the function as state",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Throws",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-quiz-015",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "In React 18, two state updates inside a `setTimeout`...",
+      "answer": "...are automatically batched into a single re-render.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "are batched into a single re-render",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "cause two separate re-renders",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "are ignored",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "throw",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["state"]
+    },
+    {
+      "id": "react-quiz-016",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "What is the main role of the `key` prop in a list?",
+      "answer": "It helps React match items across renders so reconciliation reuses the right elements.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Help React match items across renders during reconciliation",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Style the list items",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Set the array index",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Provide the DOM id attribute",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["lists"]
+    },
+    {
+      "id": "react-quiz-017",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "`useLayoutEffect` runs...",
+      "answer": "Synchronously after DOM mutations but before the browser paints.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "synchronously after DOM mutations, before paint",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "asynchronously after paint",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "before render",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "only on the server",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-quiz-018",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "In Strict Mode (development), effects are...",
+      "answer": "Mounted, cleaned up, then mounted again, to surface missing cleanups and impurities.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "mounted, cleaned up, then mounted again",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "skipped entirely",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "run once, same as production",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "run twice in production too",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-quiz-019",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "What does `useCallback(fn, deps)` return?",
+      "answer": "A memoized version of `fn` whose reference changes only when `deps` change.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A memoized fn that changes only when deps change",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The result of calling fn",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A new function every render",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A state value",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks", "performance"]
+    },
+    {
+      "id": "react-quiz-020",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "What does `useMemo(fn, deps)` return?",
+      "answer": "The memoized return value of `fn`, recomputed only when `deps` change.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The memoized return value of fn",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A memoized function",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Always a fresh value",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "undefined until deps change",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks", "performance"]
+    },
+    {
+      "id": "react-quiz-021",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "Why might a child wrapped in `React.memo` still re-render?",
+      "answer": "Because a prop is a new object/function reference each render, defeating the shallow compare.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A prop is a new object/function reference each render",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Its parent didn't render",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Its props are unchanged primitives",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "It uses useRef",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["performance"]
+    },
+    {
+      "id": "react-quiz-022",
+      "subjectId": "sub-3",
+      "type": "quiz",
+      "question": "Props in a React component are...",
+      "answer": "Read-only — a component must never mutate its own props.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "read-only (immutable) to the component",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "freely mutable",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "always strings",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "global",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-ta-001",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which hook subscribes a component to a React Context value?",
+      "answer": "`useContext(MyContext)` reads the nearest provider's value.",
+      "shortAnswer": "useContext",
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-ta-002",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which hook returns a mutable ref object that persists across renders without re-rendering?",
+      "answer": "`useRef` — its `{ current }` survives renders and writes don't re-render.",
+      "shortAnswer": "useRef",
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-ta-003",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which function renders children into a DOM node outside the parent hierarchy (e.g. for modals)?",
+      "answer": "`createPortal(children, container)`.",
+      "shortAnswer": "createPortal",
+      "tags": ["patterns"]
+    },
+    {
+      "id": "react-ta-004",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which function lazily code-splits a component so it loads on demand?",
+      "answer": "`React.lazy(() => import('./X'))`, paired with Suspense.",
+      "shortAnswer": "React.lazy",
+      "tags": ["performance"]
+    },
+    {
+      "id": "react-ta-005",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which hook memoizes a callback so its reference stays stable between renders?",
+      "answer": "`useCallback(fn, deps)`.",
+      "shortAnswer": "useCallback",
+      "tags": ["hooks", "performance"]
+    },
+    {
+      "id": "react-ta-006",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which API lets a parent pass a ref down to a child component's DOM node?",
+      "answer": "`forwardRef` wraps the child so the ref reaches its DOM node.",
+      "shortAnswer": "forwardRef",
+      "tags": ["refs"]
+    },
+    {
+      "id": "react-ta-007",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which hook customizes the instance value that a parent's ref receives?",
+      "answer": "`useImperativeHandle`, used with forwardRef.",
+      "shortAnswer": "useImperativeHandle",
+      "tags": ["refs"]
+    },
+    {
+      "id": "react-ta-008",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which hook marks a state update as non-urgent to keep the UI responsive?",
+      "answer": "`useTransition` (or `startTransition`).",
+      "shortAnswer": "useTransition",
+      "tags": ["concurrent"]
+    },
+    {
+      "id": "react-ta-009",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which hook returns a deferred copy of a value to avoid blocking urgent updates?",
+      "answer": "`useDeferredValue`.",
+      "shortAnswer": "useDeferredValue",
+      "tags": ["concurrent"]
+    },
+    {
+      "id": "react-ta-010",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which hook generates a unique, SSR-stable id for accessibility attributes?",
+      "answer": "`useId` — for linking labels and inputs, not for keys.",
+      "shortAnswer": "useId",
+      "tags": ["hooks", "a11y"]
+    },
+    {
+      "id": "react-ta-011",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which component shows a fallback UI while lazy children load?",
+      "answer": "`<Suspense fallback={...}>`.",
+      "shortAnswer": "Suspense",
+      "tags": ["performance"]
+    },
+    {
+      "id": "react-ta-012",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which prop holds the content placed between a component's opening and closing tags?",
+      "answer": "`children` (`props.children`).",
+      "shortAnswer": "children",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-ta-013",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which special list prop tells React which items changed, were added, or removed?",
+      "answer": "`key` — it must be stable and unique.",
+      "shortAnswer": "key",
+      "tags": ["lists"]
+    },
+    {
+      "id": "react-ta-014",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which hook runs synchronously after DOM mutations but before the browser paints?",
+      "answer": "`useLayoutEffect`.",
+      "shortAnswer": "useLayoutEffect",
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-ta-015",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which function wraps a component to skip re-renders when its props are shallowly equal?",
+      "answer": "`React.memo(Component)`.",
+      "shortAnswer": "React.memo",
+      "tags": ["performance"]
+    },
+    {
+      "id": "react-ta-016",
+      "subjectId": "sub-3",
+      "type": "type-answer",
+      "question": "Which hook lets a component safely subscribe to an external (non-React) store?",
+      "answer": "`useSyncExternalStore`.",
+      "shortAnswer": "useSyncExternalStore",
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-match-001",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each hook to what it returns.",
+      "matchPairs": [
+        {
+          "left": "useState",
+          "right": "[value, setter]"
+        },
+        {
+          "left": "useReducer",
+          "right": "[state, dispatch]"
+        },
+        {
+          "left": "useRef",
+          "right": "a mutable { current } object"
+        },
+        {
+          "left": "useContext",
+          "right": "the current context value"
+        },
+        {
+          "left": "useMemo",
+          "right": "a memoized value"
+        },
+        {
+          "left": "useCallback",
+          "right": "a memoized function"
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-match-002",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each useEffect form to when it runs.",
+      "matchPairs": [
+        {
+          "left": "no dependency array",
+          "right": "after every render"
+        },
+        {
+          "left": "[] (empty)",
+          "right": "once, after mount"
+        },
+        {
+          "left": "[a]",
+          "right": "when a changes"
+        },
+        {
+          "left": "cleanup function",
+          "right": "before re-run and on unmount"
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-match-003",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each React API to its purpose.",
+      "matchPairs": [
+        {
+          "left": "React.memo",
+          "right": "skip re-render on equal props"
+        },
+        {
+          "left": "React.lazy",
+          "right": "code-split a component"
+        },
+        {
+          "left": "Suspense",
+          "right": "show a fallback while loading"
+        },
+        {
+          "left": "Fragment",
+          "right": "group without an extra DOM node"
+        },
+        {
+          "left": "createPortal",
+          "right": "render outside the parent DOM"
+        },
+        {
+          "left": "forwardRef",
+          "right": "pass a ref to a child"
+        }
+      ],
+      "tags": ["api"]
+    },
+    {
+      "id": "react-match-004",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each hook to its job.",
+      "matchPairs": [
+        {
+          "left": "useState",
+          "right": "local state"
+        },
+        {
+          "left": "useEffect",
+          "right": "side effects"
+        },
+        {
+          "left": "useRef",
+          "right": "mutable ref / DOM access"
+        },
+        {
+          "left": "useMemo",
+          "right": "memoized value"
+        },
+        {
+          "left": "useCallback",
+          "right": "memoized function"
+        },
+        {
+          "left": "useContext",
+          "right": "read context"
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-match-005",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each reuse pattern to its description.",
+      "matchPairs": [
+        {
+          "left": "Custom hook",
+          "right": "reuse stateful logic via a use* function"
+        },
+        {
+          "left": "Higher-order component",
+          "right": "a function that wraps a component"
+        },
+        {
+          "left": "Render props",
+          "right": "pass a render function as a prop"
+        },
+        {
+          "left": "Context",
+          "right": "share data without prop drilling"
+        },
+        {
+          "left": "Portal",
+          "right": "render into a different DOM subtree"
+        }
+      ],
+      "tags": ["patterns"]
+    },
+    {
+      "id": "react-match-006",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each rendering concept to its description.",
+      "matchPairs": [
+        {
+          "left": "Reconciliation",
+          "right": "diff the new tree against the previous"
+        },
+        {
+          "left": "Batching",
+          "right": "group state updates into one re-render"
+        },
+        {
+          "left": "Hydration",
+          "right": "attach React to server-rendered HTML"
+        },
+        {
+          "left": "Memoization",
+          "right": "cache to skip recompute / re-render"
+        },
+        {
+          "left": "Lifting state up",
+          "right": "move shared state to a common ancestor"
+        }
+      ],
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "react-match-007",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each concurrent feature to its use.",
+      "matchPairs": [
+        {
+          "left": "useTransition",
+          "right": "mark an update as non-urgent"
+        },
+        {
+          "left": "useDeferredValue",
+          "right": "lag a value to keep the UI responsive"
+        },
+        {
+          "left": "useId",
+          "right": "stable SSR-safe unique id"
+        },
+        {
+          "left": "Suspense",
+          "right": "fallback while content loads"
+        }
+      ],
+      "tags": ["concurrent"]
+    },
+    {
+      "id": "react-match-008",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each form/event concept to its meaning.",
+      "matchPairs": [
+        {
+          "left": "value",
+          "right": "makes an input controlled"
+        },
+        {
+          "left": "onChange",
+          "right": "updates state as the user types"
+        },
+        {
+          "left": "defaultValue",
+          "right": "initial value of an uncontrolled input"
+        },
+        {
+          "left": "SyntheticEvent",
+          "right": "React's cross-browser event wrapper"
+        }
+      ],
+      "tags": ["forms", "events"]
+    },
+    {
+      "id": "react-match-009",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each hook to a typical use case.",
+      "matchPairs": [
+        {
+          "left": "useEffect",
+          "right": "sync with an external system"
+        },
+        {
+          "left": "useRef",
+          "right": "access a DOM node imperatively"
+        },
+        {
+          "left": "useReducer",
+          "right": "complex state with many transitions"
+        },
+        {
+          "left": "useMemo",
+          "right": "avoid recomputing an expensive value"
+        },
+        {
+          "left": "useLayoutEffect",
+          "right": "measure layout before paint"
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-match-010",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each rule/guideline to its meaning.",
+      "matchPairs": [
+        {
+          "left": "Call hooks at the top level",
+          "right": "never inside loops or conditions"
+        },
+        {
+          "left": "Call hooks only in React functions",
+          "right": "components or other hooks"
+        },
+        {
+          "left": "Use stable unique keys",
+          "right": "avoid index keys in dynamic lists"
+        },
+        {
+          "left": "Don't mutate state",
+          "right": "create new objects/arrays"
+        }
+      ],
+      "tags": ["rules"]
+    },
+    {
+      "id": "react-match-011",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each effect-timing concept.",
+      "matchPairs": [
+        {
+          "left": "useEffect",
+          "right": "runs after paint (async)"
+        },
+        {
+          "left": "useLayoutEffect",
+          "right": "runs after DOM mutation, before paint"
+        },
+        {
+          "left": "cleanup function",
+          "right": "runs before the next effect and on unmount"
+        },
+        {
+          "left": "[] dependencies",
+          "right": "runs once, on mount"
+        }
+      ],
+      "tags": ["hooks"]
+    },
+    {
+      "id": "react-match-012",
+      "subjectId": "sub-3",
+      "type": "match",
+      "question": "Match each change to whether it re-renders a component.",
+      "matchPairs": [
+        {
+          "left": "setState with a new value",
+          "right": "re-renders"
+        },
+        {
+          "left": "parent re-renders",
+          "right": "child re-renders unless memoized"
+        },
+        {
+          "left": "ref.current mutation",
+          "right": "no re-render"
+        },
+        {
+          "left": "consumed context value changes",
+          "right": "consumers re-render"
+        }
+      ],
+      "tags": ["state"]
+    }
+  ]
+}

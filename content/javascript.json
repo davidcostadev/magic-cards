@@ -1,0 +1,1572 @@
+{
+  "subjects": [
+    {
+      "id": "sub-5",
+      "title": "JavaScript",
+      "description": "Core JavaScript language features and runtime behavior",
+      "color": "#EAB308",
+      "icon": "javascript"
+    }
+  ],
+  "cards": [
+    {
+      "id": "js-open-001",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the Temporal Dead Zone (TDZ)?",
+      "answer": "The window between entering a scope and the point where a `let`/`const` declaration is evaluated. The binding already exists but reading or writing it throws a `ReferenceError`. `var` has no TDZ — it is hoisted and initialized to `undefined`.",
+      "hints": ["It only applies to `let` and `const`, not `var`."],
+      "tags": ["scope", "fundamentals"]
+    },
+    {
+      "id": "js-open-002",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between `null` and `undefined`?",
+      "answer": "`undefined` means a variable was declared but never assigned (the default absence). `null` is an intentional \"no value\" you assign yourself. `typeof undefined` is `\"undefined\"`, but `typeof null` is `\"object\"`. `null == undefined` is `true`; `null === undefined` is `false`.",
+      "tags": ["fundamentals", "types"]
+    },
+    {
+      "id": "js-open-003",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between `slice` and `splice` on arrays?",
+      "answer": "`slice(start, end)` returns a shallow copy of a portion and **does not** mutate the array. `splice(start, deleteCount, ...items)` **mutates** the array in place (removing and/or inserting) and returns the removed elements.",
+      "hints": ["One of them mutates the original."],
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-open-004",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What does `Array.prototype.reduce` do?",
+      "answer": "It folds an array into a single value by running a reducer `(acc, cur) => ...` left to right, threading an accumulator.\n\n```javascript\n[1, 2, 3, 4].reduce((a, b) => a + b, 0); // 10\n```\nWith no initial value the first element seeds the accumulator (and an empty array throws).",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-open-005",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between `map` and `forEach`?",
+      "answer": "`map` returns a **new array** of the callback's return values (a transform). `forEach` returns `undefined` and exists only for side effects. Neither mutates the source array unless your callback does.",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-open-006",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is event delegation?",
+      "answer": "Attaching one listener to a common ancestor and using event **bubbling** plus `event.target` to handle events from many descendants. Benefits: fewer listeners and it automatically covers elements added later.",
+      "tags": ["dom", "events"]
+    },
+    {
+      "id": "js-open-007",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the event loop?",
+      "answer": "The mechanism that lets single-threaded JS handle async work. The call stack runs synchronous code; when it empties, the loop pulls queued callbacks. The whole **microtask** queue (Promises) drains before the next **macrotask** (timers, I/O).",
+      "tags": ["async", "runtime"]
+    },
+    {
+      "id": "js-open-008",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between a microtask and a macrotask?",
+      "answer": "**Microtasks** (Promise reactions, `queueMicrotask`, `MutationObserver`) run right after the current task and the entire microtask queue drains before anything else. **Macrotasks** (`setTimeout`, `setInterval`, I/O, UI events) run one per event-loop turn. So a resolved Promise's `.then` runs before a `setTimeout(…, 0)`.",
+      "tags": ["async", "runtime"]
+    },
+    {
+      "id": "js-open-009",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "How does `Promise.all` differ from `Promise.allSettled`?",
+      "answer": "`Promise.all` is **fail-fast**: it rejects as soon as any input rejects, otherwise resolves to an array of values. `Promise.allSettled` **never rejects**: it waits for every input and resolves to `{ status, value | reason }` objects, so you can inspect each outcome.",
+      "tags": ["async", "promises"]
+    },
+    {
+      "id": "js-open-010",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is a generator function?",
+      "answer": "A function declared with `function*` that can pause and resume via `yield`.\n\n```javascript\nfunction* ids() { yield 1; yield 2; }\nconst it = ids();\nit.next(); // { value: 1, done: false }\n```\nCalling it returns an iterator; each `.next()` runs to the next `yield`. Great for lazy sequences and custom iterables.",
+      "tags": ["iterators", "generators"]
+    },
+    {
+      "id": "js-open-011",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the prototype chain?",
+      "answer": "Every object has an internal `[[Prototype]]` link. A property lookup walks up the chain until the key is found or the chain ends at `null`. This is how inheritance works in JS. Read the link with `Object.getPrototypeOf(obj)`; it usually ends at `Object.prototype` then `null`.",
+      "tags": ["prototypes", "oop"]
+    },
+    {
+      "id": "js-open-012",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What does `Object.freeze` do?",
+      "answer": "Makes an object immutable: you can't add, remove, or reassign its properties (silently ignored in sloppy mode, throws in strict mode). It is **shallow** — nested objects stay mutable unless you freeze them too.",
+      "tags": ["objects", "immutability"]
+    },
+    {
+      "id": "js-open-013",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is destructuring assignment?",
+      "answer": "Syntax to unpack values from arrays or objects into variables, with support for defaults, renaming, nesting, and rest.\n\n```javascript\nconst [a, b] = [1, 2];\nconst { x, y: yy = 0 } = point;\n```",
+      "tags": ["es6", "syntax"]
+    },
+    {
+      "id": "js-open-014",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between `for...in` and `for...of`?",
+      "answer": "`for...in` iterates enumerable **keys**, including inherited ones — meant for objects, but use with care. `for...of` iterates **values** of any iterable (arrays, strings, `Map`, `Set`). For arrays, prefer `for...of`.",
+      "tags": ["loops", "iterators"]
+    },
+    {
+      "id": "js-open-015",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between spread and rest?",
+      "answer": "Same `...` token, opposite jobs. **Spread** expands an iterable or object into individual elements/props (in calls and literals). **Rest** collects the remaining items into an array/object (in parameters and destructuring).",
+      "tags": ["es6", "syntax"]
+    },
+    {
+      "id": "js-open-016",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is currying?",
+      "answer": "Transforming a function of N arguments into N nested unary functions, each returning the next: `f(a)(b)(c)`. It enables partial application and easy composition.",
+      "tags": ["functions", "fp"]
+    },
+    {
+      "id": "js-open-017",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is memoization?",
+      "answer": "Caching a function's results keyed by its arguments so repeated calls with the same inputs return the cached value instead of recomputing. It trades memory for speed and only works for **pure** functions.",
+      "tags": ["functions", "performance"]
+    },
+    {
+      "id": "js-open-018",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between `call`, `apply`, and `bind`?",
+      "answer": "All three set `this`. `call(thisArg, ...args)` invokes immediately with args listed individually. `apply(thisArg, argsArray)` invokes immediately with args as an array. `bind(thisArg, ...args)` returns a **new** function with `this` (and any preset args) permanently bound, without calling it.",
+      "tags": ["functions", "this"]
+    },
+    {
+      "id": "js-open-019",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is a Promise and what states can it be in?",
+      "answer": "An object representing a value that may be available later. States: **pending** → either **fulfilled** (with a value) or **rejected** (with a reason). Settling is one-way and final. You react with `.then` / `.catch` / `.finally`.",
+      "tags": ["async", "promises"]
+    },
+    {
+      "id": "js-open-020",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What do `async` and `await` do?",
+      "answer": "`async` makes a function always return a Promise. `await` pauses the function until a Promise settles, yielding its value (or throwing its rejection), letting you write async code in a synchronous style. Handle errors with `try/catch`.",
+      "tags": ["async"]
+    },
+    {
+      "id": "js-open-021",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is optional chaining (`?.`)?",
+      "answer": "It short-circuits and returns `undefined` when a reference is `null` or `undefined`, instead of throwing. Works for property access, indexing, and calls: `a?.b`, `a?.[i]`, `fn?.()`.",
+      "tags": ["es2020", "operators"]
+    },
+    {
+      "id": "js-open-022",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the nullish coalescing operator (`??`)?",
+      "answer": "It returns the right operand only when the left is `null` or `undefined` — not for other falsy values like `0` or `''`. Contrast with `||`, which falls back on **any** falsy value.\n\n```javascript\n0 ?? 5;  // 0\n0 || 5;  // 5\n```",
+      "tags": ["es2020", "operators"]
+    },
+    {
+      "id": "js-open-023",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What are template literals?",
+      "answer": "Backtick strings that support multi-line text and `${expression}` interpolation. They also enable **tagged templates**, where a function receives the string parts and the interpolated values separately.",
+      "tags": ["es6", "strings"]
+    },
+    {
+      "id": "js-open-024",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between a shallow and a deep copy?",
+      "answer": "A **shallow** copy duplicates only the top level and shares nested references (`{...obj}`, `Object.assign`, `arr.slice()`). A **deep** copy recursively clones everything (`structuredClone`, or `JSON.parse(JSON.stringify(x))` with caveats).",
+      "tags": ["objects"]
+    },
+    {
+      "id": "js-open-025",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is `structuredClone`?",
+      "answer": "A built-in that **deep-clones** most values — objects, arrays, `Map`, `Set`, `Date`, typed arrays, and even cyclic references. It cannot clone functions, DOM nodes, or prototype chains (those throw or are dropped).",
+      "tags": ["objects"]
+    },
+    {
+      "id": "js-open-026",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between a function declaration and a function expression?",
+      "answer": "A **declaration** (`function f() {}`) is fully hoisted, so it's callable before its line. An **expression** (`const f = function () {}`) is not — only the variable binding hoists per `var`/`let` rules. Arrow functions are always expressions.",
+      "tags": ["functions", "hoisting"]
+    },
+    {
+      "id": "js-open-027",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What are the falsy values in JavaScript?",
+      "answer": "Exactly eight: `false`, `0`, `-0`, `0n`, `''` (empty string), `null`, `undefined`, and `NaN`. Everything else is truthy — including `'0'`, `'false'`, `[]`, and `{}`.",
+      "hints": ["There are eight of them."],
+      "tags": ["types", "coercion"]
+    },
+    {
+      "id": "js-open-028",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "How do a `Map` and a plain object differ?",
+      "answer": "A `Map` allows **any** key type (objects, functions), preserves insertion order, exposes `size`, and is directly iterable. A plain object coerces keys to strings/symbols, carries a prototype, and needs `Object.keys`/`entries`. Maps are better for frequently added/removed dynamic keys.",
+      "tags": ["collections"]
+    },
+    {
+      "id": "js-open-029",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is a `Set`?",
+      "answer": "A collection of **unique** values (compared with SameValueZero). It has fast `add`/`has`/`delete`, a `size`, and iterates in insertion order. Common trick: dedupe an array with `[...new Set(arr)]`.",
+      "tags": ["collections"]
+    },
+    {
+      "id": "js-open-030",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What do `Object.keys`, `Object.values`, and `Object.entries` return?",
+      "answer": "All three return arrays over an object's **own enumerable string-keyed** properties: `keys` → the keys, `values` → the values, `entries` → `[key, value]` pairs (handy with `for...of` and `Object.fromEntries`).",
+      "tags": ["objects"]
+    },
+    {
+      "id": "js-open-031",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is short-circuit evaluation?",
+      "answer": "`&&` returns the first **falsy** operand (or the last operand if all are truthy); `||` returns the first **truthy** operand (or the last if all are falsy). Evaluation stops once the result is determined — used for guards and defaults.",
+      "tags": ["operators"]
+    },
+    {
+      "id": "js-open-032",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between `throw`ing an error and returning one?",
+      "answer": "`throw` unwinds the call stack until a `try/catch` handles it (or the program crashes), interrupting control flow. Returning an error value keeps normal control flow and forces the caller to check the result. Both are valid; pick per API style.",
+      "tags": ["errors"]
+    },
+    {
+      "id": "js-open-033",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What does the `new` operator do?",
+      "answer": "Four steps: (1) create a fresh object, (2) link its `[[Prototype]]` to the constructor's `.prototype`, (3) bind `this` to it and run the constructor body, (4) return that object — unless the constructor explicitly returns its own object.",
+      "tags": ["oop", "objects"]
+    },
+    {
+      "id": "js-open-034",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is a `Symbol` used for?",
+      "answer": "A primitive that produces **unique**, collision-free identifiers. Common uses: non-enumerable object keys and well-known protocols like `Symbol.iterator` (which makes a value iterable) and `Symbol.asyncIterator`.",
+      "tags": ["types", "symbols"]
+    },
+    {
+      "id": "js-open-035",
+      "subjectId": "sub-5",
+      "type": "open",
+      "question": "What is the difference between `Object.create(null)` and `{}`?",
+      "answer": "`{}` inherits from `Object.prototype`, so it has `toString`, `hasOwnProperty`, etc. `Object.create(null)` has **no prototype** — a bare dictionary with no inherited keys, immune to prototype-pollution and key collisions like a `\"toString\"` key.",
+      "tags": ["objects", "prototypes"]
+    },
+    {
+      "id": "js-quiz-001",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `typeof NaN` return?",
+      "answer": "`NaN` (\"Not a Number\") is itself a value of the number type, so `typeof NaN` is `\"number\"`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "\"number\"",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "\"NaN\"",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "\"undefined\"",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "\"object\"",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["types"]
+    },
+    {
+      "id": "js-quiz-002",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `[1, 2, 3].map(n => n * 2)` return?",
+      "answer": "`map` returns a new array of each callback result.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[2, 4, 6]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[1, 2, 3, 2, 4, 6]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "undefined",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[1, 4, 9]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-quiz-003",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `'5' + 3` evaluate to?",
+      "answer": "With a string operand, `+` concatenates: the number `3` is coerced to `\"3\"`, giving `\"53\"`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "\"53\"",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "8",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "\"8\"",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "53",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["coercion", "operators"]
+    },
+    {
+      "id": "js-quiz-004",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `'5' - 3` evaluate to?",
+      "answer": "`-` has no string meaning, so `'5'` is coerced to the number `5`, giving `2`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "2",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "\"2\"",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "\"53\"",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "NaN",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["coercion", "operators"]
+    },
+    {
+      "id": "js-quiz-005",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `typeof function () {}` return?",
+      "answer": "Functions are callable objects, but `typeof` reports them specially as `\"function\"`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "\"function\"",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "\"object\"",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "\"Function\"",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "\"undefined\"",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["types", "functions"]
+    },
+    {
+      "id": "js-quiz-006",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `[1, 2, 3].indexOf(4)` return?",
+      "answer": "`indexOf` returns `-1` when the value is not found.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "-1",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "0",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "undefined",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "null",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-quiz-007",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `Boolean('')` return?",
+      "answer": "An empty string is one of the eight falsy values.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "false",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "true",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "\"\"",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "undefined",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["coercion", "types"]
+    },
+    {
+      "id": "js-quiz-008",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `Boolean('0')` return?",
+      "answer": "Any non-empty string is truthy — including `'0'`, `'false'`, and `' '`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "true",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "false",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "0",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "NaN",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["coercion", "types"]
+    },
+    {
+      "id": "js-quiz-009",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `[10, 9, 1].sort()` return?",
+      "answer": "The default `sort` converts elements to strings and compares lexicographically: `\"1\" < \"10\" < \"9\"`. Use `sort((a, b) => a - b)` for numbers.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[1, 10, 9]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[1, 9, 10]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[10, 9, 1]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[9, 10, 1]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["arrays", "gotchas"]
+    },
+    {
+      "id": "js-quiz-010",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `Promise.resolve(1).then(x => x + 1)` resolve to?",
+      "answer": "`.then` returns a new Promise resolved with the callback's return value, `2`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "2",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "1",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Promise { 1 }",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "undefined",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["async", "promises"]
+    },
+    {
+      "id": "js-quiz-011",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "In what order are the logs printed?\n\n```javascript\nconsole.log('A');\nsetTimeout(() => console.log('B'), 0);\nPromise.resolve().then(() => console.log('C'));\nconsole.log('D');\n```",
+      "answer": "Synchronous code runs first (`A`, `D`). Then the microtask (`C`) drains before the `setTimeout` macrotask (`B`).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A, D, C, B",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A, B, C, D",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A, D, B, C",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A, C, D, B",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["async", "event-loop"]
+    },
+    {
+      "id": "js-quiz-012",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `[1, 2, 3, 4].filter(n => n % 2 === 0)` return?",
+      "answer": "`filter` keeps the elements for which the callback is truthy — the even numbers.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[2, 4]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[1, 3]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[true, false, true, false]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "2",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-quiz-013",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `0 == ''` evaluate to?",
+      "answer": "Loose equality coerces both sides to numbers: `''` becomes `0`, so `0 == 0` is `true`. `0 === ''` would be `false`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "true",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "false",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "NaN",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "throws",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["coercion", "gotchas"]
+    },
+    {
+      "id": "js-quiz-014",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `NaN === NaN` evaluate to?",
+      "answer": "`NaN` is never equal to anything, including itself. Detect it with `Number.isNaN`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "false",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "true",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "NaN",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "undefined",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["gotchas", "types"]
+    },
+    {
+      "id": "js-quiz-015",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `parseInt('08px', 10)` return?",
+      "answer": "`parseInt` reads leading characters that form a valid integer and stops at the first invalid one, giving `8`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "8",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "NaN",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "\"08\"",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "0",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["numbers", "parsing"]
+    },
+    {
+      "id": "js-quiz-016",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `[...'abc']` produce?",
+      "answer": "Strings are iterable, so spreading yields an array of characters.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "['a', 'b', 'c']",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "['abc']",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "'abc'",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[97, 98, 99]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["es6", "strings"]
+    },
+    {
+      "id": "js-quiz-017",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `JSON.stringify({ a: undefined, b: 1 })` return?",
+      "answer": "`JSON.stringify` omits properties whose value is `undefined` (and functions).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "'{\"b\":1}'",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "'{\"a\":undefined,\"b\":1}'",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "'{\"a\":null,\"b\":1}'",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "'{}'",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["json"]
+    },
+    {
+      "id": "js-quiz-018",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `typeof []` return?",
+      "answer": "Arrays are objects, so `typeof []` is `\"object\"`. Use `Array.isArray` to detect arrays.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "\"object\"",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "\"array\"",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "\"Array\"",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "\"object Array\"",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["types", "arrays"]
+    },
+    {
+      "id": "js-quiz-019",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `1 < 2 < 3` evaluate to?",
+      "answer": "It evaluates left to right: `(1 < 2)` is `true`, then `true < 3` coerces `true` to `1`, and `1 < 3` is `true`. (Beware: `3 < 2 < 1` is also `true`.)",
+      "choices": [
+        {
+          "id": "a",
+          "text": "true",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "false",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "throws",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "3",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["operators", "gotchas"]
+    },
+    {
+      "id": "js-quiz-020",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `[10, 1, 2].sort((a, b) => a - b)` return?",
+      "answer": "A numeric comparator sorts ascending by value.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[1, 2, 10]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[10, 1, 2]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[1, 10, 2]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[2, 1, 10]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-quiz-021",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `typeof arguments` return inside a normal function?",
+      "answer": "`arguments` is an array-like object, so `typeof` is `\"object\"`. (It does not exist in arrow functions.)",
+      "choices": [
+        {
+          "id": "a",
+          "text": "\"object\"",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "\"array\"",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "\"arguments\"",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "\"undefined\"",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["functions"]
+    },
+    {
+      "id": "js-quiz-022",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "Given `const { a = 5 } = { a: undefined }`, what is `a`?",
+      "answer": "A destructuring default applies when the property value is `undefined`, so `a` is `5`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "5",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "undefined",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "null",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "throws",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["es6", "destructuring"]
+    },
+    {
+      "id": "js-quiz-023",
+      "subjectId": "sub-5",
+      "type": "quiz",
+      "question": "What does `[1, [2, [3]]].flat()` return?",
+      "answer": "`flat()` flattens one level by default, leaving the deeper `[3]` nested. Use `flat(Infinity)` to fully flatten.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[1, 2, [3]]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[1, 2, 3]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[1, [2, [3]]]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[1, 2, [3], 3]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-001",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method returns the **first** element that satisfies a test function?",
+      "answer": "`find` returns the first matching element, or `undefined` if none match.",
+      "shortAnswer": "find",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-002",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method returns `true` if **at least one** element passes the test function?",
+      "answer": "`some` returns `true` as soon as any element passes.",
+      "shortAnswer": "some",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-003",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method joins all elements into a single string with an optional separator?",
+      "answer": "`join` concatenates the elements, e.g. `[1,2,3].join('-')` → `\"1-2-3\"`.",
+      "shortAnswer": "join",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-004",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method adds one or more elements to the **end** and returns the new length?",
+      "answer": "`push` appends to the end and mutates the array.",
+      "shortAnswer": "push",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-005",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method removes and returns the **last** element?",
+      "answer": "`pop` removes the last element (mutating the array).",
+      "shortAnswer": "pop",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-006",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method removes and returns the **first** element?",
+      "answer": "`shift` removes the first element and shifts the rest down.",
+      "shortAnswer": "shift",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-007",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method adds one or more elements to the **beginning** of an array?",
+      "answer": "`unshift` prepends elements and returns the new length.",
+      "shortAnswer": "unshift",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-008",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which string method returns a section between two indexes, supports negatives, and does not mutate?",
+      "answer": "`slice(start, end)` extracts a substring; negative indexes count from the end.",
+      "shortAnswer": "slice",
+      "tags": ["strings"]
+    },
+    {
+      "id": "js-ta-009",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method flattens nested sub-arrays one level deep by default?",
+      "answer": "`flat()` returns a new array with sub-array elements concatenated one level deep.",
+      "shortAnswer": "flat",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-010",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which global function schedules a callback to run once after a delay in milliseconds?",
+      "answer": "`setTimeout(fn, ms)` queues the callback as a macrotask.",
+      "shortAnswer": "setTimeout",
+      "tags": ["async"]
+    },
+    {
+      "id": "js-ta-011",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which `Promise` combinator settles as soon as the **first** input promise settles?",
+      "answer": "`Promise.race` adopts the first settled outcome (fulfilled or rejected).",
+      "shortAnswer": "Promise.race",
+      "tags": ["async", "promises"]
+    },
+    {
+      "id": "js-ta-012",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which `Promise` combinator waits for **all** inputs and never rejects?",
+      "answer": "`Promise.allSettled` resolves to an array of `{ status, value | reason }`.",
+      "shortAnswer": "Promise.allSettled",
+      "tags": ["async", "promises"]
+    },
+    {
+      "id": "js-ta-013",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which method copies enumerable own properties from source objects onto a target object?",
+      "answer": "`Object.assign(target, ...sources)` performs a shallow merge and returns the target.",
+      "shortAnswer": "Object.assign",
+      "tags": ["objects"]
+    },
+    {
+      "id": "js-ta-014",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method tests whether a value is present, returning a boolean?",
+      "answer": "`includes` returns `true`/`false` (and matches `NaN`, unlike `indexOf`).",
+      "shortAnswer": "includes",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-015",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which static method creates a new array from an iterable or array-like value?",
+      "answer": "`Array.from(iterable)` builds a real array (optionally with a map function).",
+      "shortAnswer": "Array.from",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-ta-016",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which method returns `true` if a property exists **directly** on an object (not inherited)?",
+      "answer": "`hasOwnProperty` checks own properties only (`obj.hasOwnProperty('x')`).",
+      "shortAnswer": "hasOwnProperty",
+      "tags": ["objects"]
+    },
+    {
+      "id": "js-ta-017",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which built-in deep-clones most values, including cyclic references?",
+      "answer": "`structuredClone(value)` produces a deep copy (no functions or DOM nodes).",
+      "shortAnswer": "structuredClone",
+      "tags": ["objects"]
+    },
+    {
+      "id": "js-ta-018",
+      "subjectId": "sub-5",
+      "type": "type-answer",
+      "question": "Which array method returns the index of the first element matching a test function?",
+      "answer": "`findIndex` returns the index, or `-1` if no element matches.",
+      "shortAnswer": "findIndex",
+      "tags": ["arrays"]
+    },
+    {
+      "id": "js-match-001",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each `typeof` expression to its result.",
+      "matchPairs": [
+        {
+          "left": "typeof 42",
+          "right": "number"
+        },
+        {
+          "left": "typeof 'hi'",
+          "right": "string"
+        },
+        {
+          "left": "typeof true",
+          "right": "boolean"
+        },
+        {
+          "left": "typeof undefined",
+          "right": "undefined"
+        },
+        {
+          "left": "typeof {}",
+          "right": "object"
+        },
+        {
+          "left": "typeof function () {}",
+          "right": "function"
+        },
+        {
+          "left": "typeof 10n",
+          "right": "bigint"
+        },
+        {
+          "left": "typeof Symbol()",
+          "right": "symbol"
+        }
+      ],
+      "tags": ["types"],
+      "answer": "`typeof` returns a lowercase string naming the operand's type."
+    },
+    {
+      "id": "js-match-002",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each array method to whether it mutates the original array.",
+      "matchPairs": [
+        {
+          "left": "push",
+          "right": "mutates: adds to the end"
+        },
+        {
+          "left": "pop",
+          "right": "mutates: removes the last"
+        },
+        {
+          "left": "splice",
+          "right": "mutates: inserts/removes in place"
+        },
+        {
+          "left": "sort",
+          "right": "mutates: reorders in place"
+        },
+        {
+          "left": "map",
+          "right": "pure: transformed copy"
+        },
+        {
+          "left": "filter",
+          "right": "pure: filtered copy"
+        },
+        {
+          "left": "slice",
+          "right": "pure: range copy"
+        },
+        {
+          "left": "concat",
+          "right": "pure: merged copy"
+        }
+      ],
+      "tags": ["arrays"],
+      "answer": "Mutating methods change the array in place; the others return a new array."
+    },
+    {
+      "id": "js-match-003",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each JavaScript expression to its value.",
+      "matchPairs": [
+        {
+          "left": "1 + '1'",
+          "right": "'11'"
+        },
+        {
+          "left": "1 - '1'",
+          "right": "0"
+        },
+        {
+          "left": "'b' + 'a'",
+          "right": "'ba'"
+        },
+        {
+          "left": "2 ** 3",
+          "right": "8"
+        },
+        {
+          "left": "10 % 3",
+          "right": "1"
+        },
+        {
+          "left": "typeof 1",
+          "right": "'number'"
+        }
+      ],
+      "tags": ["coercion", "types"],
+      "answer": "Only the eight falsy values coerce to `false`; everything else is truthy."
+    },
+    {
+      "id": "js-match-004",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each `Promise` combinator to its behavior.",
+      "matchPairs": [
+        {
+          "left": "Promise.all",
+          "right": "rejects on first rejection, else array of values"
+        },
+        {
+          "left": "Promise.allSettled",
+          "right": "waits for all, never rejects"
+        },
+        {
+          "left": "Promise.race",
+          "right": "settles as the first input settles"
+        },
+        {
+          "left": "Promise.any",
+          "right": "first fulfillment; rejects only if all reject"
+        }
+      ],
+      "tags": ["async", "promises"]
+    },
+    {
+      "id": "js-match-005",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each operator to its meaning.",
+      "matchPairs": [
+        {
+          "left": "??",
+          "right": "fallback only when null or undefined"
+        },
+        {
+          "left": "?.",
+          "right": "short-circuit access on null/undefined"
+        },
+        {
+          "left": "||",
+          "right": "fallback on any falsy value"
+        },
+        {
+          "left": "&&",
+          "right": "first falsy operand, or the last"
+        },
+        {
+          "left": "**",
+          "right": "exponentiation"
+        },
+        {
+          "left": "...",
+          "right": "spread / rest"
+        }
+      ],
+      "tags": ["operators"]
+    },
+    {
+      "id": "js-match-006",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each string method to what it does.",
+      "matchPairs": [
+        {
+          "left": "toUpperCase",
+          "right": "returns the string in upper case"
+        },
+        {
+          "left": "trim",
+          "right": "removes leading/trailing whitespace"
+        },
+        {
+          "left": "split",
+          "right": "splits into an array by a separator"
+        },
+        {
+          "left": "replace",
+          "right": "replaces the first match"
+        },
+        {
+          "left": "padStart",
+          "right": "pads the start to a target length"
+        },
+        {
+          "left": "startsWith",
+          "right": "boolean: begins with a substring"
+        }
+      ],
+      "tags": ["strings"]
+    },
+    {
+      "id": "js-match-007",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each conversion expression to its result.",
+      "matchPairs": [
+        {
+          "left": "Number('42')",
+          "right": "42"
+        },
+        {
+          "left": "String(42)",
+          "right": "'42'"
+        },
+        {
+          "left": "parseInt('3.9')",
+          "right": "3"
+        },
+        {
+          "left": "Number('')",
+          "right": "0"
+        },
+        {
+          "left": "Number('abc')",
+          "right": "NaN"
+        },
+        {
+          "left": "Boolean(0)",
+          "right": "false"
+        }
+      ],
+      "tags": ["coercion", "numbers"]
+    },
+    {
+      "id": "js-match-008",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each array operation on [1, 2, 3] to its result.",
+      "matchPairs": [
+        {
+          "left": "map(x => x * 2)",
+          "right": "[2, 4, 6]"
+        },
+        {
+          "left": "filter(x => x > 1)",
+          "right": "[2, 3]"
+        },
+        {
+          "left": "reduce((a, b) => a + b)",
+          "right": "6"
+        },
+        {
+          "left": "join('-')",
+          "right": "'1-2-3'"
+        },
+        {
+          "left": "reverse()",
+          "right": "[3, 2, 1]"
+        },
+        {
+          "left": "indexOf(2)",
+          "right": "1"
+        }
+      ],
+      "tags": ["equality", "coercion"]
+    },
+    {
+      "id": "js-match-009",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each ES feature to its syntax.",
+      "matchPairs": [
+        {
+          "left": "destructuring",
+          "right": "const { a, b } = obj"
+        },
+        {
+          "left": "spread",
+          "right": "[...arr, 4]"
+        },
+        {
+          "left": "default parameter",
+          "right": "function f(x = 1) {}"
+        },
+        {
+          "left": "template literal",
+          "right": "`Hi ${name}`"
+        },
+        {
+          "left": "arrow function",
+          "right": "x => x * 2"
+        },
+        {
+          "left": "optional chaining",
+          "right": "user?.address?.city"
+        }
+      ],
+      "tags": ["es6", "syntax"]
+    },
+    {
+      "id": "js-match-010",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each collection type to its key trait.",
+      "matchPairs": [
+        {
+          "left": "Map",
+          "right": "any-typed keys, ordered, has size"
+        },
+        {
+          "left": "Set",
+          "right": "unique values, no duplicates"
+        },
+        {
+          "left": "WeakMap",
+          "right": "object keys, garbage-collectable"
+        },
+        {
+          "left": "Array",
+          "right": "ordered, integer-indexed list"
+        },
+        {
+          "left": "Object",
+          "right": "string/symbol keys, has a prototype"
+        }
+      ],
+      "tags": ["collections"]
+    },
+    {
+      "id": "js-match-011",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each construct to how it sets `this`.",
+      "matchPairs": [
+        {
+          "left": "call",
+          "right": "invokes now, args listed individually"
+        },
+        {
+          "left": "apply",
+          "right": "invokes now, args as an array"
+        },
+        {
+          "left": "bind",
+          "right": "returns a new function with this fixed"
+        },
+        {
+          "left": "arrow function",
+          "right": "inherits this from the enclosing scope"
+        }
+      ],
+      "tags": ["functions", "this"]
+    },
+    {
+      "id": "js-match-012",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each numeric expression to its result.",
+      "matchPairs": [
+        {
+          "left": "(255).toString(16)",
+          "right": "'ff'"
+        },
+        {
+          "left": "(3.14159).toFixed(2)",
+          "right": "'3.14'"
+        },
+        {
+          "left": "Math.floor(4.7)",
+          "right": "4"
+        },
+        {
+          "left": "Math.ceil(4.2)",
+          "right": "5"
+        },
+        {
+          "left": "Math.round(4.5)",
+          "right": "5"
+        },
+        {
+          "left": "Math.max(1, 2, 3)",
+          "right": "3"
+        }
+      ],
+      "tags": ["numbers", "math"]
+    },
+    {
+      "id": "js-match-013",
+      "subjectId": "sub-5",
+      "type": "match",
+      "question": "Match each iteration construct to what it iterates over.",
+      "matchPairs": [
+        {
+          "left": "for...of",
+          "right": "values of an iterable"
+        },
+        {
+          "left": "for...in",
+          "right": "enumerable keys of an object"
+        },
+        {
+          "left": "Object.entries",
+          "right": "[key, value] pairs"
+        },
+        {
+          "left": "Array.forEach",
+          "right": "each element via a callback (no return)"
+        },
+        {
+          "left": "Object.values",
+          "right": "an object's values"
+        }
+      ],
+      "tags": ["loops", "iterators"]
+    }
+  ]
+}

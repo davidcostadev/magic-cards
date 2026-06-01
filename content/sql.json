@@ -1,0 +1,1582 @@
+{
+  "subjects": [
+    {
+      "id": "sub-2",
+      "title": "SQL",
+      "description": "Relational database queries and optimization",
+      "color": "#E48E00",
+      "icon": "database"
+    }
+  ],
+  "cards": [
+    {
+      "id": "sql-open-001",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a primary key?",
+      "answer": "A column (or set of columns) that **uniquely** identifies each row in a table. It must be unique and **NOT NULL**, and a table has at most one. It typically backs a clustered index.",
+      "tags": ["keys"]
+    },
+    {
+      "id": "sql-open-002",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a foreign key?",
+      "answer": "A column that references the primary key of another table, enforcing **referential integrity** — you can't insert a value that doesn't exist in the referenced table, and deletes/updates can cascade or be restricted.",
+      "tags": ["keys"]
+    },
+    {
+      "id": "sql-open-003",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What does database normalization aim to do?",
+      "answer": "Organize tables to **reduce redundancy** and avoid update/insert/delete anomalies. 1NF = atomic columns, no repeating groups; 2NF = no partial dependency on part of a composite key; 3NF = no transitive dependency on non-key columns.",
+      "tags": ["design"]
+    },
+    {
+      "id": "sql-open-004",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is denormalization and why do it?",
+      "answer": "Deliberately adding redundancy (duplicated columns, precomputed aggregates) to **speed up reads** by avoiding joins. It trades storage and write complexity (keeping copies in sync) for query performance.",
+      "tags": ["design"]
+    },
+    {
+      "id": "sql-open-005",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What does ACID stand for?",
+      "answer": "The guarantees of a reliable transaction: **Atomicity** (all-or-nothing), **Consistency** (valid state to valid state), **Isolation** (concurrent transactions don't interfere), and **Durability** (committed data survives crashes).",
+      "tags": ["transactions"]
+    },
+    {
+      "id": "sql-open-006",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a transaction?",
+      "answer": "A unit of work executed as a single atomic operation. `BEGIN` starts it; `COMMIT` makes all its changes permanent; `ROLLBACK` undoes them. Either every statement succeeds or none take effect.",
+      "tags": ["transactions"]
+    },
+    {
+      "id": "sql-open-007",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is an index and what is its trade-off?",
+      "answer": "A data structure (usually a B-tree) that lets the database find rows by a column's value without scanning the whole table — speeding up `WHERE`/`JOIN`/`ORDER BY`. The cost: extra storage and slower writes, since the index must be updated too.",
+      "tags": ["indexes"]
+    },
+    {
+      "id": "sql-open-008",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is the leftmost-prefix rule for composite indexes?",
+      "answer": "An index on `(a, b, c)` can be used for queries filtering on `a`, `a, b`, or `a, b, c` — but **not** for `b` alone or `c` alone. The query must use a leftmost prefix of the index columns.",
+      "tags": ["indexes"]
+    },
+    {
+      "id": "sql-open-009",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is the difference between WHERE and HAVING?",
+      "answer": "`WHERE` filters **rows before** grouping and can't use aggregates. `HAVING` filters **groups after** `GROUP BY` and can use aggregates (e.g. `HAVING COUNT(*) > 5`).",
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-open-010",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "In what logical order are the clauses of a SELECT processed?",
+      "answer": "`FROM`/joins → `WHERE` → `GROUP BY` → `HAVING` → `SELECT` (and window functions) → `DISTINCT` → `ORDER BY` → `LIMIT`/`OFFSET`. That's why a `SELECT` alias usually can't be used in `WHERE`.",
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-open-011",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "How does NULL behave in SQL (three-valued logic)?",
+      "answer": "`NULL` means 'unknown'. Comparisons with it yield **UNKNOWN** (not true/false): `NULL = NULL` is not true. Test with `IS NULL`/`IS NOT NULL`. Most aggregates ignore NULLs; `NULL` is excluded from `WHERE` unless explicitly handled.",
+      "tags": ["null"]
+    },
+    {
+      "id": "sql-open-012",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is the difference between COUNT(*) and COUNT(column)?",
+      "answer": "`COUNT(*)` counts **all rows**, including those with NULLs. `COUNT(column)` counts only rows where that column is **not NULL**. `COUNT(DISTINCT column)` counts distinct non-NULL values.",
+      "tags": ["aggregates"]
+    },
+    {
+      "id": "sql-open-013",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What are the main JOIN types?",
+      "answer": "**INNER** (only matching rows), **LEFT** (all left rows + matches, NULLs otherwise), **RIGHT** (all right rows + matches), **FULL OUTER** (all rows from both, NULLs where unmatched), and **CROSS** (Cartesian product of every combination).",
+      "tags": ["joins"]
+    },
+    {
+      "id": "sql-open-014",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a self join?",
+      "answer": "A join of a table **to itself**, using table aliases, to relate rows within the same table — e.g. matching employees to their managers (both in the `employees` table).",
+      "tags": ["joins"]
+    },
+    {
+      "id": "sql-open-015",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a correlated subquery?",
+      "answer": "A subquery that references columns from the **outer** query, so it's conceptually re-evaluated for each outer row (e.g. `WHERE salary > (SELECT AVG(salary) FROM emp e2 WHERE e2.dept = e.dept)`). It can be slower than a join.",
+      "tags": ["subqueries"]
+    },
+    {
+      "id": "sql-open-016",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a Common Table Expression (CTE)?",
+      "answer": "A named temporary result set defined with `WITH name AS (...)` that you reference in the main query. It improves readability, can be reused, and (with `RECURSIVE`) can traverse hierarchies like org charts or trees.",
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-open-017",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a window function?",
+      "answer": "A function computed `OVER` a set of rows **related to the current row**, without collapsing them like `GROUP BY`. With `PARTITION BY` and `ORDER BY` you get running totals, moving averages, and rankings while keeping every row.",
+      "tags": ["windows"]
+    },
+    {
+      "id": "sql-open-018",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is the difference between ROW_NUMBER, RANK, and DENSE_RANK?",
+      "answer": "All number rows within a window ordering. `ROW_NUMBER` is always unique (1,2,3,4). `RANK` gives ties the same number and **skips** the next (1,1,3). `DENSE_RANK` gives ties the same number with **no gap** (1,1,2).",
+      "tags": ["windows"]
+    },
+    {
+      "id": "sql-open-019",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is the difference between UNION and UNION ALL?",
+      "answer": "Both stack the rows of two result sets (which must have compatible columns). `UNION` **removes duplicates** (and sorts to do so); `UNION ALL` keeps every row and is faster.",
+      "tags": ["set-ops"]
+    },
+    {
+      "id": "sql-open-020",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "When would you use EXISTS instead of IN?",
+      "answer": "`EXISTS` checks whether a subquery returns any row and short-circuits on the first match — often better for large or correlated subqueries. `IN` compares against a materialized list of values and behaves unexpectedly when the list contains NULLs.",
+      "tags": ["subqueries"]
+    },
+    {
+      "id": "sql-open-021",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a view?",
+      "answer": "A named, stored `SELECT` query you can query like a table. It doesn't store data (unless materialized) — it presents a saved query, simplifying complex joins and restricting which columns/rows users see.",
+      "tags": ["objects"]
+    },
+    {
+      "id": "sql-open-022",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a materialized view?",
+      "answer": "A view whose result is **physically stored** and periodically refreshed. Reads are fast (no recomputation), but the data can be stale between refreshes — a trade-off for expensive aggregations.",
+      "tags": ["objects"]
+    },
+    {
+      "id": "sql-open-023",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a stored procedure?",
+      "answer": "A precompiled, named block of SQL (and procedural logic) stored in the database and invoked by name (`CALL`). It encapsulates multi-step logic, reduces round-trips, and can take parameters.",
+      "tags": ["objects"]
+    },
+    {
+      "id": "sql-open-024",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a trigger?",
+      "answer": "A procedure the database runs **automatically** in response to a table event — `BEFORE`/`AFTER` an `INSERT`, `UPDATE`, or `DELETE`. Used for auditing, enforcing rules, or maintaining derived data.",
+      "tags": ["objects"]
+    },
+    {
+      "id": "sql-open-025",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What does EXPLAIN do?",
+      "answer": "It shows the database's **query execution plan** — how it will access tables (index vs full scan), join order, and estimated costs/rows. It's the primary tool for diagnosing slow queries.",
+      "tags": ["performance"]
+    },
+    {
+      "id": "sql-open-026",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is the N+1 query problem?",
+      "answer": "Running one query to fetch N parent rows, then **one query per row** to fetch related data — N+1 round-trips. Fix it with a single `JOIN` or an `IN (...)` batch query (or an ORM's eager loading).",
+      "tags": ["performance"]
+    },
+    {
+      "id": "sql-open-027",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is SQL injection and how do you prevent it?",
+      "answer": "Injecting malicious SQL by concatenating untrusted input into a query string. Prevent it with **parameterized queries / prepared statements** (bind variables), which keep data separate from code; never build SQL by string concatenation.",
+      "tags": ["security"]
+    },
+    {
+      "id": "sql-open-028",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What constraints can you put on a column?",
+      "answer": "`NOT NULL` (required), `UNIQUE` (no duplicates), `PRIMARY KEY` (unique + not null), `FOREIGN KEY` (references another table), `CHECK` (a boolean condition), and `DEFAULT` (a value when none is supplied).",
+      "tags": ["constraints"]
+    },
+    {
+      "id": "sql-open-029",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is the difference between DELETE, TRUNCATE, and DROP?",
+      "answer": "`DELETE` removes selected rows (supports `WHERE`, logged, transactional). `TRUNCATE` removes **all** rows fast (no `WHERE`, resets identity, minimal logging). `DROP` removes the **table itself** (structure and data).",
+      "tags": ["ddl"]
+    },
+    {
+      "id": "sql-open-030",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What are DDL, DML, DCL, and TCL?",
+      "answer": "**DDL** defines schema (`CREATE`, `ALTER`, `DROP`). **DML** manipulates data (`SELECT`, `INSERT`, `UPDATE`, `DELETE`). **DCL** controls access (`GRANT`, `REVOKE`). **TCL** manages transactions (`COMMIT`, `ROLLBACK`, `SAVEPOINT`).",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "sql-open-031",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What does the CASE expression do?",
+      "answer": "It returns a value based on conditions, like an if/else inside a query: `CASE WHEN x > 0 THEN 'pos' WHEN x < 0 THEN 'neg' ELSE 'zero' END`. Usable in `SELECT`, `WHERE`, `ORDER BY`, etc.",
+      "tags": ["expressions"]
+    },
+    {
+      "id": "sql-open-032",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What do COALESCE and NULLIF do?",
+      "answer": "`COALESCE(a, b, c)` returns the **first non-NULL** argument — handy for default values. `NULLIF(a, b)` returns NULL if `a = b`, else `a` — useful to avoid divide-by-zero (`x / NULLIF(y, 0)`).",
+      "tags": ["null"]
+    },
+    {
+      "id": "sql-open-033",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "How does LIKE pattern matching work?",
+      "answer": "`LIKE` matches text patterns: `%` matches any sequence of characters, `_` matches exactly one. `'a%'` = starts with a; `'%a'` = ends with a; `'%a%'` = contains a. It's often case-sensitive depending on collation (`ILIKE` is case-insensitive in Postgres).",
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-open-034",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is the difference between a clustered and a non-clustered index?",
+      "answer": "A **clustered** index determines the physical row order on disk (one per table — often the primary key). A **non-clustered** index is a separate structure pointing back to rows; you can have many.",
+      "tags": ["indexes"]
+    },
+    {
+      "id": "sql-open-035",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What does GROUP BY require about the SELECT list?",
+      "answer": "Every column in the `SELECT` must either appear in the `GROUP BY` or be wrapped in an aggregate (`SUM`, `COUNT`, ...). Otherwise it's ambiguous which row's value to show (strict modes reject it).",
+      "tags": ["aggregates"]
+    },
+    {
+      "id": "sql-open-036",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "How do you paginate results with LIMIT and OFFSET?",
+      "answer": "`ORDER BY ... LIMIT 20 OFFSET 40` returns 20 rows starting after the first 40 (page 3 of size 20). Always include a stable `ORDER BY`. Large offsets are slow; keyset/seek pagination scales better.",
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-open-037",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is a transaction isolation level?",
+      "answer": "A setting controlling how much concurrent transactions can see each other's uncommitted/changing data — `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE` — trading anomalies (dirty/non-repeatable/phantom reads) against concurrency.",
+      "tags": ["transactions"]
+    },
+    {
+      "id": "sql-open-038",
+      "subjectId": "sub-2",
+      "type": "open",
+      "question": "What is the difference between a surrogate key and a natural key?",
+      "answer": "A **natural** key is real-world data that's unique (e.g. email, ISBN). A **surrogate** key is an artificial id (auto-increment/UUID) with no business meaning — stable and simple, the common default for primary keys.",
+      "tags": ["keys"]
+    },
+    {
+      "id": "sql-quiz-001",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Which clause filters rows **before** grouping?",
+      "answer": "`WHERE` filters rows before `GROUP BY`; `HAVING` filters groups after.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "WHERE",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "HAVING",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "ORDER BY",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "GROUP BY",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-quiz-002",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "What does `NULL = NULL` evaluate to?",
+      "answer": "Comparisons with NULL yield UNKNOWN, not TRUE. Use `IS NULL`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "UNKNOWN (not true)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "TRUE",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "FALSE",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "0",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["null"]
+    },
+    {
+      "id": "sql-quiz-003",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Which JOIN returns all rows from both tables, with NULLs where unmatched?",
+      "answer": "FULL OUTER JOIN keeps unmatched rows from both sides.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "FULL OUTER JOIN",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "INNER JOIN",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "CROSS JOIN",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "LEFT JOIN",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["joins"]
+    },
+    {
+      "id": "sql-quiz-004",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "What is the difference between UNION and UNION ALL?",
+      "answer": "UNION removes duplicate rows; UNION ALL keeps them (and is faster).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "UNION removes duplicates; UNION ALL keeps them",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "They are identical",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "UNION ALL removes duplicates",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "UNION joins columns side by side",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["set-ops"]
+    },
+    {
+      "id": "sql-quiz-005",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Which removes ALL rows fast but can't use a WHERE clause?",
+      "answer": "TRUNCATE empties the whole table quickly; DELETE supports WHERE.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "TRUNCATE",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "DELETE",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "DROP",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "REMOVE",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["ddl"]
+    },
+    {
+      "id": "sql-quiz-006",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Which statement is DDL (Data Definition Language)?",
+      "answer": "CREATE defines schema; SELECT/INSERT/UPDATE are DML.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "CREATE TABLE",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "SELECT",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "INSERT",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "UPDATE",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "sql-quiz-007",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Can a PRIMARY KEY column contain NULL?",
+      "answer": "No — a primary key must be unique and NOT NULL.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "No, it must be NOT NULL",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Yes, once",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Yes, always",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Only with a default",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["keys"]
+    },
+    {
+      "id": "sql-quiz-008",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "What does `COUNT(*)` count?",
+      "answer": "All rows, including those containing NULLs. COUNT(col) skips NULLs.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "All rows, including NULLs",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Only non-NULL rows",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Distinct rows only",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Columns, not rows",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["aggregates"]
+    },
+    {
+      "id": "sql-quiz-009",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "`SELECT ... LIMIT 10 OFFSET 20` returns...",
+      "answer": "Rows 21-30 — it skips 20 then returns 10.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "10 rows, starting after the first 20",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The first 10 rows",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "20 rows",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Rows 10 through 20",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-quiz-010",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Which clause can use an aggregate like `COUNT(*) > 5`?",
+      "answer": "HAVING filters groups and can reference aggregates; WHERE cannot.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "HAVING",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "WHERE",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "FROM",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "ORDER BY only",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["aggregates"]
+    },
+    {
+      "id": "sql-quiz-011",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "An INNER JOIN returns...",
+      "answer": "Only rows with a match in both tables.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "only rows matching in both tables",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "all rows from the left table",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "every combination of rows",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "all rows from both tables",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["joins"]
+    },
+    {
+      "id": "sql-quiz-012",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "A CROSS JOIN produces...",
+      "answer": "The Cartesian product — every row of A paired with every row of B.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "the Cartesian product of the tables",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "only matching rows",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "all left rows with NULLs",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "an error",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["joins"]
+    },
+    {
+      "id": "sql-quiz-013",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Which window function gives ties the same rank and then SKIPS numbers?",
+      "answer": "RANK leaves gaps after ties (1,1,3); DENSE_RANK doesn't (1,1,2).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "RANK()",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "DENSE_RANK()",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "ROW_NUMBER()",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "COUNT()",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["windows"]
+    },
+    {
+      "id": "sql-quiz-014",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "`COALESCE(NULL, NULL, 'x', 'y')` returns...",
+      "answer": "The first non-NULL argument → 'x'.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "'x'",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "NULL",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "'y'",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "'xy'",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["null"]
+    },
+    {
+      "id": "sql-quiz-015",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "What does `WHERE name LIKE 'A%'` match?",
+      "answer": "`%` matches any sequence, so it matches names starting with A.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "names starting with A",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "names ending with A",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "names containing A",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "names exactly 'A%'",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-quiz-016",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Which statement permanently saves a transaction's changes?",
+      "answer": "COMMIT finalizes; ROLLBACK undoes.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "COMMIT",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "ROLLBACK",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "SAVE",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "FLUSH",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["transactions"]
+    },
+    {
+      "id": "sql-quiz-017",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "What does an index primarily speed up, at what cost?",
+      "answer": "Faster reads/lookups; slower writes and extra storage.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Reads/lookups, at the cost of slower writes",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Writes, at the cost of reads",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Everything, with no cost",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Only DELETE statements",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["indexes"]
+    },
+    {
+      "id": "sql-quiz-018",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "In a SELECT, the WHERE clause is processed...",
+      "answer": "After FROM, before GROUP BY/SELECT — so SELECT aliases aren't visible in WHERE.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "after FROM, before GROUP BY and SELECT",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "after SELECT",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "first of all",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "after ORDER BY",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-quiz-019",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "A FOREIGN KEY enforces that...",
+      "answer": "Its value must exist in the referenced table's key (referential integrity).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "values exist in the referenced table",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "values are unique",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "the column is NOT NULL",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "rows are sorted",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["keys"]
+    },
+    {
+      "id": "sql-quiz-020",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Which is a key benefit of EXISTS over IN for a subquery?",
+      "answer": "EXISTS short-circuits on the first match and handles NULLs predictably.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It short-circuits on the first matching row",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "It always returns more rows",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "It sorts the result",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "It removes duplicates",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["subqueries"]
+    },
+    {
+      "id": "sql-quiz-021",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "An aggregate like `SUM(amount)` with no GROUP BY returns...",
+      "answer": "A single row aggregating the whole table.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "one row over the entire table",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "one row per input row",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "an error",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "NULL",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["aggregates"]
+    },
+    {
+      "id": "sql-quiz-022",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "Which keyword defines a Common Table Expression?",
+      "answer": "`WITH name AS (...)` introduces a CTE.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "WITH",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "USING",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "AS",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "DECLARE",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-quiz-023",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "The safest way to prevent SQL injection is...",
+      "answer": "Parameterized queries / prepared statements that separate data from code.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Parameterized (prepared) statements",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Escaping quotes by hand",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Hiding error messages",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Using only SELECT",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["security"]
+    },
+    {
+      "id": "sql-quiz-024",
+      "subjectId": "sub-2",
+      "type": "quiz",
+      "question": "`ROW_NUMBER()` requires which accompanying clause?",
+      "answer": "Window functions need an `OVER (...)` clause.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "OVER (...)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "GROUP BY",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "HAVING",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "DISTINCT",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["windows"]
+    },
+    {
+      "id": "sql-ta-001",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which statement adds new rows to a table?",
+      "answer": "`INSERT INTO ... VALUES ...`.",
+      "shortAnswer": "INSERT",
+      "tags": ["dml"]
+    },
+    {
+      "id": "sql-ta-002",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which statement modifies existing rows?",
+      "answer": "`UPDATE ... SET ... WHERE ...`.",
+      "shortAnswer": "UPDATE",
+      "tags": ["dml"]
+    },
+    {
+      "id": "sql-ta-003",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which statement removes rows (and supports WHERE)?",
+      "answer": "`DELETE FROM ... WHERE ...`.",
+      "shortAnswer": "DELETE",
+      "tags": ["dml"]
+    },
+    {
+      "id": "sql-ta-004",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which clause limits how many rows are returned?",
+      "answer": "`LIMIT n` (TOP/FETCH in some dialects).",
+      "shortAnswer": "LIMIT",
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-ta-005",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which statement creates a new table?",
+      "answer": "`CREATE TABLE ...`.",
+      "shortAnswer": "CREATE",
+      "tags": ["ddl"]
+    },
+    {
+      "id": "sql-ta-006",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which keyword combines rows from two tables on a matching condition?",
+      "answer": "`JOIN ... ON ...`.",
+      "shortAnswer": "JOIN",
+      "tags": ["joins"]
+    },
+    {
+      "id": "sql-ta-007",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which aggregate function totals numeric values?",
+      "answer": "`SUM(column)`.",
+      "shortAnswer": "SUM",
+      "tags": ["aggregates"]
+    },
+    {
+      "id": "sql-ta-008",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which aggregate function returns the mean of a numeric column?",
+      "answer": "`AVG(column)`.",
+      "shortAnswer": "AVG",
+      "tags": ["aggregates"]
+    },
+    {
+      "id": "sql-ta-009",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which keyword gives a column or table an alias?",
+      "answer": "`AS` (e.g. `SELECT price AS cost`).",
+      "shortAnswer": "AS",
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-ta-010",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which operator tests whether a value falls within a range (inclusive)?",
+      "answer": "`BETWEEN a AND b`.",
+      "shortAnswer": "BETWEEN",
+      "tags": ["operators"]
+    },
+    {
+      "id": "sql-ta-011",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which operator tests whether a value is in a set of listed values?",
+      "answer": "`IN (1, 2, 3)`.",
+      "shortAnswer": "IN",
+      "tags": ["operators"]
+    },
+    {
+      "id": "sql-ta-012",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which function returns the first non-NULL of its arguments?",
+      "answer": "`COALESCE(a, b, ...)`.",
+      "shortAnswer": "COALESCE",
+      "tags": ["null"]
+    },
+    {
+      "id": "sql-ta-013",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which keyword begins a Common Table Expression?",
+      "answer": "`WITH name AS (...)`.",
+      "shortAnswer": "WITH",
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-ta-014",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which statement shows a query's execution plan?",
+      "answer": "`EXPLAIN` (or EXPLAIN ANALYZE).",
+      "shortAnswer": "EXPLAIN",
+      "tags": ["performance"]
+    },
+    {
+      "id": "sql-ta-015",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which constraint forbids duplicate values in a column?",
+      "answer": "`UNIQUE`.",
+      "shortAnswer": "UNIQUE",
+      "tags": ["constraints"]
+    },
+    {
+      "id": "sql-ta-016",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which clause skips a number of rows for pagination?",
+      "answer": "`OFFSET n`.",
+      "shortAnswer": "OFFSET",
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-ta-017",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which statement permanently saves the current transaction?",
+      "answer": "`COMMIT`.",
+      "shortAnswer": "COMMIT",
+      "tags": ["transactions"]
+    },
+    {
+      "id": "sql-ta-018",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which window function assigns a unique sequential number to each row?",
+      "answer": "`ROW_NUMBER()`.",
+      "shortAnswer": "ROW_NUMBER",
+      "tags": ["windows"]
+    },
+    {
+      "id": "sql-ta-019",
+      "subjectId": "sub-2",
+      "type": "type-answer",
+      "question": "Which keyword undoes the changes of the current transaction?",
+      "answer": "`ROLLBACK`.",
+      "shortAnswer": "ROLLBACK",
+      "tags": ["transactions"]
+    },
+    {
+      "id": "sql-match-001",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each clause to its purpose.",
+      "matchPairs": [
+        {
+          "left": "SELECT",
+          "right": "choose columns to return"
+        },
+        {
+          "left": "FROM",
+          "right": "the source tables"
+        },
+        {
+          "left": "WHERE",
+          "right": "filter rows before grouping"
+        },
+        {
+          "left": "GROUP BY",
+          "right": "group rows for aggregation"
+        },
+        {
+          "left": "HAVING",
+          "right": "filter groups after aggregation"
+        },
+        {
+          "left": "ORDER BY",
+          "right": "sort the result"
+        },
+        {
+          "left": "LIMIT",
+          "right": "cap the number of rows"
+        }
+      ],
+      "tags": ["queries"]
+    },
+    {
+      "id": "sql-match-002",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each JOIN type to its result.",
+      "matchPairs": [
+        {
+          "left": "INNER JOIN",
+          "right": "only matching rows"
+        },
+        {
+          "left": "LEFT JOIN",
+          "right": "all left rows + matches"
+        },
+        {
+          "left": "RIGHT JOIN",
+          "right": "all right rows + matches"
+        },
+        {
+          "left": "FULL OUTER JOIN",
+          "right": "all rows from both sides"
+        },
+        {
+          "left": "CROSS JOIN",
+          "right": "every combination (Cartesian)"
+        }
+      ],
+      "tags": ["joins"]
+    },
+    {
+      "id": "sql-match-003",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each aggregate function to its meaning.",
+      "matchPairs": [
+        {
+          "left": "COUNT",
+          "right": "number of rows"
+        },
+        {
+          "left": "SUM",
+          "right": "total of values"
+        },
+        {
+          "left": "AVG",
+          "right": "mean of values"
+        },
+        {
+          "left": "MIN",
+          "right": "smallest value"
+        },
+        {
+          "left": "MAX",
+          "right": "largest value"
+        }
+      ],
+      "tags": ["aggregates"]
+    },
+    {
+      "id": "sql-match-004",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each SQL sub-language to an example statement.",
+      "matchPairs": [
+        {
+          "left": "DDL",
+          "right": "CREATE / ALTER / DROP"
+        },
+        {
+          "left": "DML",
+          "right": "SELECT / INSERT / UPDATE"
+        },
+        {
+          "left": "TCL",
+          "right": "COMMIT / ROLLBACK"
+        },
+        {
+          "left": "DCL",
+          "right": "GRANT / REVOKE"
+        }
+      ],
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "sql-match-005",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each ACID property to its guarantee.",
+      "matchPairs": [
+        {
+          "left": "Atomicity",
+          "right": "all-or-nothing"
+        },
+        {
+          "left": "Consistency",
+          "right": "valid state to valid state"
+        },
+        {
+          "left": "Isolation",
+          "right": "transactions don't interfere"
+        },
+        {
+          "left": "Durability",
+          "right": "committed data survives crashes"
+        }
+      ],
+      "tags": ["transactions"]
+    },
+    {
+      "id": "sql-match-006",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each constraint to what it enforces.",
+      "matchPairs": [
+        {
+          "left": "PRIMARY KEY",
+          "right": "unique + not null identity"
+        },
+        {
+          "left": "FOREIGN KEY",
+          "right": "references another table"
+        },
+        {
+          "left": "UNIQUE",
+          "right": "no duplicate values"
+        },
+        {
+          "left": "NOT NULL",
+          "right": "a value is required"
+        },
+        {
+          "left": "CHECK",
+          "right": "a boolean condition"
+        },
+        {
+          "left": "DEFAULT",
+          "right": "value when none is given"
+        }
+      ],
+      "tags": ["constraints"]
+    },
+    {
+      "id": "sql-match-007",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each set operator to its behavior.",
+      "matchPairs": [
+        {
+          "left": "UNION",
+          "right": "combine, remove duplicates"
+        },
+        {
+          "left": "UNION ALL",
+          "right": "combine, keep duplicates"
+        },
+        {
+          "left": "INTERSECT",
+          "right": "rows in both result sets"
+        },
+        {
+          "left": "EXCEPT",
+          "right": "rows in the first, not the second"
+        }
+      ],
+      "tags": ["set-ops"]
+    },
+    {
+      "id": "sql-match-008",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each ranking window function to its tie behavior.",
+      "matchPairs": [
+        {
+          "left": "ROW_NUMBER()",
+          "right": "always unique (1,2,3,4)"
+        },
+        {
+          "left": "RANK()",
+          "right": "ties share, then skip (1,1,3)"
+        },
+        {
+          "left": "DENSE_RANK()",
+          "right": "ties share, no gap (1,1,2)"
+        }
+      ],
+      "tags": ["windows"]
+    },
+    {
+      "id": "sql-match-009",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each statement to its effect.",
+      "matchPairs": [
+        {
+          "left": "DELETE",
+          "right": "remove selected rows (WHERE)"
+        },
+        {
+          "left": "TRUNCATE",
+          "right": "remove all rows fast"
+        },
+        {
+          "left": "DROP",
+          "right": "remove the table itself"
+        },
+        {
+          "left": "ALTER",
+          "right": "change a table's structure"
+        }
+      ],
+      "tags": ["ddl"]
+    },
+    {
+      "id": "sql-match-010",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each operator to its use.",
+      "matchPairs": [
+        {
+          "left": "LIKE",
+          "right": "pattern match with % and _"
+        },
+        {
+          "left": "IN",
+          "right": "match a set of values"
+        },
+        {
+          "left": "BETWEEN",
+          "right": "match an inclusive range"
+        },
+        {
+          "left": "IS NULL",
+          "right": "test for NULL"
+        }
+      ],
+      "tags": ["operators"]
+    },
+    {
+      "id": "sql-match-011",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each database object to its description.",
+      "matchPairs": [
+        {
+          "left": "Index",
+          "right": "speed up lookups by a column"
+        },
+        {
+          "left": "View",
+          "right": "a stored, queryable SELECT"
+        },
+        {
+          "left": "Trigger",
+          "right": "runs automatically on an event"
+        },
+        {
+          "left": "Stored procedure",
+          "right": "named, callable SQL block"
+        },
+        {
+          "left": "CTE",
+          "right": "named temporary result set (WITH)"
+        }
+      ],
+      "tags": ["objects"]
+    },
+    {
+      "id": "sql-match-012",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each normal form to its rule.",
+      "matchPairs": [
+        {
+          "left": "1NF",
+          "right": "atomic columns, no repeating groups"
+        },
+        {
+          "left": "2NF",
+          "right": "no partial dependency on a composite key"
+        },
+        {
+          "left": "3NF",
+          "right": "no transitive dependency on non-key columns"
+        }
+      ],
+      "tags": ["design"]
+    },
+    {
+      "id": "sql-match-013",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each NULL-handling tool to its job.",
+      "matchPairs": [
+        {
+          "left": "IS NULL",
+          "right": "test whether a value is NULL"
+        },
+        {
+          "left": "COALESCE",
+          "right": "first non-NULL of several values"
+        },
+        {
+          "left": "NULLIF(a, b)",
+          "right": "NULL when a equals b"
+        },
+        {
+          "left": "COUNT(col)",
+          "right": "counts only non-NULL values"
+        }
+      ],
+      "tags": ["null"]
+    },
+    {
+      "id": "sql-match-014",
+      "subjectId": "sub-2",
+      "type": "match",
+      "question": "Match each key concept to its meaning.",
+      "matchPairs": [
+        {
+          "left": "Primary key",
+          "right": "unique row identifier"
+        },
+        {
+          "left": "Foreign key",
+          "right": "link to another table's key"
+        },
+        {
+          "left": "Composite key",
+          "right": "key made of multiple columns"
+        },
+        {
+          "left": "Surrogate key",
+          "right": "artificial id, no business meaning"
+        }
+      ],
+      "tags": ["keys"]
+    }
+  ]
+}

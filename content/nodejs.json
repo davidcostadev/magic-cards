@@ -1,0 +1,1631 @@
+{
+  "subjects": [
+    {
+      "id": "sub-7",
+      "title": "Node.js",
+      "description": "Server-side JavaScript, the event loop and core modules",
+      "color": "#16A34A",
+      "icon": "node"
+    }
+  ],
+  "cards": [
+    {
+      "id": "node-open-001",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What are the main phases of the Node.js event loop?",
+      "answer": "libuv runs the loop in phases each tick: **timers** (setTimeout/setInterval), **pending callbacks**, **poll** (retrieve I/O, run most callbacks), **check** (setImmediate), and **close** callbacks. Between phases the microtask queue (Promises) and `process.nextTick` drain.",
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-open-002",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "How do `setImmediate`, `setTimeout(fn, 0)`, and `process.nextTick` differ?",
+      "answer": "`process.nextTick` runs after the current operation but **before** the loop continues (ahead of Promises). Promise microtasks go next. `setImmediate` runs in the **check** phase; `setTimeout(fn,0)` in the **timers** phase. Inside an I/O callback, `setImmediate` fires before `setTimeout(0)`.",
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-open-003",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "Is Node.js single-threaded?",
+      "answer": "Your JavaScript runs on one main thread, but Node offloads I/O and some CPU work to libuv's **thread pool** (default 4) and the OS, so I/O is non-blocking. For CPU-bound work use `worker_threads` or `cluster`.",
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "node-open-004",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is libuv?",
+      "answer": "The C library behind Node's event loop and async I/O. It supplies the event loop, a thread pool for file-system and some crypto/DNS work, and cross-platform async networking — enabling non-blocking I/O.",
+      "tags": ["internals"]
+    },
+    {
+      "id": "node-open-005",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is the difference between CommonJS and ES modules in Node?",
+      "answer": "**CommonJS** uses `require()`/`module.exports`, loads synchronously (default, `.cjs`). **ESM** uses `import`/`export`, is asynchronous and statically analyzable (`.mjs` or `\"type\":\"module\"`). ESM has no `__dirname` or `require` by default.",
+      "tags": ["modules"]
+    },
+    {
+      "id": "node-open-006",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is the difference between `module.exports` and `exports`?",
+      "answer": "`exports` is a reference to `module.exports`. Adding properties (`exports.foo = ...`) works, but **reassigning** `exports = ...` breaks the link — only `module.exports` is returned by `require`. To export a single value, set `module.exports = ...`.",
+      "tags": ["modules"]
+    },
+    {
+      "id": "node-open-007",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is an EventEmitter?",
+      "answer": "Node's core event-driven pattern (`require('events')`). Objects `emit(name, ...args)` and register listeners with `on(name, cb)`. Many core APIs (streams, HTTP servers) are EventEmitters.",
+      "tags": ["events"]
+    },
+    {
+      "id": "node-open-008",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What are Node streams and why use them?",
+      "answer": "Streams process data in **chunks** instead of loading it all into memory. Types: Readable, Writable, Duplex, Transform. They handle large files/network data efficiently and compose via `pipe()`, with backpressure protecting memory.",
+      "tags": ["streams"]
+    },
+    {
+      "id": "node-open-009",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is backpressure in streams?",
+      "answer": "When a writable destination can't keep up with a readable source, `write()` returns `false` to signal 'slow down'. `pipe()`/`pipeline()` handle this automatically by pausing the source until the destination drains, preventing unbounded memory growth.",
+      "tags": ["streams"]
+    },
+    {
+      "id": "node-open-010",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is a Buffer?",
+      "answer": "A fixed-length chunk of raw binary data stored outside V8's heap, used for I/O (files, sockets). It's a subclass of `Uint8Array`. Create with `Buffer.from()`/`Buffer.alloc()` and convert to/from strings with an encoding.",
+      "tags": ["buffers"]
+    },
+    {
+      "id": "node-open-011",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is an error-first callback?",
+      "answer": "Node's classic async convention: the callback's **first argument is an error** (or null), with results after — `fn(err, data) => ...`. You check `err` first. `util.promisify` converts such functions to Promise-returning ones.",
+      "tags": ["async"]
+    },
+    {
+      "id": "node-open-012",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is \"callback hell\" and how do you avoid it?",
+      "answer": "Deeply nested callbacks that grow rightward and tangle error handling. Avoid it with named functions, Promise chains, or — best — `async`/`await`.",
+      "tags": ["async"]
+    },
+    {
+      "id": "node-open-013",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What does `util.promisify` do?",
+      "answer": "It wraps an error-first callback function and returns a version that returns a Promise, so you can `await` legacy callback APIs instead of nesting callbacks.",
+      "tags": ["async"]
+    },
+    {
+      "id": "node-open-014",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is `package.json`?",
+      "answer": "A project's manifest: name, version, `scripts`, `dependencies`/`devDependencies`, entry point (`main`), module `type`, and metadata. `npm install` reads it; `package-lock.json` pins the exact resolved dependency tree.",
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-open-015",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is the difference between `dependencies` and `devDependencies`?",
+      "answer": "**dependencies** are needed at runtime in production. **devDependencies** are only for development/build/test (linters, bundlers, test runners) and are skipped by `npm install --production`.",
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-open-016",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What do `^` and `~` mean in a semver range?",
+      "answer": "`^1.2.3` allows updates that keep the leftmost non-zero digit — `>=1.2.3 <2.0.0` (minor + patch). `~1.2.3` allows only patch updates — `>=1.2.3 <1.3.0`.",
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-open-017",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is the difference between npm and npx?",
+      "answer": "`npm` installs and manages packages/scripts. `npx` **executes** a package's binary — fetching it temporarily if not installed — handy for one-off tools (`npx create-react-app`) without a global install.",
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-open-018",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "How does `process.nextTick` relate to the microtask queue?",
+      "answer": "`process.nextTick(cb)` runs after the current operation and **before** the loop proceeds — even before Promise microtasks. Overusing it can starve I/O. Promise `.then` callbacks are microtasks, draining just after the nextTick queue.",
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-open-019",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What are `__dirname` and `__filename`?",
+      "answer": "In CommonJS, `__dirname` is the current module's absolute directory and `__filename` its full path. They are not defined in ES modules — derive them from `import.meta.url` with `fileURLToPath`.",
+      "tags": ["modules"]
+    },
+    {
+      "id": "node-open-020",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What does the `path` module do?",
+      "answer": "Cross-platform path utilities: `path.join()` (join with the OS separator), `path.resolve()` (absolute path), `path.basename()`, `path.dirname()`, `path.extname()` — avoiding hard-coded `/` vs `\\`.",
+      "tags": ["core-modules"]
+    },
+    {
+      "id": "node-open-021",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What's the difference between sync and async `fs` methods?",
+      "answer": "`fs.readFileSync` **blocks** the event loop until done — acceptable at startup, harmful under load. `fs.readFile` (callback) and `fs.promises.readFile` (async) are non-blocking and belong in request handlers.",
+      "tags": ["fs"]
+    },
+    {
+      "id": "node-open-022",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "How do you create a basic HTTP server in Node?",
+      "answer": "```js\nhttp.createServer((req, res) => {\n  res.writeHead(200);\n  res.end('hi');\n}).listen(3000);\n```\n`req` is a readable stream (IncomingMessage), `res` a writable stream. Express/Fastify build on this.",
+      "tags": ["http"]
+    },
+    {
+      "id": "node-open-023",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is middleware in Express?",
+      "answer": "A function `(req, res, next)` that runs in a per-request pipeline. It can read/modify req/res, end the response, or call `next()` to pass control — used for logging, auth, body parsing, and error handling.",
+      "tags": ["express"]
+    },
+    {
+      "id": "node-open-024",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What are `worker_threads`?",
+      "answer": "A module for running JavaScript on **separate threads**, each with its own event loop and V8 instance, communicating by message passing (and optional SharedArrayBuffer). Use them for CPU-bound work that would block the main thread.",
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "node-open-025",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is the `cluster` module?",
+      "answer": "It forks the Node process into multiple worker **processes** that share a server port, so a network app uses all CPU cores. The OS distributes connections; workers don't share memory.",
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "node-open-026",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "How do you handle uncaught errors in Node?",
+      "answer": "`process.on('uncaughtException', cb)` catches otherwise-unhandled sync errors; `process.on('unhandledRejection', cb)` catches rejected Promises with no `.catch`. Both are last resort — log and exit, don't pretend nothing happened.",
+      "tags": ["errors"]
+    },
+    {
+      "id": "node-open-027",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is `NODE_ENV` used for?",
+      "answer": "A convention naming the environment — usually `development`, `test`, or `production`. Libraries enable optimizations / silence debug output when it's `production`. It's just an env var you set yourself.",
+      "tags": ["config"]
+    },
+    {
+      "id": "node-open-028",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What does `emitter.once` do?",
+      "answer": "`emitter.once(name, cb)` registers a listener that fires **at most once**, then auto-removes itself — useful for one-time events like a connection's `'ready'`.",
+      "tags": ["events"]
+    },
+    {
+      "id": "node-open-029",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What do `pipe()` and `pipeline()` do?",
+      "answer": "`readable.pipe(writable)` connects streams and handles backpressure. `stream.pipeline(...streams, cb)` does the same for a chain but also **propagates errors** and cleans up — the recommended way to compose streams.",
+      "tags": ["streams"]
+    },
+    {
+      "id": "node-open-030",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is the global object in Node vs the browser?",
+      "answer": "The browser's is `window`; Node's is `global` (or the standard `globalThis`). Node also exposes `process`, `Buffer`, and — in CJS — `require`, `module`, `__dirname`. There's no `window`/`document` in Node.",
+      "tags": ["globals"]
+    },
+    {
+      "id": "node-open-031",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "How does `require('x')` resolve a module?",
+      "answer": "Node checks core modules first (e.g. `fs`), then relative/absolute paths, then walks up `node_modules` folders for the package (using its `main`/`exports`). A miss throws `MODULE_NOT_FOUND`.",
+      "tags": ["modules"]
+    },
+    {
+      "id": "node-open-032",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What's the difference between `process.exit()` and letting the process end?",
+      "answer": "`process.exit(code)` terminates **immediately**, possibly cutting off pending I/O (unflushed writes). Prefer letting the loop drain (or set `process.exitCode`) so buffers flush; reserve `exit()` for fatal cases.",
+      "tags": ["process"]
+    },
+    {
+      "id": "node-open-033",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "How do you gracefully shut down a Node server?",
+      "answer": "Listen for `SIGTERM`/`SIGINT`, stop accepting new connections (`server.close()`), finish in-flight requests, close DB/stream resources, then exit — so deploys don't drop requests.",
+      "tags": ["process"]
+    },
+    {
+      "id": "node-open-034",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is the libuv thread pool used for, and how big is it?",
+      "answer": "A pool (default **4** threads, set via `UV_THREADPOOL_SIZE`) for operations that aren't async at the OS level: file-system I/O, `dns.lookup`, and some `crypto`/`zlib` work. Heavy crypto can exhaust it.",
+      "tags": ["internals"]
+    },
+    {
+      "id": "node-open-035",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What's the difference between `fs.readFile` and `fs.createReadStream`?",
+      "answer": "`readFile` buffers the **entire** file in memory then hands it over. `createReadStream` emits the file in **chunks**, so you can process huge files (or pipe to a response) with low, constant memory.",
+      "tags": ["streams", "fs"]
+    },
+    {
+      "id": "node-open-036",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is the REPL?",
+      "answer": "Node's interactive Read-Eval-Print Loop (run `node` with no file). It evaluates expressions, keeps `_` as the last result, and is handy for experimenting with APIs.",
+      "tags": ["tooling"]
+    },
+    {
+      "id": "node-open-037",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "How do you debug a Node app?",
+      "answer": "Run with `node --inspect` (or `--inspect-brk` to break on start) and attach Chrome DevTools or your IDE. Set breakpoints, inspect scope, and profile. `console.log` and the `debug` module also help.",
+      "tags": ["tooling"]
+    },
+    {
+      "id": "node-open-038",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is the difference between `Buffer.alloc` and `Buffer.allocUnsafe`?",
+      "answer": "`Buffer.alloc(n)` returns a **zero-filled** buffer (safe). `Buffer.allocUnsafe(n)` is faster but may contain **old memory contents** until overwritten — only use it when you'll immediately fill the whole buffer.",
+      "tags": ["buffers"]
+    },
+    {
+      "id": "node-open-039",
+      "subjectId": "sub-7",
+      "type": "open",
+      "question": "What is `process.argv`?",
+      "answer": "An array of the command-line arguments: `argv[0]` is the node executable, `argv[1]` the script path, and `argv[2]` onward your arguments. Libraries like `commander`/`yargs` parse it for you.",
+      "tags": ["process"]
+    },
+    {
+      "id": "node-quiz-001",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "Inside an I/O callback, which fires first?",
+      "answer": "Within an I/O cycle, setImmediate (check phase) runs before the next timers phase.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "setImmediate",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "setTimeout(fn, 0)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "They're identical",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Neither runs",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-quiz-002",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "Which callback has the highest priority?",
+      "answer": "`process.nextTick` callbacks run before Promise microtasks and before the loop continues.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "process.nextTick",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "setImmediate",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "setTimeout",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "a Promise .then",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-quiz-003",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "What does `require()` return?",
+      "answer": "The `module.exports` object of the loaded module.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "module.exports of the loaded module",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "the file path",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "a Promise",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "the exports keyword",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["modules"]
+    },
+    {
+      "id": "node-quiz-004",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "What is the default size of the libuv thread pool?",
+      "answer": "4 threads (configurable via UV_THREADPOOL_SIZE).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "4",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "1",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "8",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "the number of CPU cores",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["internals"]
+    },
+    {
+      "id": "node-quiz-005",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "Which core module gives cross-platform path helpers like join and resolve?",
+      "answer": "The `path` module.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "path",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "fs",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "url",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "os",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["core-modules"]
+    },
+    {
+      "id": "node-quiz-006",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "In CommonJS, how do you export a single function as the whole module?",
+      "answer": "Assign it to `module.exports`.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "module.exports = fn",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "export default fn",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "exports = fn",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "return fn",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["modules"]
+    },
+    {
+      "id": "node-quiz-007",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "What does `fs.readFileSync` do to the event loop?",
+      "answer": "It blocks the loop until the read finishes.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Blocks it until the read completes",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Runs it in a worker thread",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Returns a Promise",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Schedules a timer",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["fs"]
+    },
+    {
+      "id": "node-quiz-008",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "`setImmediate` callbacks run in which event-loop phase?",
+      "answer": "The check phase.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "check",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "timers",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "poll",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "close",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-quiz-009",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "What kind of object is `req` in `http.createServer`?",
+      "answer": "A readable stream (IncomingMessage).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A readable stream (IncomingMessage)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A writable stream",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A Buffer",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A plain object",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["http"]
+    },
+    {
+      "id": "node-quiz-010",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "What is `process.argv[0]`?",
+      "answer": "The path to the node executable. argv[1] is the script, argv[2+] are user args.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "the path to the node executable",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "the script path",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "the first CLI argument",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "undefined",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["process"]
+    },
+    {
+      "id": "node-quiz-011",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "Which is true about ES modules in Node?",
+      "answer": "`__dirname` is not defined in ESM (use import.meta.url instead).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "__dirname is not defined",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "require is available",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "they load synchronously",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "they use module.exports",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["modules"]
+    },
+    {
+      "id": "node-quiz-012",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "What does the range `^1.4.2` allow?",
+      "answer": "Minor and patch updates below the next major: >=1.4.2 <2.0.0.",
+      "choices": [
+        {
+          "id": "a",
+          "text": ">=1.4.2 <2.0.0",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": ">=1.4.2 <1.5.0",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "exactly 1.4.2",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": ">=1.0.0 <2.0.0",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-quiz-013",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "What does the range `~1.4.2` allow?",
+      "answer": "Patch updates only: >=1.4.2 <1.5.0.",
+      "choices": [
+        {
+          "id": "a",
+          "text": ">=1.4.2 <1.5.0",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": ">=1.4.2 <2.0.0",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "exactly 1.4.2",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "any 1.x",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-quiz-014",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "What is `npx` primarily for?",
+      "answer": "Running a package's binary without a global install.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "running a package's binary without a global install",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "publishing packages",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "linting",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "starting the REPL",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-quiz-015",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "An error-first callback's first parameter is...",
+      "answer": "The error (or null if none).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "the error (or null)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "the result",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "a status code",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "the callback",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["async"]
+    },
+    {
+      "id": "node-quiz-016",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "What does `emitter.once(name, cb)` do?",
+      "answer": "Registers a listener that fires at most once, then removes itself.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Registers a listener that fires at most once",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Emits an event once",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Removes all listeners",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Runs synchronously only",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["events"]
+    },
+    {
+      "id": "node-quiz-017",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "Best way to copy a large file without exhausting memory?",
+      "answer": "Pipe between streams so backpressure is handled.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Use pipe()/pipeline() between streams",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "readFileSync then writeFileSync",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Load it into one Buffer",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Use a for loop",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["streams"]
+    },
+    {
+      "id": "node-quiz-018",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "Which is NOT a Node stream type?",
+      "answer": "There's no 'Singleton' stream. The four are Readable, Writable, Duplex, Transform.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Singleton",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Readable",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Writable",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Transform",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["streams"]
+    },
+    {
+      "id": "node-quiz-019",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "For CPU-bound work in Node you should use...",
+      "answer": "worker_threads (or separate processes) so the main thread isn't blocked.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "worker_threads",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "setTimeout",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "process.nextTick",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "only a bigger thread pool",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "node-quiz-020",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "Values in `process.env` are always...",
+      "answer": "Strings — coerce them yourself for numbers/booleans.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "strings",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "their original types",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "numbers",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "booleans",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["config"]
+    },
+    {
+      "id": "node-quiz-021",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "Which signal does Ctrl+C send to a Node process?",
+      "answer": "SIGINT (interrupt).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "SIGINT",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "SIGTERM",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "SIGKILL",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "SIGHUP",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["process"]
+    },
+    {
+      "id": "node-quiz-022",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "In Node, `globalThis` refers to...",
+      "answer": "The global object (Node's `global`).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "the global object",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "window",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "the module scope",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "process",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["globals"]
+    },
+    {
+      "id": "node-quiz-023",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "`Buffer.allocUnsafe(n)` may contain...",
+      "answer": "Old, uninitialized memory until you overwrite it.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "old, uninitialized memory",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "zeros",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "guaranteed safe data",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "the string 'unsafe'",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["buffers"]
+    },
+    {
+      "id": "node-quiz-024",
+      "subjectId": "sub-7",
+      "type": "quiz",
+      "question": "`cluster` workers are...",
+      "answer": "Separate processes that share a listening port.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "separate processes sharing a port",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "threads sharing memory",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "the same process",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "browser tabs",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "node-ta-001",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which `process` property holds the array of command-line arguments?",
+      "answer": "`process.argv` — argv[2] onward are user args.",
+      "shortAnswer": "process.argv",
+      "tags": ["process"]
+    },
+    {
+      "id": "node-ta-002",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which method queues a callback to run before the loop continues, ahead of Promises?",
+      "answer": "`process.nextTick(cb)`.",
+      "shortAnswer": "process.nextTick",
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-ta-003",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which core module provides the EventEmitter class?",
+      "answer": "The `events` module.",
+      "shortAnswer": "events",
+      "tags": ["core-modules"]
+    },
+    {
+      "id": "node-ta-004",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which core module provides cryptographic functions like hashing and HMAC?",
+      "answer": "The `crypto` module.",
+      "shortAnswer": "crypto",
+      "tags": ["core-modules"]
+    },
+    {
+      "id": "node-ta-005",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which core module reports OS info like CPU count and platform?",
+      "answer": "The `os` module.",
+      "shortAnswer": "os",
+      "tags": ["core-modules"]
+    },
+    {
+      "id": "node-ta-006",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which core module creates HTTP servers and clients?",
+      "answer": "The `http` module.",
+      "shortAnswer": "http",
+      "tags": ["core-modules"]
+    },
+    {
+      "id": "node-ta-007",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which core module provides streaming primitives (Readable, Writable)?",
+      "answer": "The `stream` module.",
+      "shortAnswer": "stream",
+      "tags": ["core-modules"]
+    },
+    {
+      "id": "node-ta-008",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which `util` function turns an error-first callback API into a Promise-returning one?",
+      "answer": "`util.promisify`.",
+      "shortAnswer": "util.promisify",
+      "tags": ["async"]
+    },
+    {
+      "id": "node-ta-009",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which timer function schedules a callback in the check phase, after I/O?",
+      "answer": "`setImmediate`.",
+      "shortAnswer": "setImmediate",
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-ta-010",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which stream method connects a readable to a writable, handling backpressure?",
+      "answer": "`pipe`.",
+      "shortAnswer": "pipe",
+      "tags": ["streams"]
+    },
+    {
+      "id": "node-ta-011",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which file lists a project's metadata, scripts, and dependencies?",
+      "answer": "`package.json`.",
+      "shortAnswer": "package.json",
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-ta-012",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which file pins the exact resolved dependency versions for npm?",
+      "answer": "`package-lock.json`.",
+      "shortAnswer": "package-lock.json",
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-ta-013",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which command runs a package binary without installing it globally?",
+      "answer": "`npx`.",
+      "shortAnswer": "npx",
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-ta-014",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which module runs CPU-bound JavaScript on separate threads?",
+      "answer": "`worker_threads`.",
+      "shortAnswer": "worker_threads",
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "node-ta-015",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which module forks the process across CPU cores, sharing a port?",
+      "answer": "The `cluster` module.",
+      "shortAnswer": "cluster",
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "node-ta-016",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which CommonJS variable holds the absolute directory of the current module?",
+      "answer": "`__dirname`.",
+      "shortAnswer": "__dirname",
+      "tags": ["modules"]
+    },
+    {
+      "id": "node-ta-017",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which EventEmitter method registers a listener that fires on every emit?",
+      "answer": "`on` (alias `addListener`).",
+      "shortAnswer": "on",
+      "tags": ["events"]
+    },
+    {
+      "id": "node-ta-018",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which class do you extend to emit and listen for custom events?",
+      "answer": "`EventEmitter`.",
+      "shortAnswer": "EventEmitter",
+      "tags": ["events"]
+    },
+    {
+      "id": "node-ta-019",
+      "subjectId": "sub-7",
+      "type": "type-answer",
+      "question": "Which environment variable conventionally names the runtime environment?",
+      "answer": "`NODE_ENV` (development/test/production).",
+      "shortAnswer": "NODE_ENV",
+      "tags": ["config"]
+    },
+    {
+      "id": "node-match-001",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each core module to its purpose.",
+      "matchPairs": [
+        {
+          "left": "fs",
+          "right": "file system"
+        },
+        {
+          "left": "path",
+          "right": "file paths"
+        },
+        {
+          "left": "http",
+          "right": "HTTP server / client"
+        },
+        {
+          "left": "os",
+          "right": "operating-system info"
+        },
+        {
+          "left": "crypto",
+          "right": "hashing & encryption"
+        },
+        {
+          "left": "events",
+          "right": "EventEmitter"
+        },
+        {
+          "left": "stream",
+          "right": "streaming data"
+        },
+        {
+          "left": "url",
+          "right": "URL parsing"
+        }
+      ],
+      "tags": ["core-modules"]
+    },
+    {
+      "id": "node-match-002",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each scheduler to when it runs.",
+      "matchPairs": [
+        {
+          "left": "process.nextTick",
+          "right": "before the loop continues (pre-Promises)"
+        },
+        {
+          "left": "Promise.then",
+          "right": "microtask, after nextTick"
+        },
+        {
+          "left": "setImmediate",
+          "right": "check phase"
+        },
+        {
+          "left": "setTimeout",
+          "right": "timers phase"
+        }
+      ],
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-match-003",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each stream type to its role.",
+      "matchPairs": [
+        {
+          "left": "Readable",
+          "right": "a source you read from"
+        },
+        {
+          "left": "Writable",
+          "right": "a destination you write to"
+        },
+        {
+          "left": "Duplex",
+          "right": "both read and write"
+        },
+        {
+          "left": "Transform",
+          "right": "modify data passing through"
+        }
+      ],
+      "tags": ["streams"]
+    },
+    {
+      "id": "node-match-004",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each package.json field to its meaning.",
+      "matchPairs": [
+        {
+          "left": "main",
+          "right": "entry-point file"
+        },
+        {
+          "left": "scripts",
+          "right": "named commands"
+        },
+        {
+          "left": "dependencies",
+          "right": "runtime packages"
+        },
+        {
+          "left": "devDependencies",
+          "right": "build/test packages"
+        },
+        {
+          "left": "type",
+          "right": "module system (commonjs/module)"
+        }
+      ],
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-match-005",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each semver range to what it allows.",
+      "matchPairs": [
+        {
+          "left": "^1.2.3",
+          "right": ">=1.2.3 <2.0.0"
+        },
+        {
+          "left": "~1.2.3",
+          "right": ">=1.2.3 <1.3.0"
+        },
+        {
+          "left": "1.2.3",
+          "right": "exactly 1.2.3"
+        },
+        {
+          "left": "*",
+          "right": "any version"
+        }
+      ],
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-match-006",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each `process` member to its meaning.",
+      "matchPairs": [
+        {
+          "left": "process.env",
+          "right": "environment variables"
+        },
+        {
+          "left": "process.argv",
+          "right": "CLI arguments"
+        },
+        {
+          "left": "process.nextTick",
+          "right": "defer before the loop"
+        },
+        {
+          "left": "process.exit",
+          "right": "terminate immediately"
+        },
+        {
+          "left": "process.cwd",
+          "right": "current working directory"
+        }
+      ],
+      "tags": ["process"]
+    },
+    {
+      "id": "node-match-007",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each Node global to its description.",
+      "matchPairs": [
+        {
+          "left": "__dirname",
+          "right": "current module's directory (CJS)"
+        },
+        {
+          "left": "Buffer",
+          "right": "raw binary data"
+        },
+        {
+          "left": "require",
+          "right": "load a module (CJS)"
+        },
+        {
+          "left": "globalThis",
+          "right": "the global object"
+        },
+        {
+          "left": "import.meta.url",
+          "right": "current module URL (ESM)"
+        }
+      ],
+      "tags": ["globals"]
+    },
+    {
+      "id": "node-match-008",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each fs approach to its behavior.",
+      "matchPairs": [
+        {
+          "left": "readFileSync",
+          "right": "blocks until done"
+        },
+        {
+          "left": "fs.promises.readFile",
+          "right": "async, awaitable"
+        },
+        {
+          "left": "createReadStream",
+          "right": "streams in chunks"
+        },
+        {
+          "left": "fs.watch",
+          "right": "notifies on changes"
+        }
+      ],
+      "tags": ["fs"]
+    },
+    {
+      "id": "node-match-009",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each signal / exit to its meaning.",
+      "matchPairs": [
+        {
+          "left": "SIGINT",
+          "right": "sent by Ctrl+C"
+        },
+        {
+          "left": "SIGTERM",
+          "right": "polite termination request"
+        },
+        {
+          "left": "process.exit(0)",
+          "right": "success exit"
+        },
+        {
+          "left": "process.exit(1)",
+          "right": "failure exit"
+        }
+      ],
+      "tags": ["process"]
+    },
+    {
+      "id": "node-match-010",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each npm command to what it does.",
+      "matchPairs": [
+        {
+          "left": "npm install",
+          "right": "add / restore dependencies"
+        },
+        {
+          "left": "npm run",
+          "right": "execute a script"
+        },
+        {
+          "left": "npx",
+          "right": "run a package binary"
+        },
+        {
+          "left": "npm init",
+          "right": "create package.json"
+        },
+        {
+          "left": "npm publish",
+          "right": "upload a package"
+        }
+      ],
+      "tags": ["npm"]
+    },
+    {
+      "id": "node-match-011",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each async style to its shape.",
+      "matchPairs": [
+        {
+          "left": "error-first callback",
+          "right": "fn(err, data)"
+        },
+        {
+          "left": "Promise",
+          "right": ".then / .catch"
+        },
+        {
+          "left": "async/await",
+          "right": "synchronous-looking async"
+        },
+        {
+          "left": "EventEmitter",
+          "right": "on / emit events"
+        }
+      ],
+      "tags": ["async"]
+    },
+    {
+      "id": "node-match-012",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each concurrency tool to its model.",
+      "matchPairs": [
+        {
+          "left": "worker_threads",
+          "right": "threads with their own event loop"
+        },
+        {
+          "left": "cluster",
+          "right": "multiple processes sharing a port"
+        },
+        {
+          "left": "child_process",
+          "right": "spawn external processes"
+        },
+        {
+          "left": "libuv thread pool",
+          "right": "offloads fs/crypto/dns"
+        }
+      ],
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "node-match-013",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each HTTP server piece to its role.",
+      "matchPairs": [
+        {
+          "left": "http.createServer",
+          "right": "make a server"
+        },
+        {
+          "left": "req",
+          "right": "incoming request (readable)"
+        },
+        {
+          "left": "res",
+          "right": "outgoing response (writable)"
+        },
+        {
+          "left": "res.end",
+          "right": "finish the response"
+        },
+        {
+          "left": "server.listen",
+          "right": "bind to a port"
+        }
+      ],
+      "tags": ["http"]
+    },
+    {
+      "id": "node-match-014",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each event-loop phase to what it handles.",
+      "matchPairs": [
+        {
+          "left": "timers",
+          "right": "setTimeout / setInterval callbacks"
+        },
+        {
+          "left": "poll",
+          "right": "I/O callbacks"
+        },
+        {
+          "left": "check",
+          "right": "setImmediate callbacks"
+        },
+        {
+          "left": "close",
+          "right": "close events (e.g. socket close)"
+        }
+      ],
+      "tags": ["event-loop"]
+    },
+    {
+      "id": "node-match-015",
+      "subjectId": "sub-7",
+      "type": "match",
+      "question": "Match each module-system token to its system.",
+      "matchPairs": [
+        {
+          "left": "require()",
+          "right": "CommonJS import"
+        },
+        {
+          "left": "module.exports",
+          "right": "CommonJS export"
+        },
+        {
+          "left": "import",
+          "right": "ESM import"
+        },
+        {
+          "left": "export",
+          "right": "ESM export"
+        },
+        {
+          "left": "import.meta.url",
+          "right": "ESM module path"
+        }
+      ],
+      "tags": ["modules"]
+    }
+  ]
+}

@@ -1,0 +1,1479 @@
+{
+  "subjects": [
+    {
+      "id": "sub-10",
+      "title": "Algorithms",
+      "description": "Complexity analysis, classic algorithms and data structures",
+      "color": "#8B5CF6",
+      "icon": "algorithms"
+    }
+  ],
+  "cards": [
+    {
+      "id": "algo-open-001",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the difference between time and space complexity?",
+      "answer": "Time complexity measures how the number of operations grows with the input size n; space complexity measures how much **extra** memory grows with n. Algorithms often trade one for the other — e.g. memoization spends space to save time.",
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-open-002",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What do best-, average-, and worst-case complexity mean?",
+      "answer": "Three ways to characterize an algorithm's cost. Worst-case is the upper bound (most cited); best-case is the lower bound; average-case assumes a distribution of inputs. Quicksort, for example, is best/average O(n log n) but worst-case O(n²).",
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-open-003",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is amortized analysis?",
+      "answer": "Averaging the cost of an operation over a long sequence of operations. A single op may occasionally be expensive but cheap on average — e.g. appending to a dynamic array is **amortized O(1)** even though an occasional resize costs O(n).",
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-open-004",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What makes a sorting algorithm *stable*?",
+      "answer": "A stable sort preserves the relative order of elements that compare equal; an unstable one may reorder them. Merge sort and insertion sort are stable; quicksort and heapsort are not. Stability matters when sorting by a secondary key.",
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-open-005",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is an *in-place* algorithm?",
+      "answer": "One that transforms its input using only O(1) (or O(log n)) extra space, modifying the data in place instead of allocating a copy. Quicksort and heapsort are in-place; merge sort typically is not (it needs O(n) scratch space).",
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-open-006",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the divide-and-conquer strategy?",
+      "answer": "Break a problem into smaller subproblems of the same kind, solve them recursively, and combine the results. Examples: merge sort, quicksort, binary search. Their cost is often analyzed with the Master Theorem.",
+      "tags": ["paradigms"]
+    },
+    {
+      "id": "algo-open-007",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is dynamic programming, and how do memoization and tabulation differ?",
+      "answer": "DP solves problems with **overlapping subproblems** by storing subresults. **Memoization** is top-down (recursion + a cache); **tabulation** is bottom-up (fill a table iteratively). Both turn exponential recomputation into polynomial time.",
+      "tags": ["paradigms", "dp"]
+    },
+    {
+      "id": "algo-open-008",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is a greedy algorithm, and when does it work?",
+      "answer": "It builds a solution step by step, always taking the locally optimal choice. It yields a global optimum only when the problem has the **greedy-choice property** and **optimal substructure** (e.g. Dijkstra, Huffman, interval scheduling). Otherwise it can be wrong.",
+      "tags": ["paradigms"]
+    },
+    {
+      "id": "algo-open-009",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is backtracking?",
+      "answer": "A refined brute force: build a candidate incrementally and **abandon** ('backtrack') a partial candidate as soon as it can't possibly extend to a valid solution. Used for permutations, N-Queens, Sudoku, and subset-sum.",
+      "tags": ["paradigms"]
+    },
+    {
+      "id": "algo-open-010",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the two-pointers technique?",
+      "answer": "Using two indices that move through a (usually sorted) array to find pairs or subarrays in O(n) instead of O(n²). Classic uses: pair-with-target-sum in a sorted array, removing duplicates, and reversing in place.",
+      "tags": ["techniques"]
+    },
+    {
+      "id": "algo-open-011",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the sliding-window technique?",
+      "answer": "Maintain a contiguous window over an array/string and slide its boundaries to examine all ranges in O(n). Ideal for problems like 'maximum sum of k consecutive elements' or 'longest substring without repeating characters'.",
+      "tags": ["techniques"]
+    },
+    {
+      "id": "algo-open-012",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "Why must binary search run on sorted data?",
+      "answer": "Each step compares the target to the middle element and discards half the range. That only works if the data is **sorted**, so the left and right halves are meaningfully ordered. On unsorted data you must fall back to linear search.",
+      "tags": ["searching"]
+    },
+    {
+      "id": "algo-open-013",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What are the trade-offs between an array and a linked list?",
+      "answer": "Arrays give O(1) random access by index but O(n) insert/delete in the middle (shifting) and have great cache locality. Linked lists give O(1) insert/delete *given a node* but O(n) access (no indexing) and poor cache behavior.",
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-open-014",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the difference between a singly and a doubly linked list?",
+      "answer": "A singly linked node points only to `next`; a doubly linked node points to both `prev` and `next`. Doubly linked lists allow O(1) deletion given a node and backward traversal, at the cost of one extra pointer per node.",
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-open-015",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "How does a binary search tree differ from a plain binary tree?",
+      "answer": "A binary tree just limits each node to at most two children. A **BST** adds an ordering invariant: every left descendant < node < every right descendant — enabling O(h) search/insert/delete, which is O(log n) when the tree is balanced.",
+      "tags": ["trees"]
+    },
+    {
+      "id": "algo-open-016",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "Why do we balance a binary search tree?",
+      "answer": "An unbalanced BST can degrade into a linked list (O(n) operations) if keys arrive in sorted order. Self-balancing trees (AVL, red-black) keep the height O(log n), guaranteeing O(log n) search, insert, and delete.",
+      "tags": ["trees"]
+    },
+    {
+      "id": "algo-open-017",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What are the four common tree traversals?",
+      "answer": "Depth-first: **preorder** (node, left, right), **inorder** (left, node, right — sorted for a BST), **postorder** (left, right, node). Breadth-first: **level-order**, visiting nodes level by level using a queue.",
+      "tags": ["trees", "traversal"]
+    },
+    {
+      "id": "algo-open-018",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the difference between BFS and DFS?",
+      "answer": "**BFS** explores a graph level by level using a queue, finding shortest paths in *unweighted* graphs. **DFS** goes as deep as possible before backtracking, using a stack/recursion — handy for cycle detection, topological sort, and connectivity.",
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-open-019",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What does Dijkstra's algorithm do, and what is its limitation?",
+      "answer": "It finds shortest paths from a source to all vertices in a graph with **non-negative** edge weights, greedily picking the closest unvisited vertex (via a min-heap) and relaxing its edges — O((V+E) log V) with a binary heap. It fails when edges can be negative.",
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-open-020",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is a topological sort?",
+      "answer": "A linear ordering of a **DAG's** vertices such that every edge u→v places u before v. Computed via DFS (reverse postorder) or Kahn's algorithm (repeatedly remove in-degree-0 nodes). Used for build/task dependency ordering.",
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-open-021",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the union-find (disjoint-set) data structure?",
+      "answer": "It tracks elements partitioned into disjoint sets with near-O(1) `union` and `find`, thanks to **union by rank** and **path compression**. It powers Kruskal's MST and fast connectivity queries.",
+      "tags": ["data-structures", "graphs"]
+    },
+    {
+      "id": "algo-open-022",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is a minimum spanning tree (MST)?",
+      "answer": "A subset of edges connecting all vertices of a weighted graph with **minimum total weight** and no cycles. Built greedily by Kruskal's (sort edges + union-find) or Prim's (grow from a vertex with a min-heap).",
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-open-023",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "How are hash-table collisions resolved?",
+      "answer": "When two keys hash to the same bucket. **Chaining** keeps a list per bucket; **open addressing** probes for the next free slot (linear/quadratic probing, double hashing). A good hash function and a low load factor keep operations averaged O(1).",
+      "tags": ["hashing"]
+    },
+    {
+      "id": "algo-open-024",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is a heap (priority queue)?",
+      "answer": "A complete binary tree (usually stored in an array) maintaining the heap property: each parent is ≤ (min-heap) or ≥ (max-heap) its children. It supports O(log n) insert and extract-min/max and O(1) peek, and backs priority queues and heapsort.",
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-open-025",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "How does quicksort partition, and when is it O(n²)?",
+      "answer": "It picks a **pivot**, partitions elements into those < and > the pivot, and recurses on each side. Average is O(n log n), but it degrades to O(n²) when the pivot is repeatedly the smallest/largest (e.g. sorted input with a naive pivot). Randomizing the pivot avoids this.",
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-open-026",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is quickselect?",
+      "answer": "A selection algorithm (find the k-th smallest) based on quicksort's partition, but recursing into only **one** side. Average O(n), worst O(n²). Used for medians and 'top-k' queries without fully sorting.",
+      "tags": ["selection"]
+    },
+    {
+      "id": "algo-open-027",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is a trie (prefix tree)?",
+      "answer": "A tree where each root-to-node path spells a string and nodes share common prefixes. Lookup or insertion of a key of length m is O(m), independent of how many keys are stored — ideal for autocomplete and dictionaries.",
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-open-028",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "How does memoization speed up recursion?",
+      "answer": "It caches the result of each function call keyed by its arguments, so repeated calls return instantly. This turns exponential naive recursion (like Fibonacci) into linear time by computing every distinct subproblem exactly once.",
+      "tags": ["dp"]
+    },
+    {
+      "id": "algo-open-029",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the trade-off between an adjacency list and an adjacency matrix?",
+      "answer": "An **adjacency list** stores each vertex's neighbors — O(V+E) space, efficient for sparse graphs. An **adjacency matrix** is a V×V grid — O(V²) space with O(1) edge lookups, best for dense graphs.",
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-open-030",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "How does recursion use the call stack?",
+      "answer": "Each call pushes a stack frame (parameters, locals, return address). Deep recursion can **overflow** the stack. The base case stops the recursion; without one you get infinite recursion and a stack overflow.",
+      "tags": ["recursion"]
+    },
+    {
+      "id": "algo-open-031",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is tail recursion?",
+      "answer": "A recursive call that is the **last** action in the function. Some languages optimize it into a loop (tail-call optimization), reusing one stack frame. Note: most JavaScript engines do **not** perform this optimization.",
+      "tags": ["recursion"]
+    },
+    {
+      "id": "algo-open-032",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is Floyd's cycle-detection algorithm?",
+      "answer": "The 'tortoise and hare': advance one pointer by 1 and another by 2 each step. If they ever meet, there is a cycle; if the fast pointer reaches the end, there isn't. It detects loops in a linked list using O(1) extra space.",
+      "tags": ["linked-lists"]
+    },
+    {
+      "id": "algo-open-033",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the difference between Big-O, Big-Omega, and Big-Theta?",
+      "answer": "**Big-O** is an asymptotic upper bound (≤), **Big-Omega** a lower bound (≥), and **Big-Theta** a tight bound (both). Saying an algorithm is O(n²) means it grows no faster than n²; Θ(n²) means it grows exactly like n².",
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-open-034",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "How do comparison sorts and non-comparison sorts differ?",
+      "answer": "Comparison sorts (merge, quick, heap) order elements by comparing them and are bounded below by Ω(n log n). Non-comparison sorts (counting, radix, bucket) exploit key structure to beat that — e.g. counting sort is O(n+k) for integers in a small range k.",
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-open-035",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is the Master Theorem used for?",
+      "answer": "It gives the complexity of divide-and-conquer recurrences of the form T(n) = a·T(n/b) + f(n) by comparing f(n) to n^(log_b a). For merge sort, T(n)=2T(n/2)+O(n) resolves to O(n log n).",
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-open-036",
+      "subjectId": "sub-10",
+      "type": "open",
+      "question": "What is a hash table's load factor and why does it matter?",
+      "answer": "The ratio of stored entries to buckets (n/m). As it rises, collisions and average lookup cost grow. Implementations **rehash** (resize) when it crosses a threshold (e.g. 0.75) to keep operations amortized O(1).",
+      "tags": ["hashing"]
+    },
+    {
+      "id": "algo-quiz-001",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the worst-case time complexity of quicksort?",
+      "answer": "Worst case is O(n²), when the pivot repeatedly splits off just one element (e.g. sorted input with a naive pivot). Average is O(n log n).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n²)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(n log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["sorting", "complexity"]
+    },
+    {
+      "id": "algo-quiz-002",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the space complexity of *iterative* binary search?",
+      "answer": "It only keeps a couple of index variables → O(1).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(1)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["searching", "complexity"]
+    },
+    {
+      "id": "algo-quiz-003",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "Which data structure does breadth-first search (BFS) use?",
+      "answer": "A FIFO queue processes vertices in level order.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Queue",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Stack",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Heap",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Hash table",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-quiz-004",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "Which data structure does depth-first search (DFS) typically use?",
+      "answer": "A stack — either explicit, or the call stack via recursion.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Stack",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Queue",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Heap",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Trie",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-quiz-005",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the worst-case time complexity of bubble sort?",
+      "answer": "Nested passes give O(n²); the best case is O(n) if it stops early when no swaps occur.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n²)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(n log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-quiz-006",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the best-case time of insertion sort (input already sorted)?",
+      "answer": "A single pass with no shifts → O(n).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(n²)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(n log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(1)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-quiz-007",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the time complexity of building a heap from n elements (heapify)?",
+      "answer": "Bottom-up build-heap is O(n) — tighter than doing n separate O(log n) inserts.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(n log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n²)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-quiz-008",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the time complexity of inserting one element into a binary heap?",
+      "answer": "It bubbles the element up at most the height of the tree → O(log n).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(log n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(1)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-quiz-009",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "How much extra space does standard merge sort use?",
+      "answer": "It needs a temporary array to merge → O(n) auxiliary space.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(1)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n²)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-quiz-010",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "Which of these sorting algorithms is stable?",
+      "answer": "Merge sort preserves the relative order of equal elements; the standard array versions of the others are unstable.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Merge sort",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Quicksort",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Heapsort",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Selection sort",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-quiz-011",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the *worst-case* lookup time in a hash table?",
+      "answer": "O(n), if every key collides into one bucket. The average is O(1).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(1)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hashing"]
+    },
+    {
+      "id": "algo-quiz-012",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the time to access the k-th element of a singly linked list?",
+      "answer": "You must walk from the head node by node → O(n).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(1)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(k log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-quiz-013",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the time complexity of reversing a singly linked list?",
+      "answer": "One pass, rewiring pointers → O(n) time and O(1) extra space.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(1)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n²)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-quiz-014",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the time complexity of naive recursive Fibonacci (no memo)?",
+      "answer": "The recursion tree branches and recomputes overlapping subproblems → exponential, ~O(2^n). Memoization brings it down to O(n).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(2^n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(n²)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(n log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["recursion", "dp"]
+    },
+    {
+      "id": "algo-quiz-015",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is Dijkstra's complexity using a binary min-heap?",
+      "answer": "O((V+E) log V): each vertex/edge triggers heap operations costing O(log V).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O((V+E) log V)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(V²)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(V·E)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(V+E)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["graphs", "complexity"]
+    },
+    {
+      "id": "algo-quiz-016",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the search time in a *balanced* binary search tree?",
+      "answer": "Its height is O(log n), so search follows one root-to-leaf path → O(log n).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(log n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(1)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["trees"]
+    },
+    {
+      "id": "algo-quiz-017",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the search time in a *skewed* (unbalanced) BST?",
+      "answer": "It degenerates into a linked list, so search is O(n).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(1)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["trees"]
+    },
+    {
+      "id": "algo-quiz-018",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the time to visit every node of a tree with n nodes?",
+      "answer": "Each node is visited once → O(n).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(n log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(h)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["trees", "traversal"]
+    },
+    {
+      "id": "algo-quiz-019",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "How many edges does a tree with n nodes have?",
+      "answer": "Exactly n − 1 edges connect n nodes without a cycle.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "n − 1",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "n",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "n + 1",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "2n",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["trees"]
+    },
+    {
+      "id": "algo-quiz-020",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the complexity of two independent nested loops, each over n items?",
+      "answer": "n iterations × n iterations → O(n²).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n²)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(2n)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(n log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-quiz-021",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "Using the Master Theorem, T(n) = 2T(n/2) + O(n) solves to:",
+      "answer": "This is the merge-sort recurrence → O(n log n).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n log n)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(n²)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-quiz-022",
+      "subjectId": "sub-10",
+      "type": "quiz",
+      "question": "What is the time complexity of counting sort over n integers in range [0, k)?",
+      "answer": "Counting sort is non-comparison and linear in both n and k → O(n + k).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O(n + k)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "O(n log n)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "O(n²)",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "O(k log n)",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-ta-001",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which traversal of a binary search tree visits nodes in ascending sorted order?",
+      "answer": "`inorder` (left, node, right) yields a BST's keys in sorted order.",
+      "shortAnswer": "inorder",
+      "tags": ["trees"]
+    },
+    {
+      "id": "algo-ta-002",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which graph traversal explores neighbors level by level using a queue?",
+      "answer": "BFS (breadth-first search) finds shortest paths in unweighted graphs.",
+      "shortAnswer": "BFS",
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-ta-003",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which graph traversal goes as deep as possible before backtracking?",
+      "answer": "DFS (depth-first search), using a stack or recursion.",
+      "shortAnswer": "DFS",
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-ta-004",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which divide-and-conquer sort picks a pivot and partitions around it?",
+      "answer": "`quicksort` — average O(n log n), worst O(n²).",
+      "shortAnswer": "quicksort",
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-ta-005",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which divide-and-conquer sort splits the array and merges sorted halves?",
+      "answer": "`merge sort` — stable, O(n log n), O(n) extra space.",
+      "shortAnswer": "merge sort",
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-ta-006",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which tree structure stores strings by shared prefixes (great for autocomplete)?",
+      "answer": "A `trie` (prefix tree): lookup is O(m) in the key length.",
+      "shortAnswer": "trie",
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-ta-007",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which algorithm finds shortest paths from a source with non-negative edge weights?",
+      "answer": "`Dijkstra`'s algorithm, using a min-heap.",
+      "shortAnswer": "Dijkstra",
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-ta-008",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which technique caches subproblem results to avoid recomputation (top-down DP)?",
+      "answer": "`memoization` turns exponential recursion into linear time.",
+      "shortAnswer": "memoization",
+      "tags": ["dp"]
+    },
+    {
+      "id": "algo-ta-009",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which technique uses two indices moving through a sorted array to find pairs in O(n)?",
+      "answer": "The `two pointers` technique.",
+      "shortAnswer": "two pointers",
+      "tags": ["techniques"]
+    },
+    {
+      "id": "algo-ta-010",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "What is the name for a linear ordering of a DAG where every edge goes from earlier to later?",
+      "answer": "A `topological sort`.",
+      "shortAnswer": "topological sort",
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-ta-011",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which O(n²) sort repeatedly swaps adjacent out-of-order elements, bubbling the largest to the end?",
+      "answer": "`bubble sort`.",
+      "shortAnswer": "bubble sort",
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-ta-012",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which strategy explores candidates incrementally and undoes choices that can't succeed?",
+      "answer": "`backtracking` — used for N-Queens, Sudoku, permutations.",
+      "shortAnswer": "backtracking",
+      "tags": ["paradigms"]
+    },
+    {
+      "id": "algo-ta-013",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which array technique slides a contiguous window to examine all ranges in O(n)?",
+      "answer": "The `sliding window` technique.",
+      "shortAnswer": "sliding window",
+      "tags": ["techniques"]
+    },
+    {
+      "id": "algo-ta-014",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which comparison sort builds a heap and then repeatedly extracts the max?",
+      "answer": "`heap sort` — in-place, O(n log n) worst case.",
+      "shortAnswer": "heap sort",
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-ta-015",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which data structure resolves key collisions via chaining or open addressing?",
+      "answer": "A `hash table` (hash map).",
+      "shortAnswer": "hash table",
+      "tags": ["hashing"]
+    },
+    {
+      "id": "algo-ta-016",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which selection algorithm finds the k-th smallest element via partitioning, averaging O(n)?",
+      "answer": "`quickselect`.",
+      "shortAnswer": "quickselect",
+      "tags": ["selection"]
+    },
+    {
+      "id": "algo-ta-017",
+      "subjectId": "sub-10",
+      "type": "type-answer",
+      "question": "Which O(n + k) non-comparison sort tallies how many times each key value occurs?",
+      "answer": "`counting sort`.",
+      "shortAnswer": "counting sort",
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-match-001",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each Big-O class to its common name.",
+      "matchPairs": [
+        {
+          "left": "O(1)",
+          "right": "constant"
+        },
+        {
+          "left": "O(log n)",
+          "right": "logarithmic"
+        },
+        {
+          "left": "O(n)",
+          "right": "linear"
+        },
+        {
+          "left": "O(n log n)",
+          "right": "linearithmic"
+        },
+        {
+          "left": "O(n²)",
+          "right": "quadratic"
+        },
+        {
+          "left": "O(2^n)",
+          "right": "exponential"
+        },
+        {
+          "left": "O(n!)",
+          "right": "factorial"
+        }
+      ],
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-match-002",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each algorithm to the data structure it relies on.",
+      "matchPairs": [
+        {
+          "left": "BFS",
+          "right": "queue"
+        },
+        {
+          "left": "DFS",
+          "right": "stack"
+        },
+        {
+          "left": "Dijkstra",
+          "right": "min-heap"
+        },
+        {
+          "left": "Kruskal's MST",
+          "right": "union-find"
+        },
+        {
+          "left": "Heapsort",
+          "right": "heap"
+        },
+        {
+          "left": "Counting sort",
+          "right": "count array"
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-match-003",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each data structure to its average search time.",
+      "matchPairs": [
+        {
+          "left": "Hash table",
+          "right": "O(1) average by key"
+        },
+        {
+          "left": "Balanced BST",
+          "right": "O(log n)"
+        },
+        {
+          "left": "Unsorted array",
+          "right": "O(n) scan"
+        },
+        {
+          "left": "Trie (key length m)",
+          "right": "O(m)"
+        },
+        {
+          "left": "Heap peek-min",
+          "right": "O(1)"
+        }
+      ],
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-match-004",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each tree traversal to its visit order (N=node, L=left, R=right).",
+      "matchPairs": [
+        {
+          "left": "Preorder",
+          "right": "N, L, R"
+        },
+        {
+          "left": "Inorder",
+          "right": "L, N, R"
+        },
+        {
+          "left": "Postorder",
+          "right": "L, R, N"
+        },
+        {
+          "left": "Level-order",
+          "right": "by depth, level by level"
+        }
+      ],
+      "tags": ["trees", "traversal"]
+    },
+    {
+      "id": "algo-match-005",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each algorithm to its design paradigm.",
+      "matchPairs": [
+        {
+          "left": "Merge sort",
+          "right": "divide and conquer"
+        },
+        {
+          "left": "Activity selection",
+          "right": "greedy"
+        },
+        {
+          "left": "Longest common subsequence",
+          "right": "dynamic programming"
+        },
+        {
+          "left": "Sudoku solver",
+          "right": "backtracking"
+        },
+        {
+          "left": "Brute-force subset sum",
+          "right": "exhaustive search"
+        }
+      ],
+      "tags": ["paradigms"]
+    },
+    {
+      "id": "algo-match-006",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each graph algorithm to its purpose.",
+      "matchPairs": [
+        {
+          "left": "BFS",
+          "right": "shortest path in an unweighted graph"
+        },
+        {
+          "left": "Dijkstra",
+          "right": "shortest path with non-negative weights"
+        },
+        {
+          "left": "Topological sort",
+          "right": "order a DAG's tasks"
+        },
+        {
+          "left": "Union-Find",
+          "right": "track connected components"
+        },
+        {
+          "left": "Kruskal's",
+          "right": "minimum spanning tree"
+        }
+      ],
+      "tags": ["graphs"]
+    },
+    {
+      "id": "algo-match-007",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each data structure to its access discipline.",
+      "matchPairs": [
+        {
+          "left": "Stack",
+          "right": "LIFO"
+        },
+        {
+          "left": "Queue",
+          "right": "FIFO"
+        },
+        {
+          "left": "Priority queue",
+          "right": "highest priority first"
+        },
+        {
+          "left": "Deque",
+          "right": "insert/remove at both ends"
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-match-008",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each sorting algorithm to a defining property.",
+      "matchPairs": [
+        {
+          "left": "Merge sort",
+          "right": "stable, O(n) extra space"
+        },
+        {
+          "left": "Quicksort",
+          "right": "in-place, O(n²) worst case"
+        },
+        {
+          "left": "Heapsort",
+          "right": "in-place, O(n log n) worst case"
+        },
+        {
+          "left": "Counting sort",
+          "right": "non-comparison, O(n + k)"
+        }
+      ],
+      "tags": ["sorting"]
+    },
+    {
+      "id": "algo-match-009",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each binary min-heap operation to its time.",
+      "matchPairs": [
+        {
+          "left": "peek-min",
+          "right": "O(1)"
+        },
+        {
+          "left": "insert",
+          "right": "O(log n) bubble up"
+        },
+        {
+          "left": "extract-min",
+          "right": "O(log n) sift down"
+        },
+        {
+          "left": "build-heap",
+          "right": "O(n)"
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "algo-match-010",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each technique to a problem it solves well.",
+      "matchPairs": [
+        {
+          "left": "Two pointers",
+          "right": "pair with target sum in a sorted array"
+        },
+        {
+          "left": "Sliding window",
+          "right": "longest substring without repeats"
+        },
+        {
+          "left": "Binary search",
+          "right": "find an element in a sorted array"
+        },
+        {
+          "left": "Backtracking",
+          "right": "generate all permutations"
+        },
+        {
+          "left": "Memoization",
+          "right": "avoid recomputing Fibonacci"
+        }
+      ],
+      "tags": ["techniques"]
+    },
+    {
+      "id": "algo-match-011",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each hashing concept to its description.",
+      "matchPairs": [
+        {
+          "left": "Separate chaining",
+          "right": "each bucket holds a list of entries"
+        },
+        {
+          "left": "Open addressing",
+          "right": "probe for the next free slot"
+        },
+        {
+          "left": "Linear probing",
+          "right": "check the next slot sequentially"
+        },
+        {
+          "left": "Load factor",
+          "right": "ratio of entries to buckets"
+        }
+      ],
+      "tags": ["hashing"]
+    },
+    {
+      "id": "algo-match-012",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each recurrence to its solution (Master Theorem).",
+      "matchPairs": [
+        {
+          "left": "T(n)=2T(n/2)+O(n)",
+          "right": "O(n log n)"
+        },
+        {
+          "left": "T(n)=T(n/2)+O(1)",
+          "right": "O(log n)"
+        },
+        {
+          "left": "T(n)=2T(n/2)+O(1)",
+          "right": "O(n)"
+        },
+        {
+          "left": "T(n)=T(n-1)+O(n)",
+          "right": "O(n²)"
+        }
+      ],
+      "tags": ["complexity"]
+    },
+    {
+      "id": "algo-match-013",
+      "subjectId": "sub-10",
+      "type": "match",
+      "question": "Match each problem to its classic algorithm.",
+      "matchPairs": [
+        {
+          "left": "Shortest path, non-negative weights",
+          "right": "Dijkstra"
+        },
+        {
+          "left": "Minimum spanning tree",
+          "right": "Kruskal / Prim"
+        },
+        {
+          "left": "Cycle in a linked list",
+          "right": "Floyd's tortoise and hare"
+        },
+        {
+          "left": "k-th smallest element",
+          "right": "quickselect"
+        },
+        {
+          "left": "String prefix search",
+          "right": "trie"
+        }
+      ],
+      "tags": ["algorithms"]
+    }
+  ]
+}

@@ -1,0 +1,1651 @@
+{
+  "subjects": [
+    {
+      "id": "sub-9",
+      "title": "Python",
+      "description": "Pythonic idioms, data structures and the standard library",
+      "color": "#3776AB",
+      "icon": "python"
+    }
+  ],
+  "cards": [
+    {
+      "id": "py-open-001",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is the difference between a list and a tuple?",
+      "answer": "A **list** (`[]`) is mutable — you can add/remove/change items. A **tuple** (`()`) is immutable and hashable (usable as a dict key or set member). Use tuples for fixed records, lists for collections you'll modify.",
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "py-open-002",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What are mutable vs immutable types in Python?",
+      "answer": "Immutable values can't change after creation: `int`, `float`, `str`, `tuple`, `frozenset`, `bool`. Mutable ones can: `list`, `dict`, `set`. Mutating a mutable object keeps the same identity, so shared references see the change.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "py-open-003",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is an f-string?",
+      "answer": "A formatted string literal prefixed with `f`: `f\"Hi {name}, {1+1}\"`. Expressions inside `{}` are evaluated and inserted. It supports format specs (`f\"{x:.2f}\"`) and, since 3.8, `=` for debugging (`f\"{x=}\"`).",
+      "tags": ["strings"]
+    },
+    {
+      "id": "py-open-004",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is a generator?",
+      "answer": "A function using `yield` that produces values lazily, one at a time, pausing between them. Calling it returns a generator object you iterate. It's memory-efficient for large or infinite sequences. `(x for x in it)` is the generator-expression form.",
+      "tags": ["generators"]
+    },
+    {
+      "id": "py-open-005",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is a decorator?",
+      "answer": "A callable that takes a function (or class) and returns a modified one, applied with `@decorator` above the def. Used for cross-cutting concerns — logging, caching (`@functools.lru_cache`), timing — without editing the wrapped body.",
+      "tags": ["functions"]
+    },
+    {
+      "id": "py-open-006",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is a context manager and the `with` statement?",
+      "answer": "An object with `__enter__`/`__exit__` (or built via `@contextmanager`) that sets up and **guarantees cleanup**, even on exceptions. `with open(f) as fh:` closes the file automatically when the block exits.",
+      "tags": ["idioms"]
+    },
+    {
+      "id": "py-open-007",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What do `*args` and `**kwargs` mean?",
+      "answer": "In a signature, `*args` collects extra **positional** arguments into a tuple and `**kwargs` collects extra **keyword** arguments into a dict. At a call site, `*`/`**` unpack an iterable/dict into arguments.",
+      "tags": ["functions"]
+    },
+    {
+      "id": "py-open-008",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is the mutable default argument pitfall?",
+      "answer": "A default like `def f(items=[])` is created **once** at definition, so every call shares and mutates the same list. Use `def f(items=None): items = items or []` instead.",
+      "tags": ["gotchas"]
+    },
+    {
+      "id": "py-open-009",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is the difference between `is` and `==`?",
+      "answer": "`==` compares **values** (calls `__eq__`); `is` compares **identity** (same object in memory). Use `is` only for singletons like `None` (`x is None`), never for value equality.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "py-open-010",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is duck typing?",
+      "answer": "\"If it walks like a duck and quacks like a duck...\" — Python cares whether an object supports the methods/behavior you use, not its class. Code works with any object that has the right interface.",
+      "tags": ["idioms"]
+    },
+    {
+      "id": "py-open-011",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is EAFP vs LBYL?",
+      "answer": "**EAFP** ('easier to ask forgiveness than permission') — try and catch exceptions; the Pythonic default. **LBYL** ('look before you leap') — check conditions first. EAFP avoids race conditions and is often cleaner.",
+      "tags": ["idioms"]
+    },
+    {
+      "id": "py-open-012",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is the GIL?",
+      "answer": "The **Global Interpreter Lock** lets only one thread execute Python bytecode at a time in CPython. So threads don't speed up CPU-bound work (use `multiprocessing`), but they're fine for I/O-bound concurrency.",
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "py-open-013",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "When do you use threading vs multiprocessing vs asyncio?",
+      "answer": "**threading** for I/O-bound concurrency (the GIL is released during I/O). **multiprocessing** for CPU-bound parallelism (separate processes bypass the GIL). **asyncio** for high-concurrency I/O on one thread via `async`/`await`.",
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "py-open-014",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is a virtual environment?",
+      "answer": "An isolated Python install with its own packages (`python -m venv .venv`, then activate). It keeps each project's dependencies separate from the system and other projects, avoiding version conflicts.",
+      "tags": ["tooling"]
+    },
+    {
+      "id": "py-open-015",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is PEP 8?",
+      "answer": "Python's official style guide: 4-space indentation, `snake_case` for functions/variables, `CapWords` for classes, line length, import order, and more. Tools like `black`, `ruff`, and `flake8` enforce it.",
+      "tags": ["style"]
+    },
+    {
+      "id": "py-open-016",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What are type hints?",
+      "answer": "Optional annotations of expected types: `def add(a: int, b: int) -> int:`. They don't affect runtime (Python stays dynamic) but let editors and `mypy`/`pyright` catch type errors statically.",
+      "tags": ["typing"]
+    },
+    {
+      "id": "py-open-017",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is a dataclass?",
+      "answer": "`@dataclass` (from `dataclasses`) auto-generates `__init__`, `__repr__`, `__eq__`, etc. from typed class attributes — a concise way to write classes that mainly hold data.",
+      "tags": ["classes"]
+    },
+    {
+      "id": "py-open-018",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is the difference between `@staticmethod`, `@classmethod`, and a regular method?",
+      "answer": "A regular method takes `self` (the instance). A `@classmethod` takes `cls` (the class) — good for alternative constructors. A `@staticmethod` takes neither — just a function namespaced on the class.",
+      "tags": ["classes"]
+    },
+    {
+      "id": "py-open-019",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What does `@property` do?",
+      "answer": "It turns a method into a read-only attribute accessed without parentheses (`obj.area`), with an optional `@x.setter` for assignment. You can compute or validate access while keeping clean attribute syntax.",
+      "tags": ["classes"]
+    },
+    {
+      "id": "py-open-020",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What are dunder (magic) methods?",
+      "answer": "Double-underscore methods that hook into operators/protocols: `__init__` (construct), `__repr__`/`__str__` (display), `__len__` (`len()`), `__eq__` (`==`), `__iter__` (iteration), `__enter__`/`__exit__` (`with`). Implementing them makes your objects behave like built-ins.",
+      "tags": ["classes"]
+    },
+    {
+      "id": "py-open-021",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is the LEGB scope rule?",
+      "answer": "Name lookup order: **L**ocal → **E**nclosing (outer functions) → **G**lobal (module) → **B**uilt-in. The first match wins. `global` and `nonlocal` let you rebind names in outer scopes.",
+      "tags": ["scope"]
+    },
+    {
+      "id": "py-open-022",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What's the difference between a shallow and a deep copy?",
+      "answer": "A **shallow** copy (`copy.copy`, `list(x)`, `x[:]`) duplicates the container but shares nested objects. A **deep** copy (`copy.deepcopy`) recursively clones everything. Plain assignment (`b = a`) just aliases the same object.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "py-open-023",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What do `zip` and `enumerate` do?",
+      "answer": "`enumerate(it)` yields `(index, value)` pairs — ideal when a loop needs the index. `zip(a, b, ...)` pairs items across iterables positionally, stopping at the shortest.",
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-open-024",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What's the difference between `sorted()` and `list.sort()`?",
+      "answer": "`sorted(iterable)` returns a **new** sorted list and works on any iterable. `list.sort()` sorts **in place** and returns `None`. Both accept `key=` and `reverse=`.",
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-open-025",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is the difference between a set and a dict comprehension?",
+      "answer": "Same `{}` braces, different shape. A **set** comp `{x for x in it}` yields unique values; a **dict** comp `{k: v for ...}` yields key→value pairs. (List comp uses `[]`, generator uses `()`.)",
+      "tags": ["comprehensions"]
+    },
+    {
+      "id": "py-open-026",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is `None`?",
+      "answer": "A singleton meaning 'no value' / absence. A function with no explicit `return` returns `None`. Test for it with `is None`. It is falsy.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "py-open-027",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "How does `try/except/else/finally` work?",
+      "answer": "`try` runs risky code; `except` handles specific exceptions; `else` runs only if no exception occurred; `finally` always runs (cleanup). Catch specific types, not a bare `except:`.",
+      "tags": ["errors"]
+    },
+    {
+      "id": "py-open-028",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "How do you define a custom exception?",
+      "answer": "Subclass `Exception` (or a more specific built-in): `class MyError(Exception): pass`, then `raise MyError(\"msg\")`. Custom types let callers catch your errors specifically.",
+      "tags": ["errors"]
+    },
+    {
+      "id": "py-open-029",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is the walrus operator `:=`?",
+      "answer": "An assignment **expression** (3.8+): it assigns and returns a value inside an expression, e.g. `if (n := len(data)) > 10:`. It avoids a separate assignment line.",
+      "tags": ["operators"]
+    },
+    {
+      "id": "py-open-030",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What are the falsy values in Python?",
+      "answer": "`False`, `None`, `0`, `0.0`, `0j`, and empty containers (`''`, `[]`, `()`, `{}`, `set()`) — plus any object whose `__bool__`/`__len__` says so. Everything else is truthy.",
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "py-open-031",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What does `collections.defaultdict` do?",
+      "answer": "A dict that auto-creates a default for missing keys via a factory: `defaultdict(list)` returns `[]` on first access, so you can `d[k].append(x)` without checking the key first.",
+      "tags": ["collections"]
+    },
+    {
+      "id": "py-open-032",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is `collections.Counter`?",
+      "answer": "A dict subclass for counting hashable items: `Counter(\"aabbb\")` → `{'b':3,'a':2}`. It offers `.most_common(n)` and supports arithmetic on counts.",
+      "tags": ["collections"]
+    },
+    {
+      "id": "py-open-033",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is a `namedtuple`?",
+      "answer": "A tuple subclass with **named fields**: `Point = namedtuple('Point', 'x y')` lets you write `p.x` while staying immutable and tuple-compatible. `dataclasses`/`typing.NamedTuple` are modern alternatives.",
+      "tags": ["collections"]
+    },
+    {
+      "id": "py-open-034",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What is slicing?",
+      "answer": "`seq[start:stop:step]` returns a subsequence (stop exclusive). Omit parts for defaults; negatives count from the end. `seq[::-1]` reverses; `seq[:]` copies a list.",
+      "tags": ["sequences"]
+    },
+    {
+      "id": "py-open-035",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "How does `dict.get` differ from `dict[key]`?",
+      "answer": "`d[key]` raises `KeyError` if the key is missing. `d.get(key, default)` returns `default` (or `None`) instead of raising — handy when a key may be absent.",
+      "tags": ["dicts"]
+    },
+    {
+      "id": "py-open-036",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What's the difference between `append` and `extend` on a list?",
+      "answer": "`list.append(x)` adds `x` as one element. `list.extend(iter)` adds **each** item of an iterable. `[1].append([2,3])` → `[1,[2,3]]`; `[1].extend([2,3])` → `[1,2,3]`.",
+      "tags": ["lists"]
+    },
+    {
+      "id": "py-open-037",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What do `global` and `nonlocal` do?",
+      "answer": "Inside a function, `global x` lets you assign to a module-level name; `nonlocal x` lets you assign to a name in the nearest **enclosing** function (for closures). Without them, assignment creates a new local.",
+      "tags": ["scope"]
+    },
+    {
+      "id": "py-open-038",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "How do you read a file safely in Python?",
+      "answer": "Use a context manager: `with open('f.txt', encoding='utf-8') as fh: data = fh.read()`. The `with` block closes the file automatically, even on error; set the encoding explicitly.",
+      "tags": ["io"]
+    },
+    {
+      "id": "py-open-039",
+      "subjectId": "sub-9",
+      "type": "open",
+      "question": "What's the difference between `range`, a list, and a generator for iteration?",
+      "answer": "`range(n)` is a lazy, memory-light integer sequence. `list(range(n))` materializes them all in memory. A generator yields values on demand and can be infinite. Prefer lazy forms for large sequences.",
+      "tags": ["iteration"]
+    },
+    {
+      "id": "py-quiz-001",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "Which of these types is immutable?",
+      "answer": "Tuples are immutable; list, dict, and set are mutable.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "tuple",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "list",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "dict",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "set",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "py-quiz-002",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `7 // 2` evaluate to?",
+      "answer": "`//` is floor division → 3.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "3",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "3.5",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "1",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "2",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["operators"]
+    },
+    {
+      "id": "py-quiz-003",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `-7 // 2` evaluate to?",
+      "answer": "Floor division rounds toward negative infinity → -4.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "-4",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "-3",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "-3.5",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "3",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["operators", "gotchas"]
+    },
+    {
+      "id": "py-quiz-004",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `2 ** 3` evaluate to?",
+      "answer": "`**` is exponentiation → 8.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "8",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "6",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "9",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "5",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["operators"]
+    },
+    {
+      "id": "py-quiz-005",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `bool([])` return?",
+      "answer": "An empty list is falsy → False.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "False",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "True",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "None",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["truthiness"]
+    },
+    {
+      "id": "py-quiz-006",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `\"ab\" * 3` produce?",
+      "answer": "String repetition → 'ababab'.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "'ababab'",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "'abababab'",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "['ab','ab','ab']",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "an error",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["strings"]
+    },
+    {
+      "id": "py-quiz-007",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `[0] * 3` produce?",
+      "answer": "List repetition → [0, 0, 0].",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[0, 0, 0]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[0]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[3]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[[0],[0],[0]]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["lists"]
+    },
+    {
+      "id": "py-quiz-008",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `len({'a': 1, 'b': 2})` return?",
+      "answer": "`len` of a dict is the number of keys → 2.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "2",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "4",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "1",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "an error",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["dicts"]
+    },
+    {
+      "id": "py-quiz-009",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `list(range(1, 5))` give?",
+      "answer": "range is start-inclusive, stop-exclusive → [1, 2, 3, 4].",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[1, 2, 3, 4]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[1, 2, 3, 4, 5]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[0, 1, 2, 3, 4]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[1, 5]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-quiz-010",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `[1, 2, 3][::-1]` produce?",
+      "answer": "A reversed copy → [3, 2, 1].",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[3, 2, 1]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[1, 2, 3]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[3]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "an error",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["sequences"]
+    },
+    {
+      "id": "py-quiz-011",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "Inside a function, what type is `args` in `*args`?",
+      "answer": "Extra positional arguments are collected into a tuple.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "tuple",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "list",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "dict",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "set",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["functions"]
+    },
+    {
+      "id": "py-quiz-012",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "Inside a function, what type is `kwargs` in `**kwargs`?",
+      "answer": "Extra keyword arguments are collected into a dict.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "dict",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "list",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "tuple",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "set",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["functions"]
+    },
+    {
+      "id": "py-quiz-013",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `sorted([3,1,2])` do?",
+      "answer": "It returns a new sorted list and leaves the original unchanged.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Returns a new sorted list; original unchanged",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Returns None; sorts in place",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Returns a tuple",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Reverses the list",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-quiz-014",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `{**{'a': 1}, **{'a': 2}}` produce?",
+      "answer": "Merging dicts: the later key wins → {'a': 2}.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "{'a': 2}",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "{'a': 1}",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "{'a': [1, 2]}",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "an error",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["dicts"]
+    },
+    {
+      "id": "py-quiz-015",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `'5' + 5` do in Python?",
+      "answer": "Mixing str and int raises a TypeError (no implicit coercion).",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Raises a TypeError",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "'55'",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "10",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "'10'",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["types"]
+    },
+    {
+      "id": "py-quiz-016",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "Which expression creates an empty set?",
+      "answer": "`set()` — because `{}` creates an empty dict.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "set()",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "{}",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "()",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "py-quiz-017",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `bool('False')` return?",
+      "answer": "Any non-empty string is truthy → True.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "True",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "False",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "an error",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "None",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["truthiness"]
+    },
+    {
+      "id": "py-quiz-018",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "After `x = [1, 2]; y = x; y.append(3)`, what is `x`?",
+      "answer": "`y` aliases the same list, so x is also [1, 2, 3].",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[1, 2, 3]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[1, 2]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "an error",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[3]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["references", "gotchas"]
+    },
+    {
+      "id": "py-quiz-019",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `d.get('missing')` return when the key is absent?",
+      "answer": "`get` returns None (not a KeyError) for a missing key.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "None",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "a KeyError",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "''",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "0",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["dicts"]
+    },
+    {
+      "id": "py-quiz-020",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `list(enumerate(['a', 'b']))` give?",
+      "answer": "enumerate yields (index, value) pairs → [(0, 'a'), (1, 'b')].",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[(0, 'a'), (1, 'b')]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "['a', 'b']",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "[(1, 'a'), (2, 'b')]",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[(0, 1), ('a', 'b')]",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-quiz-021",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `list(zip([1, 2, 3], ['a', 'b']))` give?",
+      "answer": "zip stops at the shortest iterable → [(1, 'a'), (2, 'b')].",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[(1, 'a'), (2, 'b')]",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "[(1, 'a'), (2, 'b'), (3, None)]",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "an error",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "[1, 'a', 2, 'b']",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-quiz-022",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "Are strings mutable in Python?",
+      "answer": "No — strings are immutable; methods return new strings.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "No — they're immutable",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Yes",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Only with []",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Only ASCII ones",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["strings"]
+    },
+    {
+      "id": "py-quiz-023",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "What does `3 == 3.0` evaluate to?",
+      "answer": "Numeric equality compares values across int/float → True.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "True",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "False",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "an error",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "3",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["types"]
+    },
+    {
+      "id": "py-quiz-024",
+      "subjectId": "sub-9",
+      "type": "quiz",
+      "question": "Which library gives CPU-bound parallelism by bypassing the GIL?",
+      "answer": "multiprocessing uses separate processes, each with its own interpreter.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "multiprocessing",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "threading",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "asyncio",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "functools",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "py-ta-001",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which statement opens a context manager that guarantees cleanup?",
+      "answer": "`with` (e.g. `with open(...) as f:`).",
+      "shortAnswer": "with",
+      "tags": ["idioms"]
+    },
+    {
+      "id": "py-ta-002",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which built-in returns a new sorted list from any iterable?",
+      "answer": "`sorted(iterable)`.",
+      "shortAnswer": "sorted",
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-ta-003",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which built-in yields (index, value) pairs while looping?",
+      "answer": "`enumerate`.",
+      "shortAnswer": "enumerate",
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-ta-004",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which built-in pairs items across multiple iterables positionally?",
+      "answer": "`zip`.",
+      "shortAnswer": "zip",
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-ta-005",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which built-in produces a lazy sequence of integers?",
+      "answer": "`range`.",
+      "shortAnswer": "range",
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-ta-006",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which keyword makes a function a generator by pausing and producing a value?",
+      "answer": "`yield`.",
+      "shortAnswer": "yield",
+      "tags": ["generators"]
+    },
+    {
+      "id": "py-ta-007",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which decorator exposes a method as a read-only attribute?",
+      "answer": "`@property`.",
+      "shortAnswer": "property",
+      "tags": ["classes"]
+    },
+    {
+      "id": "py-ta-008",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which dict method returns a value with a fallback when the key is missing?",
+      "answer": "`get` — `d.get(key, default)`.",
+      "shortAnswer": "get",
+      "tags": ["dicts"]
+    },
+    {
+      "id": "py-ta-009",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which standard module provides Counter, defaultdict, and deque?",
+      "answer": "`collections`.",
+      "shortAnswer": "collections",
+      "tags": ["collections"]
+    },
+    {
+      "id": "py-ta-010",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which keyword defines an anonymous inline function?",
+      "answer": "`lambda`.",
+      "shortAnswer": "lambda",
+      "tags": ["functions"]
+    },
+    {
+      "id": "py-ta-011",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which keyword raises an exception?",
+      "answer": "`raise`.",
+      "shortAnswer": "raise",
+      "tags": ["errors"]
+    },
+    {
+      "id": "py-ta-012",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which built-in returns an object's type?",
+      "answer": "`type(obj)`.",
+      "shortAnswer": "type",
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-ta-013",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which standard module provides regular-expression support?",
+      "answer": "`re`.",
+      "shortAnswer": "re",
+      "tags": ["stdlib"]
+    },
+    {
+      "id": "py-ta-014",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which standard module reads and writes JSON?",
+      "answer": "`json`.",
+      "shortAnswer": "json",
+      "tags": ["stdlib"]
+    },
+    {
+      "id": "py-ta-015",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which decorator defines a method that needs neither self nor cls?",
+      "answer": "`@staticmethod`.",
+      "shortAnswer": "staticmethod",
+      "tags": ["classes"]
+    },
+    {
+      "id": "py-ta-016",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which list method adds a single item to the end?",
+      "answer": "`append`.",
+      "shortAnswer": "append",
+      "tags": ["lists"]
+    },
+    {
+      "id": "py-ta-017",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which list method removes and returns the last item?",
+      "answer": "`pop`.",
+      "shortAnswer": "pop",
+      "tags": ["lists"]
+    },
+    {
+      "id": "py-ta-018",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which built-in opens a file and returns a file object?",
+      "answer": "`open`.",
+      "shortAnswer": "open",
+      "tags": ["io"]
+    },
+    {
+      "id": "py-ta-019",
+      "subjectId": "sub-9",
+      "type": "type-answer",
+      "question": "Which keyword creates a class?",
+      "answer": "`class`.",
+      "shortAnswer": "class",
+      "tags": ["classes"]
+    },
+    {
+      "id": "py-match-001",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each literal to the type it creates.",
+      "matchPairs": [
+        {
+          "left": "[]",
+          "right": "list"
+        },
+        {
+          "left": "()",
+          "right": "tuple"
+        },
+        {
+          "left": "{}",
+          "right": "dict"
+        },
+        {
+          "left": "{1, 2}",
+          "right": "set"
+        },
+        {
+          "left": "''",
+          "right": "str"
+        },
+        {
+          "left": "set()",
+          "right": "empty set"
+        }
+      ],
+      "tags": ["data-structures"]
+    },
+    {
+      "id": "py-match-002",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each built-in to its purpose.",
+      "matchPairs": [
+        {
+          "left": "len",
+          "right": "length / item count"
+        },
+        {
+          "left": "sorted",
+          "right": "new sorted list"
+        },
+        {
+          "left": "sum",
+          "right": "add numbers"
+        },
+        {
+          "left": "max",
+          "right": "largest item"
+        },
+        {
+          "left": "min",
+          "right": "smallest item"
+        },
+        {
+          "left": "zip",
+          "right": "pair iterables"
+        },
+        {
+          "left": "enumerate",
+          "right": "index + value"
+        }
+      ],
+      "tags": ["builtins"]
+    },
+    {
+      "id": "py-match-003",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each collections class to its purpose.",
+      "matchPairs": [
+        {
+          "left": "Counter",
+          "right": "count occurrences"
+        },
+        {
+          "left": "defaultdict",
+          "right": "default for missing keys"
+        },
+        {
+          "left": "deque",
+          "right": "fast appends/pops at both ends"
+        },
+        {
+          "left": "OrderedDict",
+          "right": "remembers insertion order"
+        },
+        {
+          "left": "namedtuple",
+          "right": "tuple with named fields"
+        }
+      ],
+      "tags": ["collections"]
+    },
+    {
+      "id": "py-match-004",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each operator to its meaning.",
+      "matchPairs": [
+        {
+          "left": "//",
+          "right": "floor division"
+        },
+        {
+          "left": "**",
+          "right": "exponentiation"
+        },
+        {
+          "left": "%",
+          "right": "modulo / remainder"
+        },
+        {
+          "left": ":=",
+          "right": "walrus assignment"
+        },
+        {
+          "left": "is",
+          "right": "identity check"
+        }
+      ],
+      "tags": ["operators"]
+    },
+    {
+      "id": "py-match-005",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each dunder method to what it powers.",
+      "matchPairs": [
+        {
+          "left": "__init__",
+          "right": "construction"
+        },
+        {
+          "left": "__repr__",
+          "right": "developer string"
+        },
+        {
+          "left": "__len__",
+          "right": "len()"
+        },
+        {
+          "left": "__eq__",
+          "right": "=="
+        },
+        {
+          "left": "__iter__",
+          "right": "iteration"
+        }
+      ],
+      "tags": ["classes"]
+    },
+    {
+      "id": "py-match-006",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each exception keyword to its role.",
+      "matchPairs": [
+        {
+          "left": "try",
+          "right": "guard risky code"
+        },
+        {
+          "left": "except",
+          "right": "handle an error"
+        },
+        {
+          "left": "else",
+          "right": "run if no error"
+        },
+        {
+          "left": "finally",
+          "right": "always run cleanup"
+        },
+        {
+          "left": "raise",
+          "right": "throw an exception"
+        }
+      ],
+      "tags": ["errors"]
+    },
+    {
+      "id": "py-match-007",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each decorator to its effect.",
+      "matchPairs": [
+        {
+          "left": "@property",
+          "right": "method as a read-only attribute"
+        },
+        {
+          "left": "@staticmethod",
+          "right": "no self or cls"
+        },
+        {
+          "left": "@classmethod",
+          "right": "receives cls"
+        },
+        {
+          "left": "@dataclass",
+          "right": "auto __init__/__repr__"
+        },
+        {
+          "left": "@lru_cache",
+          "right": "memoize results"
+        }
+      ],
+      "tags": ["classes"]
+    },
+    {
+      "id": "py-match-008",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each comprehension to its result type.",
+      "matchPairs": [
+        {
+          "left": "[x for x in it]",
+          "right": "list"
+        },
+        {
+          "left": "{x for x in it}",
+          "right": "set"
+        },
+        {
+          "left": "{k: v for ...}",
+          "right": "dict"
+        },
+        {
+          "left": "(x for x in it)",
+          "right": "generator"
+        }
+      ],
+      "tags": ["comprehensions"]
+    },
+    {
+      "id": "py-match-009",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each slice of `[0, 1, 2, 3, 4]` to its result.",
+      "matchPairs": [
+        {
+          "left": "[1:3]",
+          "right": "[1, 2]"
+        },
+        {
+          "left": "[::-1]",
+          "right": "[4, 3, 2, 1, 0]"
+        },
+        {
+          "left": "[:2]",
+          "right": "[0, 1]"
+        },
+        {
+          "left": "[-1]",
+          "right": "4"
+        },
+        {
+          "left": "[::2]",
+          "right": "[0, 2, 4]"
+        }
+      ],
+      "tags": ["sequences"]
+    },
+    {
+      "id": "py-match-010",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each concurrency tool to its use.",
+      "matchPairs": [
+        {
+          "left": "threading",
+          "right": "I/O-bound concurrency"
+        },
+        {
+          "left": "multiprocessing",
+          "right": "CPU-bound parallelism"
+        },
+        {
+          "left": "asyncio",
+          "right": "async/await on one thread"
+        },
+        {
+          "left": "the GIL",
+          "right": "one bytecode thread at a time"
+        }
+      ],
+      "tags": ["concurrency"]
+    },
+    {
+      "id": "py-match-011",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each standard module to its domain.",
+      "matchPairs": [
+        {
+          "left": "os",
+          "right": "operating system"
+        },
+        {
+          "left": "sys",
+          "right": "interpreter / runtime"
+        },
+        {
+          "left": "json",
+          "right": "JSON encode/decode"
+        },
+        {
+          "left": "re",
+          "right": "regular expressions"
+        },
+        {
+          "left": "math",
+          "right": "math functions"
+        },
+        {
+          "left": "datetime",
+          "right": "dates and times"
+        }
+      ],
+      "tags": ["stdlib"]
+    },
+    {
+      "id": "py-match-012",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each argument syntax to its meaning.",
+      "matchPairs": [
+        {
+          "left": "*args",
+          "right": "extra positional args (tuple)"
+        },
+        {
+          "left": "**kwargs",
+          "right": "extra keyword args (dict)"
+        },
+        {
+          "left": "/",
+          "right": "positional-only marker"
+        },
+        {
+          "left": "*",
+          "right": "keyword-only marker"
+        }
+      ],
+      "tags": ["functions"]
+    },
+    {
+      "id": "py-match-013",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each copy approach to its behavior.",
+      "matchPairs": [
+        {
+          "left": "b = a",
+          "right": "same object (alias)"
+        },
+        {
+          "left": "a[:]",
+          "right": "shallow copy of a list"
+        },
+        {
+          "left": "copy.copy(a)",
+          "right": "shallow copy"
+        },
+        {
+          "left": "copy.deepcopy(a)",
+          "right": "deep recursive copy"
+        }
+      ],
+      "tags": ["fundamentals"]
+    },
+    {
+      "id": "py-match-014",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each string operation on `\"Hello\"` to its result.",
+      "matchPairs": [
+        {
+          "left": ".upper()",
+          "right": "'HELLO'"
+        },
+        {
+          "left": ".lower()",
+          "right": "'hello'"
+        },
+        {
+          "left": ".replace('l', 'L')",
+          "right": "'HeLLo'"
+        },
+        {
+          "left": ".startswith('He')",
+          "right": "True"
+        },
+        {
+          "left": "[::-1]",
+          "right": "'olleH'"
+        }
+      ],
+      "tags": ["strings"]
+    },
+    {
+      "id": "py-match-015",
+      "subjectId": "sub-9",
+      "type": "match",
+      "question": "Match each conversion to its result.",
+      "matchPairs": [
+        {
+          "left": "int('42')",
+          "right": "42"
+        },
+        {
+          "left": "str(42)",
+          "right": "'42'"
+        },
+        {
+          "left": "float('3.5')",
+          "right": "3.5"
+        },
+        {
+          "left": "list('ab')",
+          "right": "['a', 'b']"
+        },
+        {
+          "left": "bool(0)",
+          "right": "False"
+        }
+      ],
+      "tags": ["builtins"]
+    }
+  ]
+}
