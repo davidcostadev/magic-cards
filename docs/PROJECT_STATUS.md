@@ -56,7 +56,7 @@ server secret **`CONTENT_API_KEY`** via the `x-api-key` header — **not** a use
 [`content-catalog.md`](./content-catalog.md), design: [ADR 0007](./adr/0007-shared-content-catalog-via-api-key.md).
 
 - `POST /v1/catalog/subjects` · `POST /v1/catalog/cards` · `DELETE /v1/catalog/subjects/:id`
-- Idempotent seed: `pnpm --filter backend seed:catalog` (example Git + HTTP content).
+- Idempotent seed: `pnpm --filter backend seed:catalog` — loads `catalog-content.json` (10 subjects, 77 cards across all 4 types: open 28 / quiz 19 / type-answer 19 / match 11).
 - The key is **catalog-only** (public, system-owned content); it can never touch a user's deck.
 
 ## 6. Database
