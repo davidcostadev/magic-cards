@@ -9,6 +9,11 @@ export default defineConfig({
     port: 5000,
     host: true,
     allowedHosts: ['.davidcosta.dev', 'blue.davidcosta.dev'],
+    // Proxy API calls so the browser only ever talks to this origin (no direct localhost:3001,
+    // which trips mixed-content / private-network access over HTTPS/remote hosts).
+    proxy: {
+      '/v1': { target: 'http://localhost:3001', changeOrigin: true },
+    },
   },
   preview: {
     port: 5000,
