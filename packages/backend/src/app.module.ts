@@ -17,8 +17,14 @@ import { SubjectsModule } from './modules/subjects/subjects.module';
 
 @Module({
   imports: [
-    // Validate env once at startup; fail fast on bad/missing config.
-    ConfigModule.forRoot({ isGlobal: true, cache: true, validate: validateEnv }),
+    // Validate env once at startup; fail fast on bad/missing config. Tests ignore the
+    // .env file so they depend only on process.env (deterministic).
+    ConfigModule.forRoot({
+      isGlobal: true,
+      cache: true,
+      validate: validateEnv,
+      ignoreEnvFile: process.env.NODE_ENV === 'test',
+    }),
     // Default rate limit: 300 requests / minute / IP (auth endpoints are stricter).
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     DatabaseModule,
