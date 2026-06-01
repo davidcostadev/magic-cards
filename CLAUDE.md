@@ -5,7 +5,7 @@ Magic Cards is a spaced repetition learning platform focused on programming and 
 
 ## Tech Stack
 - **Frontend**: React + TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Router + Query, react-i18next
-- **Backend**: NestJS (Fastify adapter) + REST API (`/v1`, Stripe-style) + Drizzle ORM, SQLite
+- **Backend**: NestJS (Fastify adapter) + REST API (`/v1`, Stripe-style) + Drizzle ORM, PostgreSQL (pg / PGlite)
 - **API Contract**: OpenAPI 3.1 (generated from Zod via `@nestjs/swagger` + `nestjs-zod`); frontend uses a generated `openapi-fetch` client
 - **Validation**: Zod (single source of truth — request validation, OpenAPI spec, aligned with Drizzle)
 - **Monorepo**: pnpm workspaces
@@ -112,8 +112,11 @@ See `docs/architecture.md` section 13 for detailed phases:
 - **Contract**: OpenAPI 3.1 (`@nestjs/swagger`); swagger UI at `/docs`; committed spec + CI drift check
 
 ## Database
-- **Current**: SQLite (in-process via better-sqlite3)
-- **Future**: PostgreSQL (Drizzle dialect swap)
+- **Engine**: PostgreSQL (async data layer). Real Postgres via `pg` in production/E2E; embedded
+  in-process Postgres (**PGlite**) for zero-setup dev (`DATABASE_PATH`) and tests. Driver is chosen at
+  runtime by whether `DATABASE_URL` is set. See ADR 0006.
+- **Schema**: Drizzle `pgTable` — UUIDv7 text ids, ISO-text timestamps, `jsonb` hints/tags, `boolean` flags
+- **Config**: validated at startup (`@nestjs/config` + Zod, `src/config/env.ts`); prod requires `DATABASE_URL` + `JWT_SECRET`
 - **Key Entities**: User, Subject, Card, CardProgress, ReviewHistory
 
 ## Notes for Future Sessions

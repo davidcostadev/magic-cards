@@ -22,12 +22,13 @@ than only testing each side in isolation.
    and endpoints, and to frontend logic/hooks/components — not to pure visual scaffolding (the FRD-001
    prototype) or styling-only polish (FRD-004).
    - **Unit/integration** runner: **Vitest** (both packages).
-   - Backend integration: `@nestjs/testing` + **supertest** against a real (file/in-memory) SQLite DB.
+   - Backend integration: `@nestjs/testing` + **supertest** against an in-memory PGlite (embedded
+     Postgres) database — see ADR 0006.
    - Frontend component: React Testing Library.
 
 2. **Full-stack E2E with Playwright, in Docker.** A browser-level suite drives the frontend against a
-   running backend. The stack runs via **`docker compose`** (backend + frontend, backend pointed at a
-   throwaway SQLite DB seeded per run) so the environment is identical locally and in CI. Playwright runs
+   running backend. The stack runs via **`docker compose`** (Postgres + backend + frontend, backend
+   pointed at a throwaway Postgres per run) so the environment is identical locally and in CI. Playwright runs
    the canonical flows: signup → create subject → create cards → study session → review → dashboard
    reflects the result.
 

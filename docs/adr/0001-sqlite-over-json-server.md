@@ -1,8 +1,12 @@
 # ADR 0001: SQLite in-process instead of JSON Server
 
-- **Status**: Accepted
+- **Status**: Accepted — database engine superseded by ADR 0006 (PostgreSQL)
 - **Date**: 2026-05-27
 - **Deciders**: David Costa
+
+> **Update (2026-06-01):** the choice to use a *real relational, in-process* DB still
+> holds, but the engine moved from SQLite to **PostgreSQL** (with PGlite as the embedded
+> in-process engine for dev/test). See ADR 0006.
 
 ## Context
 
