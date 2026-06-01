@@ -9,9 +9,11 @@ interface CardListProps {
   cards: CardType[];
   onEdit: (card: CardType) => void;
   onDelete: (id: string) => void;
+  /** Hide edit/delete affordances (e.g. for shared/public content). */
+  readOnly?: boolean;
 }
 
-export function CardList({ cards, onEdit, onDelete }: CardListProps) {
+export function CardList({ cards, onEdit, onDelete, readOnly }: CardListProps) {
   const { t } = useTranslation();
 
   if (cards.length === 0) {
@@ -45,26 +47,28 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
                   </p>
                 )}
               </div>
-              <div className="flex shrink-0 gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t('common.edit')}
-                  className="h-10 w-10"
-                  onClick={() => onEdit(card)}
-                >
-                  <Pencil className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t('common.delete')}
-                  className="h-10 w-10 text-destructive"
-                  onClick={() => onDelete(card.id)}
-                >
-                  <Trash2 className="h-5 w-5" />
-                </Button>
-              </div>
+              {!readOnly && (
+                <div className="flex shrink-0 gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('common.edit')}
+                    className="h-10 w-10"
+                    onClick={() => onEdit(card)}
+                  >
+                    <Pencil className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('common.delete')}
+                    className="h-10 w-10 text-destructive"
+                    onClick={() => onDelete(card.id)}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

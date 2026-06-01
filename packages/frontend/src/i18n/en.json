@@ -85,6 +85,8 @@
     "search": "Search subjects...",
     "noResults": "No subjects match your search.",
     "manage": "Manage",
+    "shared": "Shared",
+    "sharedReadOnly": "Shared content · read-only",
     "manageTitle": "Manage subjects",
     "manageHint": "Choose which subjects appear in your list and study sessions.",
     "noActive": "No active subjects. Add some with Manage.",

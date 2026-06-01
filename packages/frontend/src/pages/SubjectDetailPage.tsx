@@ -55,6 +55,7 @@ export function SubjectDetailPage() {
 
   const Icon = getSubjectIcon(subject.icon ?? 'code');
   const color = subject.color ?? '#6366f1';
+  const isPublic = subject.isPublic;
 
   const handleSave = (data: CardFormData) => {
     if (editingCard) {
@@ -85,22 +86,24 @@ export function SubjectDetailPage() {
           <div className="min-w-0">
             <h1 className="text-2xl font-bold truncate sm:text-3xl">{subject.title}</h1>
             <p className="text-sm text-muted-foreground line-clamp-2 sm:text-base">
-              {subject.description ?? ''}
+              {isPublic ? t('subjects.sharedReadOnly') : (subject.description ?? '')}
             </p>
           </div>
         </div>
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="flex-1 sm:flex-none"
-            onClick={() => {
-              setEditingCard(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            {t('cards.createCard')}
-          </Button>
+          {!isPublic && (
+            <Button
+              variant="outline"
+              className="flex-1 sm:flex-none"
+              onClick={() => {
+                setEditingCard(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              {t('cards.createCard')}
+            </Button>
+          )}
           {cards.length > 0 && (
             <Link
               to="/learn/$subjectId"
@@ -116,6 +119,7 @@ export function SubjectDetailPage() {
 
       <CardList
         cards={cards}
+        readOnly={isPublic}
         onEdit={(card) => {
           setEditingCard(card);
           setFormOpen(true);

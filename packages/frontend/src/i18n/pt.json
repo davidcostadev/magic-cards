@@ -85,6 +85,8 @@
     "search": "Buscar assuntos...",
     "noResults": "Nenhum assunto corresponde à sua busca.",
     "manage": "Gerenciar",
+    "shared": "Compartilhado",
+    "sharedReadOnly": "Conteúdo compartilhado · somente leitura",
     "manageTitle": "Gerenciar assuntos",
     "manageHint": "Escolha quais assuntos aparecem na sua lista e nos estudos.",
     "noActive": "Nenhum assunto ativo. Adicione em Gerenciar.",

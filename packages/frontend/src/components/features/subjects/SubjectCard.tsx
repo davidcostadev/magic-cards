@@ -37,61 +37,72 @@ export function SubjectCard({ subject, cardCount, onEdit, onDelete }: SubjectCar
 
   return (
     <Card className="group relative transition-shadow hover:shadow-md">
-      <div className="absolute right-3 top-3">
-        <div className="relative">
-          <Button
-            ref={triggerRef}
-            variant="ghost"
-            size="icon"
-            aria-label={t('common.options')}
-            aria-haspopup="true"
-            aria-expanded={menuOpen}
-            className="h-10 w-10 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            <MoreVertical className="h-5 w-5" />
-          </Button>
-          {menuOpen && (
-            <>
-              <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => closeMenu()} />
-              <div
-                role="menu"
-                aria-label={t('common.options')}
-                className="absolute right-0 z-20 mt-1 w-44 rounded-xl border bg-popover p-1.5 shadow-md"
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') closeMenu(true);
-                }}
-              >
-                <button
-                  type="button"
-                  ref={firstItemRef}
-                  role="menuitem"
-                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-base transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-                  onClick={() => {
-                    onEdit(subject);
-                    closeMenu();
+      {subject.isPublic && (
+        <Badge variant="secondary" className="absolute right-3 top-3 z-10">
+          {t('subjects.shared')}
+        </Badge>
+      )}
+      {!subject.isPublic && (
+        <div className="absolute right-3 top-3">
+          <div className="relative">
+            <Button
+              ref={triggerRef}
+              variant="ghost"
+              size="icon"
+              aria-label={t('common.options')}
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+              className="h-10 w-10 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+            {menuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  aria-hidden="true"
+                  onClick={() => closeMenu()}
+                />
+                <div
+                  role="menu"
+                  aria-label={t('common.options')}
+                  className="absolute right-0 z-20 mt-1 w-44 rounded-xl border bg-popover p-1.5 shadow-md"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') closeMenu(true);
                   }}
                 >
-                  <Pencil className="h-5 w-5" />
-                  {t('common.edit')}
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-base text-destructive transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-                  onClick={() => {
-                    onDelete(subject.id);
-                    closeMenu();
-                  }}
-                >
-                  <Trash2 className="h-5 w-5" />
-                  {t('common.delete')}
-                </button>
-              </div>
-            </>
-          )}
+                  <button
+                    type="button"
+                    ref={firstItemRef}
+                    role="menuitem"
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-base transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                    onClick={() => {
+                      onEdit(subject);
+                      closeMenu();
+                    }}
+                  >
+                    <Pencil className="h-5 w-5" />
+                    {t('common.edit')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-base text-destructive transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                    onClick={() => {
+                      onDelete(subject.id);
+                      closeMenu();
+                    }}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                    {t('common.delete')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       <Link
         to="/subjects/$subjectId"
         params={{ subjectId: subject.id }}
