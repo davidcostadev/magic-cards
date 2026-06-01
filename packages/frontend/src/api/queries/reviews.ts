@@ -5,8 +5,13 @@ import { cardKeys } from './cards';
 import { subjectKeys } from './subjects';
 
 export type ReviewQueue = components['schemas']['ReviewQueueResponseDto'];
-export type CardProgress = components['schemas']['CardProgressResponseDto'];
+export type SubmitReviewResult = components['schemas']['SubmitReviewResponseDto'];
+export type CardProgress = SubmitReviewResult['progress'];
+/** Grading feedback for auto-graded cards (absent for self-assessed `open` cards). */
+export type Grade = NonNullable<SubmitReviewResult['grade']>;
 export type ReviewInput = components['schemas']['CreateReviewDto'];
+/** A review response for an auto-graded card, discriminated by type. */
+export type ReviewResponse = NonNullable<ReviewInput['response']>;
 
 export const reviewKeys = {
   queue: (subject?: string) => ['review_queue', subject ?? 'all'] as const,

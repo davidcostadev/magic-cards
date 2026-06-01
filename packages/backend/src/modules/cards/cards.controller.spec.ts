@@ -134,4 +134,145 @@ describe('Cards CRUD', () => {
       .set('Authorization', `Bearer ${otherToken}`);
     expect(res.status).toBe(404);
   });
+
+  it('defaults a card with no explicit type to open', async () => {
+    const res = await auth(
+      request(app.getHttpServer()).post('/v1/cards').send({ subjectId, question: 'Q', answer: 'A' })
+    );
+    expect(res.body.type).toBe('open');
+  });
+});
+
+describe('Interactive card types', () => {
+  function post(body: Record<string, unknown>) {
+    return auth(
+      request(app.getHttpServer())
+        .post('/v1/cards')
+        .send({ subjectId, ...body })
+    );
+  }
+
+  it('creates a quiz card and returns choices (with isCorrect) to its owner', async () => {
+    const res = await post({
+      type: 'quiz',
+      question: 'Pick one',
+      answer: 'B is right',
+      choices: [
+        { id: 'a', text: 'A', isCorrect: false },
+        { id: 'b', text: 'B', isCorrect: true },
+      ],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.type).toBe('quiz');
+    expect(res.body.choices).toEqual([
+      { id: 'a', text: 'A', isCorrect: false },
+      { id: 'b', text: 'B', isCorrect: true },
+    ]);
+  });
+
+  it('rejects a quiz without exactly one correct choice', async () => {
+    const res = await post({
+      type: 'quiz',
+      question: 'Pick one',
+      answer: 'x',
+      choices: [
+        { id: 'a', text: 'A', isCorrect: false },
+        { id: 'b', text: 'B', isCorrect: false },
+      ],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.param).toBe('choices');
+  });
+
+  it('creates a type-answer card and returns its shortAnswer to the owner', async () => {
+    const res = await post({
+      type: 'type-answer',
+      question: 'Utility type?',
+      answer: 'Partial<T>',
+      shortAnswer: 'Partial',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.shortAnswer).toBe('Partial');
+  });
+
+  it('rejects a type-answer without a shortAnswer', async () => {
+    const res = await post({ type: 'type-answer', question: 'Q', answer: 'A' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.param).toBe('shortAnswer');
+  });
+
+  it('creates a match card and returns its pairs to the owner', async () => {
+    const res = await post({
+      type: 'match',
+      question: 'Match',
+      matchPairs: [
+        { left: 'TS', right: 'TypeScript' },
+        { left: 'PY', right: 'Python' },
+      ],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.type).toBe('match');
+    expect(res.body.matchPairs).toHaveLength(2);
+  });
+
+  it('rejects a match with fewer than two pairs', async () => {
+    const res = await post({
+      type: 'match',
+      question: 'Match',
+      matchPairs: [{ left: 'TS', right: 'TypeScript' }],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.param).toBe('matchPairs');
+  });
+
+  it('re-validates the merged card on update (cannot drop the correct choice)', async () => {
+    const created = await post({
+      type: 'quiz',
+      question: 'Pick one',
+      answer: 'B',
+      choices: [
+        { id: 'a', text: 'A', isCorrect: false },
+        { id: 'b', text: 'B', isCorrect: true },
+      ],
+    });
+    const res = await auth(
+      request(app.getHttpServer())
+        .patch(`/v1/cards/${created.body.id}`)
+        .send({
+          choices: [
+            { id: 'a', text: 'A', isCorrect: false },
+            { id: 'b', text: 'B', isCorrect: false },
+          ],
+        })
+    );
+    expect(res.status).toBe(400);
+    expect(res.body.error.param).toBe('choices');
+  });
+
+  it('updates a quiz card and persists the edited choices', async () => {
+    const created = await post({
+      type: 'quiz',
+      question: 'Pick one',
+      answer: 'B',
+      choices: [
+        { id: 'a', text: 'A', isCorrect: false },
+        { id: 'b', text: 'B', isCorrect: true },
+      ],
+    });
+    const res = await auth(
+      request(app.getHttpServer())
+        .patch(`/v1/cards/${created.body.id}`)
+        .send({
+          choices: [
+            { id: 'a', text: 'Alpha', isCorrect: true },
+            { id: 'b', text: 'Beta', isCorrect: false },
+          ],
+        })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.choices).toEqual([
+      { id: 'a', text: 'Alpha', isCorrect: true },
+      { id: 'b', text: 'Beta', isCorrect: false },
+    ]);
+  });
 });

@@ -13,6 +13,13 @@ interface CardListProps {
   readOnly?: boolean;
 }
 
+const TYPE_LABEL_KEY: Record<CardType['type'], string> = {
+  open: 'cards.typeOpen',
+  quiz: 'cards.typeQuiz',
+  'type-answer': 'cards.typeTypeAnswer',
+  match: 'cards.typeMatch',
+};
+
 export function CardList({ cards, onEdit, onDelete, readOnly }: CardListProps) {
   const { t } = useTranslation();
 
@@ -28,6 +35,11 @@ export function CardList({ cards, onEdit, onDelete, readOnly }: CardListProps) {
             <div className="flex items-start justify-between gap-5">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
+                  {card.type !== 'open' && (
+                    <Badge variant="secondary" className="shrink-0">
+                      {t(TYPE_LABEL_KEY[card.type])}
+                    </Badge>
+                  )}
                   <p className="text-base font-semibold line-clamp-2">
                     {card.question.split('\n')[0].replace(/[#`*]/g, '')}
                   </p>

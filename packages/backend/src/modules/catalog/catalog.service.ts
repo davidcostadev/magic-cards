@@ -4,6 +4,7 @@ import { ApiError } from '../../common/errors/api-error';
 import { SYSTEM_USER_ID } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
 import { cards, subjects, users } from '../../db/schema';
+import { buildPayload, toCardResponse } from '../cards/card-mapper';
 import type { CardResponse, CreateCardDto } from '../cards/dto/card.dto';
 import type { CreateSubjectDto, SubjectResponse } from '../subjects/dto/subject.dto';
 
@@ -41,13 +42,15 @@ export class CatalogService implements OnModuleInit {
       .insert(cards)
       .values({
         subjectId: dto.subjectId,
+        type: dto.type,
         question: dto.question,
-        answer: dto.answer,
+        answer: dto.answer ?? '',
+        payload: buildPayload(dto),
         hints: dto.hints ?? [],
         tags: dto.tags ?? [],
       })
       .returning();
-    return card;
+    return toCardResponse(card, true);
   }
 
   /** Removes a public catalog subject (and its cards/progress via cascade). */

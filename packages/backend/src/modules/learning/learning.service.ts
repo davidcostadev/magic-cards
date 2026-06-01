@@ -3,9 +3,20 @@ import { and, asc, eq, getTableColumns, isNull, lte } from 'drizzle-orm';
 import { ApiError } from '../../common/errors/api-error';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
-import { cardProgress, cards, reviewHistory, subjects, users } from '../../db/schema';
+import {
+  type Card,
+  type CardChoice,
+  cardProgress,
+  cards,
+  type MatchPair,
+  reviewHistory,
+  subjects,
+  users,
+} from '../../db/schema';
+import { toCardResponse } from '../cards/card-mapper';
 import type { CardResponse } from '../cards/dto/card.dto';
-import type { CardProgressResponse } from '../reviews/dto/review.dto';
+import type { CreateReviewInput, GradeResult, SubmitReviewResult } from '../reviews/dto/review.dto';
+import { GradingService } from './grading.service';
 import { Sm2Service } from './sm2.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -21,7 +32,8 @@ export interface SessionCards {
 export class LearningService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
-    private readonly sm2: Sm2Service
+    private readonly sm2: Sm2Service,
+    private readonly grading: GradingService
   ) {}
 
   /**
@@ -71,7 +83,11 @@ export class LearningService {
             .limit(maxNew)
         : [];
 
-    return { due, new: newCards };
+    // Always sanitized: the study payload never carries grading data (server grades on submit).
+    return {
+      due: due.map((card) => toCardResponse(card, false)),
+      new: newCards.map((card) => toCardResponse(card, false)),
+    };
   }
 
   /** The single next card to study: most overdue, else the next new card, else null. */
@@ -80,22 +96,27 @@ export class LearningService {
     return due[0] ?? newCards[0] ?? null;
   }
 
-  /** Applies SM-2, upserts the card's progress, and logs an immutable review. */
-  async submitReview(
-    userId: string,
-    cardId: string,
-    quality: number,
-    timeSpent: number,
-    wasHintUsed: boolean
-  ): Promise<CardProgressResponse> {
+  /**
+   * Applies SM-2, upserts the card's progress, and logs an immutable review. `open` cards
+   * carry a self-assessed `quality`; the auto-graded types instead carry the learner's
+   * `response`, which the server grades to derive the quality (and the feedback returned).
+   */
+  async submitReview(userId: string, input: CreateReviewInput): Promise<SubmitReviewResult> {
+    const { cardId, timeSpent, wasHintUsed } = input;
     const [card] = await this.db
-      .select({ subjectId: cards.subjectId })
+      .select({
+        subjectId: cards.subjectId,
+        type: cards.type,
+        answer: cards.answer,
+        payload: cards.payload,
+      })
       .from(cards)
       .innerJoin(subjects, eq(cards.subjectId, subjects.id))
       .where(and(eq(cards.id, cardId), canSeeSubject(userId)))
       .limit(1);
     if (!card) throw ApiError.notFound('cards.notFound');
 
+    const { quality, grade } = this.resolveQuality(card, input);
     const effectiveQuality = this.sm2.applyHintCap(quality, wasHintUsed);
     const [existing] = await this.db
       .select()
@@ -151,7 +172,51 @@ export class LearningService {
       wasHintUsed,
     });
 
-    return progress;
+    return grade ? { progress, grade } : { progress };
+  }
+
+  /**
+   * Derives the SM-2 quality for a review. `open` cards are self-assessed (the client's
+   * `quality` is trusted); the auto-graded types are corrected here from the learner's
+   * `response`, so the answer never has to be shipped to the client.
+   */
+  private resolveQuality(
+    card: { type: Card['type']; answer: string; payload: Card['payload'] },
+    input: CreateReviewInput
+  ): { quality: number; grade?: GradeResult } {
+    if (card.type === 'open') {
+      if (input.quality == null) throw ApiError.badRequest('errors.validation', 'quality');
+      return { quality: input.quality };
+    }
+
+    const response = input.response;
+    if (!response || response.type !== card.type) {
+      throw ApiError.badRequest('errors.validation', 'response');
+    }
+
+    let correct: boolean;
+    const detail: Partial<GradeResult> = {};
+    if (response.type === 'quiz') {
+      const choices = (card.payload as { choices: CardChoice[] } | null)?.choices ?? [];
+      const result = this.grading.gradeQuiz(choices, response.choiceId);
+      correct = result.correct;
+      detail.correctChoiceId = result.correctChoiceId;
+    } else if (response.type === 'type-answer') {
+      const shortAnswer = (card.payload as { shortAnswer: string } | null)?.shortAnswer ?? '';
+      const result = this.grading.gradeTypeAnswer(shortAnswer, response.text);
+      correct = result.correct;
+      detail.correctText = result.correctText;
+    } else {
+      const pairs = (card.payload as { matchPairs: MatchPair[] } | null)?.matchPairs ?? [];
+      const result = this.grading.gradeMatch(pairs, response.pairs);
+      correct = result.correct;
+      detail.correctPairs = result.correctPairs;
+    }
+
+    return {
+      quality: this.grading.qualityForCorrectness(correct),
+      grade: { correct, explanation: card.answer, ...detail },
+    };
   }
 
   private async assertSubjectVisible(userId: string, subjectId: string): Promise<void> {

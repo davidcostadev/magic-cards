@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDatabase, type DatabaseHandle, type DrizzleDB } from '../../db/client';
 import { cardProgress, cards, subjects, users } from '../../db/schema';
+import { GradingService } from './grading.service';
 import { LearningService } from './learning.service';
 import { Sm2Service } from './sm2.service';
 
@@ -9,7 +10,7 @@ let handle: DatabaseHandle;
 let db: DrizzleDB;
 
 function service() {
-  return new LearningService(db, new Sm2Service());
+  return new LearningService(db, new Sm2Service(), new GradingService());
 }
 
 function addCard(id: string) {

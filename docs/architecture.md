@@ -220,14 +220,29 @@ Card count is always computed on demand — never stored.
 |--------|------|-------------|
 | id | text (UUID) | PK |
 | subjectId | text | FK → subjects.id, not null |
+| type | text | `open` \| `quiz` \| `type-answer` \| `match`, not null, default `open` |
 | question | text | Markdown, not null |
-| answer | text | Markdown, not null |
+| answer | text | Markdown, not null — answer (`open`) or explanation (`quiz`/`type-answer`); blank for `match` |
+| payload | jsonb | type-specific data, null for `open` (see below) |
 | hints | jsonb | array of strings, default `[]` |
 | tags | jsonb | array of strings, default `[]` |
 | createdAt | text (ISO) | not null |
 | updatedAt | text (ISO) | not null |
 
 No static difficulty field. Difficulty is emergent via the SM-2 ease factor.
+
+**Card types & `payload`.** `open` is the original Markdown Q&A (self-assessed). The other three are
+**auto-graded by the server** and carry their type-specific data in the `payload` jsonb, validated by a
+Zod discriminated union on `type` (the column defaults to `open`, so legacy/open payloads stay valid):
+
+- `quiz` → `{ choices: [{ id, text, isCorrect }] }` — exactly one `isCorrect`; `answer` is the explanation.
+- `type-answer` → `{ shortAnswer }` — a short typed answer; `answer` is the explanation.
+- `match` → `{ matchPairs: [{ left, right }] }` — associate pairs; `answer` (explanation) optional.
+
+The grading data (`isCorrect`, `shortAnswer`, the match pairing) is **owner-only**. Card responses are
+sanitized for anyone who doesn't own the card — and *always* for the study queue — so the answer can't
+be read off the payload: `choices` drop `isCorrect`, `shortAnswer` is omitted, and `matchPairs` becomes
+`matchItems: { lefts, rights }` with `rights` deterministically shuffled (seeded by card id). See §6.
 
 #### cardProgress
 | Column | Type | Constraints |
@@ -369,21 +384,33 @@ Cards are a top-level resource filtered by subject via a query param (Stripe-sty
 | Method & Path | Auth | Body / Query | Response |
 |---|---|---|---|
 | `GET /v1/cards` | protected | `?subject=:id` (required) `&limit&starting_after&ending_before` | `200` list of `Card` |
-| `POST /v1/cards` | protected | `{ subjectId, question, answer, hints?, tags? }` | `201` `Card` |
+| `POST /v1/cards` | protected | `{ subjectId, type?, question, answer?, choices?, shortAnswer?, matchPairs?, hints?, tags? }` | `201` `Card` |
 | `GET /v1/cards/:id` | protected | — | `200` `Card` |
-| `PATCH /v1/cards/:id` | protected | `{ question?, answer?, hints?, tags? }` | `200` `Card` |
+| `PATCH /v1/cards/:id` | protected | `{ question?, answer?, choices?, shortAnswer?, matchPairs?, hints?, tags? }` | `200` `Card` |
 | `DELETE /v1/cards/:id` | protected | — | `204` |
+
+`type` defaults to `open` and is immutable after creation. The body is validated by a discriminated
+union on `type` (open/quiz/type-answer require `answer`; quiz needs ≥2 choices with exactly one correct;
+type-answer needs `shortAnswer`; match needs ≥2 `matchPairs`). On update the merged card is re-validated
+against its type. Responses are sanitized for non-owners (see §4).
 
 ### Reviews & Review Queue
 
 A **Review** is a creatable resource: submitting one (`POST /v1/reviews`) logs immutable review history
-and updates the card's progress via SM-2.
+and updates the card's progress via SM-2. `open` cards are **self-assessed** (the client sends `quality`);
+the auto-graded types send their `response` and the **server grades** it, derives the quality, and returns
+the grade for the UI (the answer is never shipped to the client beforehand).
 
 | Method & Path | Auth | Body / Query | Response |
 |---|---|---|---|
-| `GET /v1/review_queue` | protected | `?subject=:id` (optional) | `200` `{ due: Card[], new: Card[], total: number }` |
-| `GET /v1/review_queue/next` | protected | `?subject=:id` (optional) | `200` `Card` (next card to review) or `204` if empty |
-| `POST /v1/reviews` | protected | `{ cardId, quality, timeSpent, wasHintUsed }` | `201` `CardProgress` |
+| `GET /v1/review_queue` | protected | `?subject=:id` (optional) | `200` `{ due: Card[], new: Card[], total: number }` (sanitized) |
+| `GET /v1/review_queue/next` | protected | `?subject=:id` (optional) | `200` `Card` (sanitized) or `204` if empty |
+| `POST /v1/reviews` | protected | `{ cardId, timeSpent, wasHintUsed, quality? \| response? }` | `201` `{ progress: CardProgress, grade? }` |
+
+The review body carries **exactly one** of `quality` (1–5, for `open`) or `response` (discriminated by
+type: `{ type:'quiz', choiceId }` \| `{ type:'type-answer', text }` \| `{ type:'match', pairs }`). For
+graded cards the response includes `grade: { correct, explanation, correctChoiceId? | correctText? |
+correctPairs? }`; correct → quality 4, incorrect → 2 (then the hint cap applies as usual).
 
 ### Dashboard
 
@@ -402,7 +429,7 @@ the key is unset. Publish-only (see ADR 0007).
 | Method & Path | Auth | Body / Query | Response |
 |---|---|---|---|
 | `POST /v1/catalog/subjects` | `x-api-key` | `{ title, description?, color?, icon? }` | `201` public `Subject` |
-| `POST /v1/catalog/cards` | `x-api-key` | `{ subjectId, question, answer, hints?, tags? }` | `201` `Card` (into a public subject) |
+| `POST /v1/catalog/cards` | `x-api-key` | same body as `POST /v1/cards` (all card types) | `201` `Card` (into a public subject) |
 
 Reads are visibility-scoped: every read returns the user's own **or** public content
 (`canSeeSubject`), while every mutation stays owner-only — so public content is read-only to

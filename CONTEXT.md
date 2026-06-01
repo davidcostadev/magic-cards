@@ -7,7 +7,14 @@
 
 ## Card
 
-A learning unit consisting of a **question** and an **answer**, both in Markdown format (with syntax highlighting support for code blocks). Cards belong to exactly one Subject.
+A learning unit with a **question** (Markdown, with syntax-highlighted code blocks) belonging to exactly one Subject. A Card has a **type** that determines how it is studied and graded:
+
+- **`open`** — the original Markdown Q&A: the learner reveals the **answer** and **self-assesses** (see Review).
+- **`quiz`** — multiple choice: pick one of several **choices** (exactly one is correct). `answer` is the explanation.
+- **`type-answer`** — type a short answer, compared leniently (case/accent/whitespace-insensitive) to the accepted **shortAnswer**. `answer` is the explanation.
+- **`match`** — associate **pairs** (left ↔ right), graded all-or-nothing.
+
+The `quiz`/`type-answer`/`match` types are **auto-graded by the server**: the grading data (which choice is correct, the accepted answer, the pairing) is owner-only and is never sent to the learner before they answer — the server grades the submitted response and returns the outcome (see Review).
 
 A Card has no static difficulty classification. Difficulty is an emergent property discovered by the SM-2 algorithm through the learner's actual performance (see Card Progress / ease factor).
 
@@ -25,7 +32,9 @@ A Subject does not store a card count. The number of Cards in a Subject is alway
 
 ## Review
 
-A single evaluation event following this interaction sequence:
+A single evaluation event. How the learner is graded depends on the Card's type.
+
+**`open` cards — self-assessed.** The interaction sequence is:
 
 1. The Card's **question** is displayed (rendered Markdown).
 2. The learner may optionally reveal **Hints** one at a time — they appear inline, sequentially, with a fade-in animation. Revealing any hint marks the review as hint-assisted.
@@ -45,11 +54,13 @@ This maps to a **Quality** score:
 | Right   | Good       | 4       |
 | Right   | Easy       | 5       |
 
-If any Hint was used, Quality is capped at 3 regardless of the learner's self-assessment.
+**`quiz` / `type-answer` / `match` — server-graded.** The learner answers interactively (picks a choice, types an answer, or matches pairs) and submits their **response**. The server grades it and derives the Quality: **correct → 4**, **incorrect → 2** (a lapse that resets the interval). The response carries the outcome plus the correct answer/explanation for the UI to display. Match is graded **all-or-nothing**.
+
+If any Hint was used, Quality is capped at 3 regardless of outcome (applies to every type).
 
 ## Quality
 
-An integer (1–5 in practice) representing how well the learner recalled the answer during a Review. Drives the SM-2 scheduling algorithm. Quality 0 and 2 are not reachable through the UI.
+An integer (1–5) representing how well the learner recalled the answer during a Review; drives the SM-2 scheduling algorithm. For `open` cards the reachable values are 1/3/4/5 (the two-step UI). For the auto-graded types the server emits 4 (correct) or 2 (incorrect), before the hint cap.
 
 ## Card Progress
 

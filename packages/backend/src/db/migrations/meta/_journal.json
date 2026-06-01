@@ -15,6 +15,13 @@
       "when": 1780318817157,
       "tag": "0001_wide_next_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780327023776,
+      "tag": "0002_nostalgic_hulk",
+      "breakpoints": true
     }
   ]
 }

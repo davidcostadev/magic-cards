@@ -6,12 +6,12 @@ import type { AuthUser } from '../../common/types/authenticated-request';
 import { CardResponseDto } from '../cards/dto/card.dto';
 import { LearningService } from '../learning/learning.service';
 import {
-  type CardProgressResponse,
-  CardProgressResponseDto,
   CreateReviewDto,
   ReviewQueueQueryDto,
   type ReviewQueueResponse,
   ReviewQueueResponseDto,
+  SubmitReviewResponseDto,
+  type SubmitReviewResult,
 } from './dto/review.dto';
 
 @ApiTags('reviews')
@@ -48,17 +48,11 @@ export class ReviewsController {
 
   @Post('reviews')
   @HttpCode(201)
-  @ApiOkResponse({ type: CardProgressResponseDto })
+  @ApiOkResponse({ type: SubmitReviewResponseDto })
   submit(
     @CurrentUser() user: AuthUser,
     @Body() body: CreateReviewDto
-  ): Promise<CardProgressResponse> {
-    return this.learning.submitReview(
-      user.id,
-      body.cardId,
-      body.quality,
-      body.timeSpent,
-      body.wasHintUsed
-    );
+  ): Promise<SubmitReviewResult> {
+    return this.learning.submitReview(user.id, body);
   }
 }

@@ -2,12 +2,37 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { cardResponseSchema } from '../../cards/dto/card.dto';
 
-export const createReviewSchema = z.object({
-  cardId: z.string().min(1),
-  quality: z.number().int().min(1).max(5),
-  timeSpent: z.number().int().min(0),
-  wasHintUsed: z.boolean(),
-});
+const matchPairSchema = z.object({ left: z.string().min(1), right: z.string().min(1) });
+
+/**
+ * The learner's answer for an auto-graded card; discriminated by the card's type.
+ * Fields are allowed to be empty so a timed-out / skipped attempt can be submitted and
+ * graded as incorrect (a lapse), rather than rejected by validation.
+ */
+const reviewResponseSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('quiz'), choiceId: z.string() }),
+  z.object({ type: z.literal('type-answer'), text: z.string() }),
+  z.object({ type: z.literal('match'), pairs: z.array(matchPairSchema) }),
+]);
+
+/**
+ * Exactly one of `quality` / `response`:
+ * - `open` cards are self-assessed → the client sends `quality` (1–5).
+ * - quiz / type-answer / match are graded server-side → the client sends its `response`.
+ */
+export const createReviewSchema = z
+  .object({
+    cardId: z.string().min(1),
+    quality: z.number().int().min(1).max(5).optional(),
+    response: reviewResponseSchema.optional(),
+    timeSpent: z.number().int().min(0),
+    wasHintUsed: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    if ((data.quality == null) === (data.response == null)) {
+      ctx.addIssue({ code: 'custom', path: ['quality'], message: 'reviews.qualityOrResponse' });
+    }
+  });
 
 export const reviewQueueQuerySchema = z.object({
   subject: z.string().min(1).optional(),
@@ -27,6 +52,20 @@ export const cardProgressResponseSchema = z.object({
   updatedAt: z.string(),
 });
 
+/** Grading feedback returned for auto-graded cards (absent for self-assessed `open` cards). */
+export const gradeResultSchema = z.object({
+  correct: z.boolean(),
+  explanation: z.string(), // the card's Markdown answer/explanation, revealed after grading
+  correctChoiceId: z.string().optional(), // quiz
+  correctText: z.string().optional(), // type-answer
+  correctPairs: z.array(matchPairSchema).optional(), // match
+});
+
+export const submitReviewResponseSchema = z.object({
+  progress: cardProgressResponseSchema,
+  grade: gradeResultSchema.optional(),
+});
+
 export const reviewQueueResponseSchema = z.object({
   due: z.array(cardResponseSchema),
   new: z.array(cardResponseSchema),
@@ -36,7 +75,11 @@ export const reviewQueueResponseSchema = z.object({
 export class CreateReviewDto extends createZodDto(createReviewSchema) {}
 export class ReviewQueueQueryDto extends createZodDto(reviewQueueQuerySchema) {}
 export class CardProgressResponseDto extends createZodDto(cardProgressResponseSchema) {}
+export class SubmitReviewResponseDto extends createZodDto(submitReviewResponseSchema) {}
 export class ReviewQueueResponseDto extends createZodDto(reviewQueueResponseSchema) {}
 
 export type CardProgressResponse = z.infer<typeof cardProgressResponseSchema>;
 export type ReviewQueueResponse = z.infer<typeof reviewQueueResponseSchema>;
+export type CreateReviewInput = z.infer<typeof createReviewSchema>;
+export type GradeResult = z.infer<typeof gradeResultSchema>;
+export type SubmitReviewResult = z.infer<typeof submitReviewResponseSchema>;

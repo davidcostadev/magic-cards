@@ -59,7 +59,9 @@ export function SubjectDetailPage() {
 
   const handleSave = (data: CardFormData) => {
     if (editingCard) {
-      updateCard.mutate({ id: editingCard.id, body: data });
+      // `type` and `subjectId` are immutable, so only the editable fields go in the PATCH.
+      const { type: _type, ...body } = data;
+      updateCard.mutate({ id: editingCard.id, body });
     } else {
       createCard.mutate({ subjectId, ...data });
     }

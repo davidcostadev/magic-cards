@@ -643,7 +643,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CardProgressResponseDto"
+                  "$ref": "#/components/schemas/SubmitReviewResponseDto"
                 }
               }
             }
@@ -1289,6 +1289,15 @@
                 "subjectId": {
                   "type": "string"
                 },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "quiz",
+                    "type-answer",
+                    "match"
+                  ]
+                },
                 "question": {
                   "type": "string"
                 },
@@ -1307,6 +1316,71 @@
                     "type": "string"
                   }
                 },
+                "choices": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "text": {
+                        "type": "string"
+                      },
+                      "isCorrect": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "text"
+                    ]
+                  }
+                },
+                "shortAnswer": {
+                  "type": "string"
+                },
+                "matchPairs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "left": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "right": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "left",
+                      "right"
+                    ]
+                  }
+                },
+                "matchItems": {
+                  "type": "object",
+                  "properties": {
+                    "lefts": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "rights": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "lefts",
+                    "rights"
+                  ]
+                },
                 "createdAt": {
                   "type": "string"
                 },
@@ -1317,6 +1391,7 @@
               "required": [
                 "id",
                 "subjectId",
+                "type",
                 "question",
                 "answer",
                 "hints",
@@ -1341,13 +1416,71 @@
             "type": "string",
             "minLength": 1
           },
+          "type": {
+            "default": "open",
+            "type": "string",
+            "enum": [
+              "open",
+              "quiz",
+              "type-answer",
+              "match"
+            ]
+          },
           "question": {
             "type": "string",
             "minLength": 1
           },
           "answer": {
-            "type": "string",
-            "minLength": 1
+            "type": "string"
+          },
+          "choices": {
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "isCorrect": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "text",
+                "isCorrect"
+              ]
+            }
+          },
+          "shortAnswer": {
+            "type": "string"
+          },
+          "matchPairs": {
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "left": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "right": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "left",
+                "right"
+              ]
+            }
           },
           "hints": {
             "maxItems": 10,
@@ -1366,8 +1499,7 @@
         },
         "required": [
           "subjectId",
-          "question",
-          "answer"
+          "question"
         ]
       },
       "CardResponseDto": {
@@ -1378,6 +1510,15 @@
           },
           "subjectId": {
             "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "open",
+              "quiz",
+              "type-answer",
+              "match"
+            ]
           },
           "question": {
             "type": "string"
@@ -1397,6 +1538,71 @@
               "type": "string"
             }
           },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "isCorrect": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "text"
+              ]
+            }
+          },
+          "shortAnswer": {
+            "type": "string"
+          },
+          "matchPairs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "left": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "right": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "left",
+                "right"
+              ]
+            }
+          },
+          "matchItems": {
+            "type": "object",
+            "properties": {
+              "lefts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "rights": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "lefts",
+              "rights"
+            ]
+          },
           "createdAt": {
             "type": "string"
           },
@@ -1407,6 +1613,7 @@
         "required": [
           "id",
           "subjectId",
+          "type",
           "question",
           "answer",
           "hints",
@@ -1423,8 +1630,56 @@
             "minLength": 1
           },
           "answer": {
-            "type": "string",
-            "minLength": 1
+            "type": "string"
+          },
+          "choices": {
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "isCorrect": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "text",
+                "isCorrect"
+              ]
+            }
+          },
+          "shortAnswer": {
+            "type": "string"
+          },
+          "matchPairs": {
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "left": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "right": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "left",
+                "right"
+              ]
+            }
           },
           "hints": {
             "maxItems": 10,
@@ -1456,6 +1711,15 @@
                 "subjectId": {
                   "type": "string"
                 },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "quiz",
+                    "type-answer",
+                    "match"
+                  ]
+                },
                 "question": {
                   "type": "string"
                 },
@@ -1474,6 +1738,71 @@
                     "type": "string"
                   }
                 },
+                "choices": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "text": {
+                        "type": "string"
+                      },
+                      "isCorrect": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "text"
+                    ]
+                  }
+                },
+                "shortAnswer": {
+                  "type": "string"
+                },
+                "matchPairs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "left": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "right": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "left",
+                      "right"
+                    ]
+                  }
+                },
+                "matchItems": {
+                  "type": "object",
+                  "properties": {
+                    "lefts": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "rights": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "lefts",
+                    "rights"
+                  ]
+                },
                 "createdAt": {
                   "type": "string"
                 },
@@ -1484,6 +1813,7 @@
               "required": [
                 "id",
                 "subjectId",
+                "type",
                 "question",
                 "answer",
                 "hints",
@@ -1504,6 +1834,15 @@
                 "subjectId": {
                   "type": "string"
                 },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "quiz",
+                    "type-answer",
+                    "match"
+                  ]
+                },
                 "question": {
                   "type": "string"
                 },
@@ -1522,6 +1861,71 @@
                     "type": "string"
                   }
                 },
+                "choices": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "text": {
+                        "type": "string"
+                      },
+                      "isCorrect": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "text"
+                    ]
+                  }
+                },
+                "shortAnswer": {
+                  "type": "string"
+                },
+                "matchPairs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "left": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "right": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "left",
+                      "right"
+                    ]
+                  }
+                },
+                "matchItems": {
+                  "type": "object",
+                  "properties": {
+                    "lefts": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "rights": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "lefts",
+                    "rights"
+                  ]
+                },
                 "createdAt": {
                   "type": "string"
                 },
@@ -1532,6 +1936,7 @@
               "required": [
                 "id",
                 "subjectId",
+                "type",
                 "question",
                 "answer",
                 "hints",
@@ -1563,6 +1968,75 @@
             "minimum": 1,
             "maximum": 5
           },
+          "response": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "quiz"
+                  },
+                  "choiceId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "choiceId"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "type-answer"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "text"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "match"
+                  },
+                  "pairs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "left": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "right": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "left",
+                        "right"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "pairs"
+                ]
+              }
+            ]
+          },
           "timeSpent": {
             "type": "integer",
             "minimum": 0,
@@ -1574,73 +2048,121 @@
         },
         "required": [
           "cardId",
-          "quality",
           "timeSpent",
           "wasHintUsed"
         ]
       },
-      "CardProgressResponseDto": {
+      "SubmitReviewResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "cardId": {
-            "type": "string"
-          },
-          "interval": {
-            "type": "number"
-          },
-          "easeFactor": {
-            "type": "number"
-          },
-          "repetitions": {
-            "type": "number"
-          },
-          "nextReviewDate": {
-            "type": "string"
-          },
-          "lastReviewDate": {
-            "anyOf": [
-              {
+          "progress": {
+            "type": "object",
+            "properties": {
+              "id": {
                 "type": "string"
               },
-              {
-                "type": "null"
+              "userId": {
+                "type": "string"
+              },
+              "cardId": {
+                "type": "string"
+              },
+              "interval": {
+                "type": "number"
+              },
+              "easeFactor": {
+                "type": "number"
+              },
+              "repetitions": {
+                "type": "number"
+              },
+              "nextReviewDate": {
+                "type": "string"
+              },
+              "lastReviewDate": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "new",
+                  "learning",
+                  "reviewing",
+                  "mastered"
+                ]
+              },
+              "createdAt": {
+                "type": "string"
+              },
+              "updatedAt": {
+                "type": "string"
               }
+            },
+            "required": [
+              "id",
+              "userId",
+              "cardId",
+              "interval",
+              "easeFactor",
+              "repetitions",
+              "nextReviewDate",
+              "lastReviewDate",
+              "status",
+              "createdAt",
+              "updatedAt"
             ]
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "learning",
-              "reviewing",
-              "mastered"
+          "grade": {
+            "type": "object",
+            "properties": {
+              "correct": {
+                "type": "boolean"
+              },
+              "explanation": {
+                "type": "string"
+              },
+              "correctChoiceId": {
+                "type": "string"
+              },
+              "correctText": {
+                "type": "string"
+              },
+              "correctPairs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "left": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "right": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "left",
+                    "right"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "correct",
+              "explanation"
             ]
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "updatedAt": {
-            "type": "string"
           }
         },
         "required": [
-          "id",
-          "userId",
-          "cardId",
-          "interval",
-          "easeFactor",
-          "repetitions",
-          "nextReviewDate",
-          "lastReviewDate",
-          "status",
-          "createdAt",
-          "updatedAt"
+          "progress"
         ]
       },
       "DashboardStatsDto": {

@@ -45,7 +45,7 @@ product gaps — see below.
 | Item | State | Notes |
 |---|---|---|
 | **Deployment target** | ⬜ | Dockerfiles + `docker-compose.e2e.yml` exist; no host wiring (fly.toml/railway, secrets, domain). |
-| **Alternative card types** (quiz / match / type-answer) | ⏸️ | Backend supports **open** cards only by design for now; prototypes deferred. |
+| **Alternative card types** (quiz / match / type-answer) | ✅ | Implemented end-to-end (2026-06-01): `cards.type` + `payload` jsonb, Zod discriminated union, **server-side grading**, sanitized study payload, study + authoring UI. See architecture §4/§6, CONTEXT.md. |
 | **Rate limiter → Redis** | ⬜ | Currently in-memory (`@nestjs/throttler`) — fine for one instance; Redis store needed for multi-instance/horizontal scaling. |
 | **Route code-splitting** | 🟡 | DB indexes present; frontend code-splitting not audited. |
 
@@ -86,6 +86,13 @@ needs no cleanup**.
 
 ## 8. Recent notable changes (2026-06-01)
 
+- **Alternative card types** (quiz / type-answer / match) implemented end-to-end: `cards.type` +
+  `payload` jsonb (migration `0002`), Zod discriminated-union validation, a pure `GradingService`
+  (TDD), **server-side grading** with a sanitized study payload (answers never shipped to the
+  client), `POST /v1/reviews` now takes `quality` XOR `response` and returns `{ progress, grade? }`,
+  and the study (`QuizReview`/`TypeAnswerReview`/`MatchReview` dispatched by `CardReview`) + authoring
+  (`CardForm` type selector) UI. Decisions: jsonb payload, server grading, no per-card `language`,
+  match all-or-nothing.
 - **Shared content catalog** added (publish/delete/seed + `x-api-key` guard, ADR 0007).
 - **Bug fix:** subject `cardCount` was always 0 (correlated-subquery column-qualification trap) →
   LEFT JOIN + GROUP BY, with a regression test.

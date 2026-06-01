@@ -378,34 +378,91 @@ export interface components {
             data: {
                 id: string;
                 subjectId: string;
+                /** @enum {string} */
+                type: "open" | "quiz" | "type-answer" | "match";
                 question: string;
                 answer: string;
                 hints: string[];
                 tags: string[];
+                choices?: {
+                    id: string;
+                    text: string;
+                    isCorrect?: boolean;
+                }[];
+                shortAnswer?: string;
+                matchPairs?: {
+                    left: string;
+                    right: string;
+                }[];
+                matchItems?: {
+                    lefts: string[];
+                    rights: string[];
+                };
                 createdAt: string;
                 updatedAt: string;
             }[];
         };
         CreateCardDto: {
             subjectId: string;
+            /**
+             * @default open
+             * @enum {string}
+             */
+            type: "open" | "quiz" | "type-answer" | "match";
             question: string;
-            answer: string;
+            answer?: string;
+            choices?: {
+                id: string;
+                text: string;
+                isCorrect: boolean;
+            }[];
+            shortAnswer?: string;
+            matchPairs?: {
+                left: string;
+                right: string;
+            }[];
             hints?: string[];
             tags?: string[];
         };
         CardResponseDto: {
             id: string;
             subjectId: string;
+            /** @enum {string} */
+            type: "open" | "quiz" | "type-answer" | "match";
             question: string;
             answer: string;
             hints: string[];
             tags: string[];
+            choices?: {
+                id: string;
+                text: string;
+                isCorrect?: boolean;
+            }[];
+            shortAnswer?: string;
+            matchPairs?: {
+                left: string;
+                right: string;
+            }[];
+            matchItems?: {
+                lefts: string[];
+                rights: string[];
+            };
             createdAt: string;
             updatedAt: string;
         };
         UpdateCardDto: {
             question?: string;
             answer?: string;
+            choices?: {
+                id: string;
+                text: string;
+                isCorrect: boolean;
+            }[];
+            shortAnswer?: string;
+            matchPairs?: {
+                left: string;
+                right: string;
+            }[];
             hints?: string[];
             tags?: string[];
         };
@@ -413,20 +470,52 @@ export interface components {
             due: {
                 id: string;
                 subjectId: string;
+                /** @enum {string} */
+                type: "open" | "quiz" | "type-answer" | "match";
                 question: string;
                 answer: string;
                 hints: string[];
                 tags: string[];
+                choices?: {
+                    id: string;
+                    text: string;
+                    isCorrect?: boolean;
+                }[];
+                shortAnswer?: string;
+                matchPairs?: {
+                    left: string;
+                    right: string;
+                }[];
+                matchItems?: {
+                    lefts: string[];
+                    rights: string[];
+                };
                 createdAt: string;
                 updatedAt: string;
             }[];
             new: {
                 id: string;
                 subjectId: string;
+                /** @enum {string} */
+                type: "open" | "quiz" | "type-answer" | "match";
                 question: string;
                 answer: string;
                 hints: string[];
                 tags: string[];
+                choices?: {
+                    id: string;
+                    text: string;
+                    isCorrect?: boolean;
+                }[];
+                shortAnswer?: string;
+                matchPairs?: {
+                    left: string;
+                    right: string;
+                }[];
+                matchItems?: {
+                    lefts: string[];
+                    rights: string[];
+                };
                 createdAt: string;
                 updatedAt: string;
             }[];
@@ -434,23 +523,51 @@ export interface components {
         };
         CreateReviewDto: {
             cardId: string;
-            quality: number;
+            quality?: number;
+            response?: {
+                /** @constant */
+                type: "quiz";
+                choiceId: string;
+            } | {
+                /** @constant */
+                type: "type-answer";
+                text: string;
+            } | {
+                /** @constant */
+                type: "match";
+                pairs: {
+                    left: string;
+                    right: string;
+                }[];
+            };
             timeSpent: number;
             wasHintUsed: boolean;
         };
-        CardProgressResponseDto: {
-            id: string;
-            userId: string;
-            cardId: string;
-            interval: number;
-            easeFactor: number;
-            repetitions: number;
-            nextReviewDate: string;
-            lastReviewDate: string | null;
-            /** @enum {string} */
-            status: "new" | "learning" | "reviewing" | "mastered";
-            createdAt: string;
-            updatedAt: string;
+        SubmitReviewResponseDto: {
+            progress: {
+                id: string;
+                userId: string;
+                cardId: string;
+                interval: number;
+                easeFactor: number;
+                repetitions: number;
+                nextReviewDate: string;
+                lastReviewDate: string | null;
+                /** @enum {string} */
+                status: "new" | "learning" | "reviewing" | "mastered";
+                createdAt: string;
+                updatedAt: string;
+            };
+            grade?: {
+                correct: boolean;
+                explanation: string;
+                correctChoiceId?: string;
+                correctText?: string;
+                correctPairs?: {
+                    left: string;
+                    right: string;
+                }[];
+            };
         };
         DashboardStatsDto: {
             reviewedToday: number;
@@ -884,7 +1001,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CardProgressResponseDto"];
+                    "application/json": components["schemas"]["SubmitReviewResponseDto"];
                 };
             };
         };

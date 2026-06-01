@@ -57,6 +57,25 @@ export const subjects = pgTable(
   ]
 );
 
+/** Card kinds: `open` is Markdown Q&A; the rest are auto-graded by the server. */
+export const CARD_TYPES = ['open', 'quiz', 'type-answer', 'match'] as const;
+export type CardType = (typeof CARD_TYPES)[number];
+
+/** A single multiple-choice option (quiz). `isCorrect` is server-only — stripped before study. */
+export type CardChoice = { id: string; text: string; isCorrect: boolean };
+/** A left↔right association (match). The pairing is server-only — stripped before study. */
+export type MatchPair = { left: string; right: string };
+
+/**
+ * Type-specific data, discriminated by `cards.type` (validated by the Zod union in the DTO):
+ * `open` → null; `quiz` → choices; `type-answer` → shortAnswer; `match` → matchPairs.
+ */
+export type CardPayload =
+  | { choices: CardChoice[] }
+  | { shortAnswer: string }
+  | { matchPairs: MatchPair[] }
+  | null;
+
 export const cards = pgTable(
   'cards',
   {
@@ -64,8 +83,13 @@ export const cards = pgTable(
     subjectId: text('subject_id')
       .notNull()
       .references(() => subjects.id, { onDelete: 'cascade' }),
+    // `open` keeps full backward compatibility; existing rows default to it.
+    type: text('type', { enum: CARD_TYPES }).notNull().default('open'),
     question: text('question').notNull(),
+    // For open/quiz/type-answer this is the answer/explanation (Markdown). Match may leave it blank.
     answer: text('answer').notNull(),
+    // Null for open cards; type-specific data for the interactive kinds.
+    payload: jsonb('payload').$type<CardPayload>(),
     hints: jsonb('hints').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: text('created_at').notNull().$defaultFn(isoNow),

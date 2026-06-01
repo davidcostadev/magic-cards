@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Card } from '@/api/queries/cards';
 import { type ReviewQueue, useReviewQueue, useSubmitReview } from '@/api/queries/reviews';
 import { Kbd } from '@/components/common/Kbd';
-import { CardReview, type ReviewResult } from '@/components/features/learning/CardReview';
+import { CardReview, type ReviewSubmission } from '@/components/features/learning/CardReview';
 import { SessionSummary } from '@/components/features/learning/SessionSummary';
 import { Button } from '@/components/ui/button';
 import {
@@ -125,9 +125,25 @@ export function LearningSessionPage() {
 
   const currentCard = sessionCards[currentIndex];
 
-  const handleRate = ({ quality, wasHintUsed, timeSpentMs }: ReviewResult) => {
-    submitReview.mutate({ cardId: currentCard.id, quality, timeSpent: timeSpentMs, wasHintUsed });
-    if (quality >= 3) setCorrectCount((prev) => prev + 1);
+  // Runs the review mutation. Open cards carry a self-assessed `quality`; the auto-graded
+  // types carry their `response` and the server returns the grade for the UI to display.
+  const handleSubmit = async (input: ReviewSubmission) => {
+    try {
+      const data = await submitReview.mutateAsync({
+        cardId: currentCard.id,
+        quality: input.quality,
+        response: input.response,
+        timeSpent: Math.round(input.timeSpentMs),
+        wasHintUsed: input.wasHintUsed,
+      });
+      return data.grade;
+    } catch {
+      return undefined;
+    }
+  };
+
+  const handleAdvance = (correct: boolean) => {
+    if (correct) setCorrectCount((prev) => prev + 1);
     if (currentIndex + 1 >= sessionCards.length) {
       setCompleted(true);
     } else {
@@ -144,7 +160,8 @@ export function LearningSessionPage() {
         totalCards={sessionCards.length}
         dailyGoalProgress={currentIndex}
         dailyGoal={dailyGoal}
-        onRate={handleRate}
+        onSubmit={handleSubmit}
+        onAdvance={handleAdvance}
       />
 
       <Dialog
