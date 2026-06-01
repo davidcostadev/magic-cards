@@ -39,6 +39,7 @@ export function useSubmitReview() {
       queryClient.invalidateQueries({ queryKey: ["review_queue"] });
       queryClient.invalidateQueries({ queryKey: subjectKeys.all });
       queryClient.invalidateQueries({ queryKey: cardKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

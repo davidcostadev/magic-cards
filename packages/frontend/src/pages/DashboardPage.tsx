@@ -10,38 +10,18 @@ import { StreakWidget } from "@/components/features/dashboard/StreakWidget";
 import { WeakCardsWidget } from "@/components/features/dashboard/WeakCardsWidget";
 import { UpcomingReviews } from "@/components/features/dashboard/UpcomingReviews";
 import { useAuth } from "@/context/AuthContext";
-import { mockCards, mockCardProgress, mockSubjects } from "@/mocks/data";
-
-const MOCK_REVIEWED_TODAY = 12;
-const MOCK_STREAK = 7;
-const MOCK_ACCURACY_7D = 82;
-const MOCK_ACCURACY_30D = 78;
+import { useDashboardStats, useUpcoming, useWeakCards } from "@/api/queries/dashboard";
 
 export function DashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { data: stats } = useDashboardStats();
+  const { data: weakCards = [] } = useWeakCards(5);
+  const { data: upcoming } = useUpcoming();
 
-  const statusCounts = {
-    new: mockCardProgress.filter((p) => p.status === "new").length,
-    learning: mockCardProgress.filter((p) => p.status === "learning").length,
-    reviewing: mockCardProgress.filter((p) => p.status === "reviewing").length,
-    mastered: mockCardProgress.filter((p) => p.status === "mastered").length,
-  };
-
-  const weakCards = mockCardProgress
-    .filter((p) => p.easeFactor < 2.0)
-    .sort((a, b) => a.easeFactor - b.easeFactor)
-    .slice(0, 5)
-    .map((p) => {
-      const card = mockCards.find((c) => c.id === p.cardId)!;
-      const subject = mockSubjects.find((s) => s.id === card.subjectId)!;
-      return {
-        id: card.id,
-        question: card.question,
-        easeFactor: p.easeFactor,
-        subjectTitle: subject.title,
-      };
-    });
+  const dailyGoal = stats?.dailyGoal ?? user?.dailyGoal ?? 20;
+  const reviewedToday = stats?.reviewedToday ?? 0;
+  const statusCounts = stats?.cardsByStatus ?? { new: 0, learning: 0, reviewing: 0, mastered: 0 };
 
   return (
     <div className="p-5 md:p-7 space-y-7">
@@ -64,28 +44,29 @@ export function DashboardPage() {
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between text-base">
             <span className="text-muted-foreground">
-              {t("dashboard.cardsReviewed", {
-                count: MOCK_REVIEWED_TODAY,
-                goal: user?.dailyGoal ?? 20,
-              })}
+              {t("dashboard.cardsReviewed", { count: reviewedToday, goal: dailyGoal })}
             </span>
             <span className="font-semibold">
-              {Math.round((MOCK_REVIEWED_TODAY / (user?.dailyGoal ?? 20)) * 100)}%
+              {Math.round((reviewedToday / dailyGoal) * 100)}%
             </span>
           </div>
-          <Progress value={MOCK_REVIEWED_TODAY} max={user?.dailyGoal ?? 20} />
+          <Progress value={reviewedToday} max={dailyGoal} />
         </CardContent>
       </Card>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <StreakWidget streakDays={MOCK_STREAK} />
+        <StreakWidget streakDays={stats?.streak ?? 0} />
         <StatsCard
           icon={<Target className="h-6 w-6" />}
           label={t("dashboard.accuracy")}
-          value={`${MOCK_ACCURACY_7D}%`}
-          subtext={`${t("dashboard.accuracy7d")} · ${MOCK_ACCURACY_30D}% ${t("dashboard.accuracy30d")}`}
+          value={`${stats?.accuracy7d ?? 0}%`}
+          subtext={`${t("dashboard.accuracy7d")} · ${stats?.accuracy30d ?? 0}% ${t("dashboard.accuracy30d")}`}
         />
-        <UpcomingReviews today={4} tomorrow={6} thisWeek={18} />
+        <UpcomingReviews
+          today={upcoming?.today ?? 0}
+          tomorrow={upcoming?.tomorrow ?? 0}
+          thisWeek={upcoming?.thisWeek ?? 0}
+        />
       </div>
 
       <Card>

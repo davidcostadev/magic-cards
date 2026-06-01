@@ -38,4 +38,8 @@ test('a learner can create a subject, add a card, and study it', async ({ page }
 
   // The session ends with a summary.
   await expect(page.getByText('Session Complete!')).toBeVisible();
+
+  // Back on the dashboard, the daily-goal progress reflects the completed review.
+  await page.getByRole('link', { name: 'Back to Dashboard' }).click();
+  await expect(page.getByText('1 / 20 cards')).toBeVisible();
 });
