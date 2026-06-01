@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     port: 5000,
     host: true,
-    allowedHosts: ['.davidcosta.dev'],
+    allowedHosts: ['.davidcosta.dev', 'blue.davidcosta.dev'],
   },
   preview: {
     port: 5000,
