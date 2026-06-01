@@ -7,6 +7,9 @@ authorized by a single server-side **API key**, not a user login. See ADR 0007 f
 > **TL;DR:** set `CONTENT_API_KEY` on the backend, then `POST /v1/catalog/subjects` and
 > `/v1/catalog/cards` with an `x-api-key` header. Published content shows up for everyone,
 > read-only.
+>
+> For the **card types**, bulk **import/export**, queries, and the AI-authoring workflow, see the
+> companion [**Content Authoring Guide**](./content-authoring.md).
 
 ---
 

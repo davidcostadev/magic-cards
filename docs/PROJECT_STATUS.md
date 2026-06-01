@@ -101,5 +101,5 @@ needs no cleanup**.
 ## 9. Sources of truth
 
 `architecture.md` (full design) · `CONTEXT.md` (domain glossary) · `adr/` (decisions) ·
-`content-catalog.md` (catalog usage) · `security-audit.md` (security posture) ·
-`packages/backend/src/db/schema.ts` (DB types).
+`content-catalog.md` (catalog usage) · `content-authoring.md` (cards/types/import/queries) ·
+`security-audit.md` (security posture) · `packages/backend/src/db/schema.ts` (DB types).
