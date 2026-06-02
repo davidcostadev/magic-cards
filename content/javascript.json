@@ -1529,8 +1529,8 @@
           "right": "5"
         },
         {
-          "left": "Math.round(4.5)",
-          "right": "5"
+          "left": "Math.abs(-7)",
+          "right": "7"
         },
         {
           "left": "Math.max(1, 2, 3)",

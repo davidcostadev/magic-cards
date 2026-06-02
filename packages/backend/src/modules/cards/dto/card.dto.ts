@@ -58,8 +58,18 @@ function refineCardByType(
   if (data.type === 'type-answer' && !hasText(data.shortAnswer)) {
     fail('shortAnswer', 'cards.shortAnswerRequired');
   }
-  if (data.type === 'match' && (data.matchPairs ?? []).length < MIN_PAIRS) {
-    fail('matchPairs', 'cards.matchNeedsPairs');
+  if (data.type === 'match') {
+    const pairs = (data.matchPairs ?? []) as { right?: string }[];
+    if (pairs.length < MIN_PAIRS) {
+      fail('matchPairs', 'cards.matchNeedsPairs');
+    } else {
+      // Right-hand values must be unique: the matching UI identifies tiles by their text, so
+      // duplicate rights make a card unsolvable (two identical tiles can't both be matched).
+      const rights = pairs.map((p) => p.right);
+      if (new Set(rights).size !== rights.length) {
+        fail('matchPairs', 'cards.matchRightsUnique');
+      }
+    }
   }
 }
 
