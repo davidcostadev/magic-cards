@@ -2,21 +2,15 @@ import type { Card, CardChoice, CardPayload, MatchPair } from '../../db/schema';
 import type { CardResponse } from './dto/card.dto';
 
 /**
- * How many pairs a `match` card shows (and is graded on) during study, regardless of how many
- * are authored — a smaller board is easier to scan and keyboard-navigate. The grader
- * (`grading.service`) must use the same first-N subset so the study payload and grading agree.
- */
-export const MATCH_DISPLAY_LIMIT = 4;
-
-/**
  * Maps a stored card row to its API response, un-nesting the `payload` jsonb into the
- * type-specific fields. `reveal` is true only for the owner (authoring); for everyone
- * else — including the owner while studying via the review queue — the grading data is
- * stripped so the answer can't be read off the payload:
+ * type-specific fields. `reveal` is true only for the owner (authoring); for non-owners
+ * studying via the review queue the grading data is stripped:
  *
  * - quiz        → choices keep `isCorrect` only when revealed
  * - type-answer → `shortAnswer` only when revealed
- * - match       → full `matchPairs` when revealed, else shuffled `matchItems` (no pairing)
+ * - match       → `matchPairs` is sent for studying too, so the client can validate each
+ *                 pairing instantly (the learner opted into client-side matching, and every
+ *                 candidate value is already on screen). quiz/type-answer stay hidden.
  *
  * The Markdown `answer`/explanation is the answer for `open` cards (always sent, self-assessed)
  * but a spoiler for the graded types, so it is blanked unless revealed.
@@ -49,18 +43,8 @@ export function toCardResponse(card: Card, reveal: boolean): CardResponse {
   }
   if (card.type === 'match') {
     const pairs = (payload as { matchPairs: MatchPair[] } | null)?.matchPairs ?? [];
-    const shown = pairs.slice(0, MATCH_DISPLAY_LIMIT);
-    return {
-      ...base,
-      answer: '',
-      matchItems: {
-        lefts: shown.map((p) => p.left),
-        rights: seededShuffle(
-          shown.map((p) => p.right),
-          card.id
-        ),
-      },
-    };
+    // Sent for client-side matching (see the doc comment); the client shuffles and windows them.
+    return { ...base, answer: '', matchPairs: pairs };
   }
   // type-answer: nothing extra to expose before grading.
   return { ...base, answer: '' };
@@ -71,31 +55,6 @@ function revealedPayload(payload: CardPayload): Partial<CardResponse> {
   if (payload && 'shortAnswer' in payload) return { shortAnswer: payload.shortAnswer };
   if (payload && 'matchPairs' in payload) return { matchPairs: payload.matchPairs };
   return {};
-}
-
-/**
- * Deterministic Fisher–Yates shuffle seeded by the card id, so a match card's right-column
- * order is stable across requests (no layout jump) yet decoupled from the left column —
- * the pairing can't be inferred from positions. Deterministic also keeps tests stable.
- */
-function seededShuffle<T>(items: T[], seed: string): T[] {
-  let h = 1779033703 ^ seed.length;
-  for (let i = 0; i < seed.length; i++) {
-    h = Math.imul(h ^ seed.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  const rand = () => {
-    h = Math.imul(h ^ (h >>> 16), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    h ^= h >>> 16;
-    return (h >>> 0) / 4294967296;
-  };
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
 }
 
 /** Builds the `payload` jsonb to store for a card of the given type from its input fields. */

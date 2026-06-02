@@ -289,10 +289,11 @@ describe('GET /v1/review_queue — sanitization', () => {
     }
   });
 
-  it('exposes match items without revealing the pairing', async () => {
+  it('sends match pairs for client-side matching (answer omitted)', async () => {
     await addTypedCard({
       type: 'match',
       question: 'Match',
+      answer: 'explanation',
       matchPairs: [
         { left: 'TS', right: 'TypeScript' },
         { left: 'PY', right: 'Python' },
@@ -300,9 +301,13 @@ describe('GET /v1/review_queue — sanitization', () => {
     });
 
     const res = await auth(request(app.getHttpServer()).get('/v1/review_queue/next'));
-    expect(res.body.matchItems.lefts).toEqual(['TS', 'PY']);
-    expect([...res.body.matchItems.rights].sort()).toEqual(['Python', 'TypeScript']);
-    expect(res.body).not.toHaveProperty('matchPairs');
+    expect(res.body.type).toBe('match');
+    expect(res.body.matchPairs).toEqual([
+      { left: 'TS', right: 'TypeScript' },
+      { left: 'PY', right: 'Python' },
+    ]);
+    // The Markdown explanation is still withheld until the review is submitted.
+    expect(res.body.answer).toBe('');
   });
 });
 

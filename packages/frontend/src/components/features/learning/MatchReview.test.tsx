@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Card } from '@/api/queries/cards';
@@ -22,15 +22,19 @@ const card = {
   answer: '',
   hints: [],
   tags: [],
-  matchItems: { lefts: ['TS', 'PY'], rights: ['Python', 'TypeScript'] },
+  matchPairs: [
+    { left: 'TS', right: 'TypeScript' },
+    { left: 'PY', right: 'Python' },
+  ],
   createdAt: '',
   updatedAt: '',
 } as Card;
 
 describe('MatchReview', () => {
-  it('keeps submit disabled until every left is paired, then submits the pairing', async () => {
+  it('matches pairs by tapping left then right, removing each, then completes the card', async () => {
     const onSubmit = vi.fn().mockResolvedValue({ correct: true, explanation: '' });
     const onAdvance = vi.fn();
+    const user = userEvent.setup();
     render(
       <MatchReview
         card={card}
@@ -43,18 +47,18 @@ describe('MatchReview', () => {
       />
     );
 
-    const submit = screen.getByRole('button', { name: /learn\.checkAnswer/ });
-    expect(submit).toBeDisabled();
+    // A correct pair is removed from the board.
+    await user.click(screen.getByRole('button', { name: 'TS' }));
+    await user.click(screen.getByRole('button', { name: 'TypeScript' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'TS' })).not.toBeInTheDocument()
+    );
 
-    // Pair TS→TypeScript and PY→Python.
-    await userEvent.click(screen.getByRole('button', { name: 'TS' }));
-    await userEvent.click(screen.getByRole('button', { name: 'TypeScript' }));
-    await userEvent.click(screen.getByRole('button', { name: 'PY' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Python' }));
+    await user.click(screen.getByRole('button', { name: 'PY' }));
+    await user.click(screen.getByRole('button', { name: 'Python' }));
 
-    expect(submit).toBeEnabled();
-    await userEvent.click(submit);
-
+    // Matching every pair finalizes the card (all pairs submitted, no mistakes).
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         response: {
@@ -64,11 +68,35 @@ describe('MatchReview', () => {
             { left: 'PY', right: 'Python' },
           ],
         },
+        wasHintUsed: false,
       })
     );
 
-    expect(await screen.findByText('learn.allMatched')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /learn\.nextCard/ }));
+    const next = await screen.findByRole('button', { name: /learn\.nextCard/ });
+    await user.click(next);
     expect(onAdvance).toHaveBeenCalledWith(true);
+  });
+
+  it('flashes a wrong pair without removing it and counts it as a mistake', async () => {
+    const onSubmit = vi.fn().mockResolvedValue({ correct: true, explanation: '' });
+    const user = userEvent.setup();
+    render(
+      <MatchReview
+        card={card}
+        currentIndex={0}
+        totalCards={1}
+        dailyGoalProgress={0}
+        dailyGoal={20}
+        onSubmit={onSubmit}
+        onAdvance={vi.fn()}
+      />
+    );
+
+    // Wrong pairing: TS -> Python. Both tiles stay on the board.
+    await user.click(screen.getByRole('button', { name: 'TS' }));
+    await user.click(screen.getByRole('button', { name: 'Python' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'TS' })).toBeEnabled());
+    expect(screen.getByRole('button', { name: 'TS' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Python' })).toBeInTheDocument();
   });
 });

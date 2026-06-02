@@ -84,23 +84,6 @@ describe('GradingService.gradeMatch (all-or-nothing)', () => {
     ];
     expect(service().gradeMatch(pairs, submitted).correct).toBe(false);
   });
-
-  it('grades only the first 4 pairs when a card has more (the rest are not shown)', () => {
-    const sixPairs: MatchPair[] = [
-      { left: 'a', right: '1' },
-      { left: 'b', right: '2' },
-      { left: 'c', right: '3' },
-      { left: 'd', right: '4' },
-      { left: 'e', right: '5' },
-      { left: 'f', right: '6' },
-    ];
-    // The learner only ever sees/submits the first 4; matching those is correct.
-    const submitted = sixPairs.slice(0, 4);
-    const result = service().gradeMatch(sixPairs, submitted);
-    expect(result.correct).toBe(true);
-    expect(result.correctPairs).toHaveLength(4);
-    expect(result.correctPairs.map((p) => p.left)).toEqual(['a', 'b', 'c', 'd']);
-  });
 });
 
 describe('GradingService.qualityForCorrectness', () => {

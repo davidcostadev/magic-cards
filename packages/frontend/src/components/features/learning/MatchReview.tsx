@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Grade } from '@/api/queries/reviews';
 import { Kbd } from '@/components/common/Kbd';
@@ -11,8 +11,42 @@ import type { CardReviewProps } from './reviewTypes';
 import { useReviewSession } from './useReviewSession';
 
 const TIMER_SECONDS = 60;
+/** How many pairs are visible at once; solving one refills from the rest. */
+const WINDOW = 4;
 
-/** Associate left↔right pairs, then submit once; graded all-or-nothing on the server. */
+type Pair = { left: string; right: string };
+
+function shuffle<T>(arr: readonly T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+interface Board {
+  lefts: string[];
+  rights: string[];
+  queue: Pair[];
+}
+
+function initBoard(pairs: Pair[]): Board {
+  const shuffled = shuffle(pairs);
+  const head = shuffled.slice(0, WINDOW);
+  return {
+    lefts: head.map((p) => p.left),
+    rights: shuffle(head.map((p) => p.right)),
+    queue: shuffled.slice(WINDOW),
+  };
+}
+
+/**
+ * Tap-to-match: pick a left and a right (either order); a correct pair flashes green and is
+ * removed (refilled from the remaining pairs), a wrong one flashes red and stays. The card
+ * completes once every pair is matched. Validation is client-side — the server still records
+ * the review and SM-2 grade on submit.
+ */
 export function MatchReview({
   card,
   currentIndex,
@@ -24,19 +58,26 @@ export function MatchReview({
 }: CardReviewProps) {
   const { t } = useTranslation();
   const { exitRequested } = useLearningSessions();
-  const lefts = card.matchItems?.lefts ?? [];
-  const rights = card.matchItems?.rights ?? [];
 
-  // left → right assignment chosen by the learner.
-  const [assignments, setAssignments] = useState<Record<string, string>>({});
-  const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
+  const pairs: Pair[] = useMemo(() => card.matchPairs ?? [], [card.matchPairs]);
+  const solution = useMemo(() => new Map(pairs.map((p) => [p.left, p.right])), [pairs]);
+  const total = pairs.length;
+
+  const [board, setBoard] = useState<Board>(() => initBoard(pairs));
+  const [selLeft, setSelLeft] = useState<string | null>(null);
+  const [selRight, setSelRight] = useState<string | null>(null);
+  const [flash, setFlash] = useState<{ left: string; right: string; ok: boolean } | null>(null);
+  const [mistakes, setMistakes] = useState(0);
   const [grade, setGrade] = useState<Grade | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const answered = grade !== null;
-  const allAssigned = lefts.length > 0 && lefts.every((l) => assignments[l]);
 
-  // After grading, the correct right for each left (to colour tiles green/red).
-  const correctRight = (left: string) => grade?.correctPairs?.find((p) => p.left === left)?.right;
+  const answered = grade !== null;
+  const locked = flash !== null || answered;
+  const solved = total - (board.lefts.length + board.queue.length);
+
+  const boardRef = useRef(board);
+  boardRef.current = board;
+  const mistakesRef = useRef(0);
+  const finalizedRef = useRef(false);
 
   const { elapsedMs } = useReviewSession({
     currentIndex,
@@ -44,71 +85,90 @@ export function MatchReview({
     dailyGoalProgress,
     dailyGoal,
     seconds: TIMER_SECONDS,
-    active: !answered && !submitting,
-    onTimeout: () => void submit(),
+    active: !answered,
+    onTimeout: () => finalize(),
   });
 
-  async function submit() {
-    if (answered || submitting) return;
-    setSubmitting(true);
-    const pairs = lefts
-      .filter((l) => assignments[l])
-      .map((l) => ({ left: l, right: assignments[l] }));
+  // Submits the matched pairs (all of them on completion, the solved subset on timeout) so the
+  // server records the review and the authoritative SM-2 grade. Runs at most once.
+  async function finalize() {
+    if (finalizedRef.current) return;
+    finalizedRef.current = true;
+    const b = boardRef.current;
+    const remaining = new Set([...b.lefts, ...b.queue.map((p) => p.left)]);
+    const matched = pairs.filter((p) => !remaining.has(p.left));
     const result = await onSubmit({
-      response: { type: 'match', pairs },
-      wasHintUsed: false,
+      response: { type: 'match', pairs: matched },
+      wasHintUsed: mistakesRef.current > 0,
       timeSpentMs: Math.round(elapsedMs()),
     });
     setGrade(result ?? { correct: false, explanation: '' });
-    setSubmitting(false);
   }
 
-  // Keyboard shortcuts: left items use numbers (1–9), right items use letters (A, B, C…).
-  const leftKey = (i: number) => (i < 9 ? String(i + 1) : null);
-  const rightKey = (i: number) => (i < 26 ? String.fromCharCode(65 + i) : null);
+  // When every pair is matched, finalize the card.
+  useEffect(() => {
+    if (!answered && board.lefts.length === 0 && board.queue.length === 0 && total > 0) {
+      void finalize();
+    }
+  }, [board, answered, total]);
 
-  const rightOwner = (right: string) =>
-    Object.keys(assignments).find((l) => assignments[l] === right) ?? null;
+  const evaluate = (left: string, right: string) => {
+    setSelLeft(null);
+    setSelRight(null);
+    const correct = solution.get(left) === right;
+    setFlash({ left, right, ok: correct });
+    if (!correct) {
+      mistakesRef.current += 1;
+      setMistakes(mistakesRef.current);
+    }
+    window.setTimeout(
+      () => {
+        if (correct) {
+          setBoard((b) => {
+            const lefts = b.lefts.filter((l) => l !== left);
+            const rights = b.rights.filter((r) => r !== right);
+            let queue = b.queue;
+            if (queue.length > 0) {
+              const [next, ...rest] = queue;
+              lefts.push(next.left);
+              rights.splice(Math.floor(Math.random() * (rights.length + 1)), 0, next.right);
+              queue = rest;
+            }
+            return { lefts, rights, queue };
+          });
+        }
+        setFlash(null);
+      },
+      correct ? 350 : 600
+    );
+  };
 
   const pickLeft = (left: string) => {
-    if (answered) return;
-    setSelectedLeft((prev) => (prev === left ? null : left));
+    if (locked) return;
+    if (selRight) evaluate(left, selRight);
+    else setSelLeft((prev) => (prev === left ? null : left));
   };
 
   const pickRight = (right: string) => {
-    if (answered || !selectedLeft) return;
-    setAssignments((prev) => {
-      const next = { ...prev };
-      // a right can map to only one left — release any prior owner.
-      const owner = Object.keys(next).find((l) => next[l] === right);
-      if (owner) delete next[owner];
-      next[selectedLeft] = right;
-      return next;
-    });
-    setSelectedLeft(null);
+    if (locked) return;
+    if (selLeft) evaluate(selLeft, right);
+    else setSelRight((prev) => (prev === right ? null : right));
   };
 
+  // Keyboard: numbers pick a left, letters pick a right; Enter advances once graded.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (exitRequested || isTypingTarget(e.target)) return;
-
-      // Enter/Space advances when graded, or submits once everything is paired.
-      if (e.key === 'Enter' || e.key === ' ') {
-        if (isInteractiveTarget(document.activeElement)) return;
-        if (answered) {
+      if (answered) {
+        if ((e.key === 'Enter' || e.key === ' ') && !isInteractiveTarget(document.activeElement)) {
           e.preventDefault();
           onAdvance(grade.correct);
-        } else if (allAssigned && !submitting) {
-          e.preventDefault();
-          void submit();
         }
         return;
       }
-      if (answered || submitting) return;
-
-      // A number picks a left item; a letter assigns a right to the selected left.
+      if (locked) return;
       if (/^[1-9]$/.test(e.key)) {
-        const left = lefts[Number(e.key) - 1];
+        const left = board.lefts[Number(e.key) - 1];
         if (left) {
           e.preventDefault();
           pickLeft(left);
@@ -116,8 +176,8 @@ export function MatchReview({
         return;
       }
       const letter = e.key.toLowerCase();
-      if (/^[a-z]$/.test(letter) && selectedLeft) {
-        const right = rights[letter.charCodeAt(0) - 97];
+      if (/^[a-z]$/.test(letter)) {
+        const right = board.rights[letter.charCodeAt(0) - 97];
         if (right) {
           e.preventDefault();
           pickRight(right);
@@ -126,97 +186,25 @@ export function MatchReview({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    answered,
-    allAssigned,
-    submitting,
-    grade,
-    exitRequested,
-    onAdvance,
-    selectedLeft,
-    lefts,
-    rights,
-  ]);
+  });
 
-  const matchedCount = lefts.filter((l) => assignments[l]).length;
+  const tileClass = (value: string, side: 'left' | 'right', selected: boolean) => {
+    if (flash && (side === 'left' ? flash.left : flash.right) === value) {
+      return flash.ok
+        ? 'border-success bg-success text-white'
+        : 'border-destructive bg-destructive text-white';
+    }
+    if (selected) return 'border-primary bg-primary text-primary-foreground cursor-pointer';
+    return 'border-border bg-secondary hover:border-primary cursor-pointer';
+  };
 
-  return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <MarkdownContent text={card.question} />
+  const tileBase =
+    'flex w-full items-center gap-3 rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100 disabled:cursor-not-allowed';
 
-      {!answered && (
-        <p className="text-sm text-muted-foreground">
-          {matchedCount}/{lefts.length} {t('learn.matchPairsFound')}
-        </p>
-      )}
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2.5">
-          {lefts.map((left, index) => {
-            const assigned = assignments[left];
-            const key = leftKey(index);
-            return (
-              <button
-                key={left}
-                type="button"
-                onClick={() => pickLeft(left)}
-                disabled={answered}
-                aria-pressed={selectedLeft === left}
-                aria-keyshortcuts={!answered && key ? key : undefined}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100 disabled:cursor-not-allowed',
-                  answered
-                    ? assigned === correctRight(left)
-                      ? 'border-success bg-success text-white'
-                      : 'border-destructive bg-destructive text-white'
-                    : selectedLeft === left
-                      ? 'border-primary bg-primary text-primary-foreground cursor-pointer'
-                      : 'border-border bg-secondary hover:border-primary cursor-pointer'
-                )}
-              >
-                {!answered && key && (
-                  <span aria-hidden="true">
-                    <Kbd className="h-7 w-7 shrink-0 text-xs">{key}</Kbd>
-                  </span>
-                )}
-                <span className="flex flex-col items-start gap-0.5">
-                  <span>{left}</span>
-                  {assigned && <span className="text-xs font-normal opacity-80">→ {assigned}</span>}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="space-y-2.5">
-          {rights.map((right, index) => {
-            const used = rightOwner(right) !== null;
-            const key = rightKey(index);
-            return (
-              <button
-                key={right}
-                type="button"
-                onClick={() => pickRight(right)}
-                disabled={answered || !selectedLeft}
-                aria-keyshortcuts={!answered && key ? key : undefined}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-xl border-2 p-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100 disabled:cursor-not-allowed',
-                  used ? 'border-primary/40 bg-accent opacity-60' : 'border-border bg-secondary',
-                  !answered && selectedLeft ? 'hover:border-primary cursor-pointer' : ''
-                )}
-              >
-                {!answered && key && (
-                  <span aria-hidden="true">
-                    <Kbd className="h-7 w-7 shrink-0 text-xs">{key}</Kbd>
-                  </span>
-                )}
-                <span>{right}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {answered ? (
+  if (answered) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 p-4">
+        <MarkdownContent text={card.question} />
         <div className="space-y-3 animate-[fadeIn_200ms_ease-in]">
           <p
             className={cn(
@@ -224,7 +212,11 @@ export function MatchReview({
               grade.correct ? 'text-success' : 'text-destructive'
             )}
           >
-            {grade.correct ? t('learn.allMatched') : t('learn.incorrect')}
+            {grade.correct
+              ? mistakes === 0
+                ? t('learn.perfectMatch')
+                : t('learn.allMatched')
+              : t('learn.incorrect')}
           </p>
           {!grade.correct && grade.correctPairs && (
             <div className="rounded-2xl border-2 border-success/40 bg-success/10 p-4 space-y-1">
@@ -247,18 +239,60 @@ export function MatchReview({
             <Kbd className="ml-2">{t('learn.keyEnter')}</Kbd>
           </Button>
         </div>
-      ) : (
-        <Button
-          onClick={() => void submit()}
-          className="w-full"
-          size="lg"
-          disabled={!allAssigned || submitting}
-          aria-keyshortcuts="Enter"
-        >
-          {t('learn.checkAnswer')}
-          <Kbd className="ml-2">{t('learn.keyEnter')}</Kbd>
-        </Button>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-4 p-4">
+      <MarkdownContent text={card.question} />
+
+      <p className="text-sm text-muted-foreground">
+        {solved}/{total} {t('learn.matchPairsFound')}
+      </p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2.5">
+          {board.lefts.map((left, index) => (
+            <button
+              key={left}
+              type="button"
+              onClick={() => pickLeft(left)}
+              disabled={locked}
+              aria-pressed={selLeft === left}
+              aria-keyshortcuts={index < 9 ? String(index + 1) : undefined}
+              className={cn(tileBase, tileClass(left, 'left', selLeft === left))}
+            >
+              {index < 9 && (
+                <span aria-hidden="true">
+                  <Kbd className="h-7 w-7 shrink-0 text-xs">{index + 1}</Kbd>
+                </span>
+              )}
+              <span>{left}</span>
+            </button>
+          ))}
+        </div>
+        <div className="space-y-2.5">
+          {board.rights.map((right, index) => (
+            <button
+              key={right}
+              type="button"
+              onClick={() => pickRight(right)}
+              disabled={locked}
+              aria-pressed={selRight === right}
+              aria-keyshortcuts={index < 26 ? String.fromCharCode(65 + index) : undefined}
+              className={cn(tileBase, tileClass(right, 'right', selRight === right))}
+            >
+              {index < 26 && (
+                <span aria-hidden="true">
+                  <Kbd className="h-7 w-7 shrink-0 text-xs">{String.fromCharCode(65 + index)}</Kbd>
+                </span>
+              )}
+              <span>{right}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
