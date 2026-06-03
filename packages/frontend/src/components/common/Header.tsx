@@ -26,6 +26,22 @@ export function Header() {
         ? 'text-warning'
         : 'text-muted-foreground';
 
+  const timerBarColor =
+    sessionInfo.timerSeconds <= 5
+      ? 'bg-destructive'
+      : sessionInfo.timerSeconds <= 10
+        ? 'bg-warning'
+        : 'bg-primary';
+
+  const timerPercent = Math.max(
+    0,
+    Math.min(100, (sessionInfo.timerSeconds / sessionInfo.timerTotalSeconds) * 100)
+  );
+
+  // The countdown only ticks while a card is unanswered; show the timer chrome solely then so
+  // a stopped clock never lingers as a misleading red "0s".
+  const showTimer = inSession && sessionInfo.timerRunning;
+
   return (
     <header className="sticky top-0 z-50 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-full items-center justify-between px-5">
@@ -45,9 +61,11 @@ export function Header() {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className={cn('text-lg font-mono font-bold tabular-nums', timerColor)}>
-                {Math.ceil(sessionInfo.timerSeconds)}s
-              </span>
+              {showTimer && (
+                <span className={cn('text-lg font-mono font-bold tabular-nums', timerColor)}>
+                  {Math.ceil(sessionInfo.timerSeconds)}s
+                </span>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -87,6 +105,23 @@ export function Header() {
           </>
         )}
       </div>
+
+      {/* Subtle YouTube-style time bar pinned under the topbar: depletes as the card's time runs out. */}
+      {showTimer && (
+        <div
+          className="absolute inset-x-0 -bottom-px h-0.5 overflow-hidden"
+          role="progressbar"
+          aria-label={t('learn.title')}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(timerPercent)}
+        >
+          <div
+            className={cn('h-full transition-all duration-100 ease-linear', timerBarColor)}
+            style={{ width: `${timerPercent}%` }}
+          />
+        </div>
+      )}
     </header>
   );
 }

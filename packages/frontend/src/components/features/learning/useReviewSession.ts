@@ -40,10 +40,17 @@ export function useReviewSession(opts: ReviewSessionOptions): { elapsedMs: () =>
   ]);
 
   useEffect(() => {
+    // Once answered/timed-out the countdown stops; flag it so the header drops the timer
+    // entirely instead of freezing at a misleading red "0s".
     if (!opts.active) {
-      updateSessionInfo({ timerSeconds: 0 });
+      updateSessionInfo({ timerRunning: false });
       return;
     }
+    updateSessionInfo({
+      timerRunning: true,
+      timerTotalSeconds: opts.seconds,
+      timerSeconds: opts.seconds,
+    });
     const interval = setInterval(() => {
       const elapsed = (Date.now() - startRef.current) / 1000;
       const left = Math.max(0, opts.seconds - elapsed);

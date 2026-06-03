@@ -6,6 +6,10 @@ interface SessionInfo {
   dailyGoalProgress: number;
   dailyGoal: number;
   timerSeconds: number;
+  /** Countdown length for the current card — denominator for the header progress bar. */
+  timerTotalSeconds: number;
+  /** True only while the per-card countdown is ticking; false once answered/timed-out. */
+  timerRunning: boolean;
 }
 
 interface LearningContextValue {
@@ -24,6 +28,8 @@ const defaultSessionInfo: SessionInfo = {
   dailyGoalProgress: 0,
   dailyGoal: 20,
   timerSeconds: 30,
+  timerTotalSeconds: 30,
+  timerRunning: false,
 };
 
 const LearningContext = createContext<LearningContextValue>({
