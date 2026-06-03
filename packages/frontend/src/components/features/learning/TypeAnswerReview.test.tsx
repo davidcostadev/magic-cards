@@ -18,6 +18,7 @@ const card = {
   id: 'c1',
   subjectId: 's1',
   type: 'type-answer',
+  language: 'en',
   question: 'Utility type?',
   answer: '',
   hints: [],

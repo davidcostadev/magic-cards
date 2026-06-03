@@ -35,6 +35,10 @@ export const users = pgTable('users', {
   updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
 });
 
+/** Content language a card is authored in. Defaults to English. */
+export const CARD_LANGUAGES = ['en', 'pt'] as const;
+export type CardLanguage = (typeof CARD_LANGUAGES)[number];
+
 export const subjects = pgTable(
   'subjects',
   {
@@ -76,6 +80,14 @@ export type CardPayload =
   | { matchPairs: MatchPair[] }
   | null;
 
+/**
+ * Optional per-language alternates for a card's question/answer. The PRIMARY language lives in
+ * the top-level `question`/`answer` columns (named by `language`); `translations` holds the same
+ * card rendered in other languages, so one card can be viewed bilingually (e.g. EN ⇄ PT).
+ */
+export type CardTranslation = { question: string; answer: string };
+export type CardTranslations = Partial<Record<CardLanguage, CardTranslation>>;
+
 export const cards = pgTable(
   'cards',
   {
@@ -85,11 +97,15 @@ export const cards = pgTable(
       .references(() => subjects.id, { onDelete: 'cascade' }),
     // `open` keeps full backward compatibility; existing rows default to it.
     type: text('type', { enum: CARD_TYPES }).notNull().default('open'),
+    // Content language of this card — drives the language badge and the study-language filter.
+    language: text('language', { enum: CARD_LANGUAGES }).notNull().default('en'),
     question: text('question').notNull(),
     // For open/quiz/type-answer this is the answer/explanation (Markdown). Match may leave it blank.
     answer: text('answer').notNull(),
     // Null for open cards; type-specific data for the interactive kinds.
     payload: jsonb('payload').$type<CardPayload>(),
+    // Optional alternate-language versions of question/answer (primary lives in the columns above).
+    translations: jsonb('translations').$type<CardTranslations>(),
     hints: jsonb('hints').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: text('created_at').notNull().$defaultFn(isoNow),

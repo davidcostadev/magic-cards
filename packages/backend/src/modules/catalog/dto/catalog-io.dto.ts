@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { CARD_TYPES } from '../../../db/schema';
-import { cardResponseSchema } from '../../cards/dto/card.dto';
+import { CARD_LANGUAGES, CARD_TYPES } from '../../../db/schema';
+import { cardResponseSchema, cardTranslationsSchema } from '../../cards/dto/card.dto';
 
 /**
  * Bulk import/export for the public catalog (authorized by `x-api-key`). The import body
@@ -28,6 +28,10 @@ const importCardSchema = z.object({
   id: z.string().min(1).optional(),
   subjectId: z.string().min(1),
   type: z.enum(CARD_TYPES).optional(), // defaults to `open` during validation
+  // Content language of the card; defaults to 'en' when omitted.
+  language: z.enum(CARD_LANGUAGES).optional(),
+  // Alternate-language versions of question/answer, keyed by language code.
+  translations: cardTranslationsSchema.optional(),
   question: z.string().min(1),
   answer: z.string().optional(),
   choices: z

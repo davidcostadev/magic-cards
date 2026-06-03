@@ -23,14 +23,17 @@ export class CardsService {
     userId: string,
     query: CardListQuery
   ): Promise<{ rows: CardResponse[]; limit: number }> {
-    const owned = await this.assertSubjectVisible(userId, query.subject);
+    await this.assertSubjectVisible(userId, query.subject);
     const rows = await this.db
       .select()
       .from(cards)
       .where(and(eq(cards.subjectId, query.subject), cursorWhere(cards.id, query)))
       .orderBy(desc(cards.id))
       .limit(query.limit + 1);
-    return { rows: rows.map((card) => toCardResponse(card, owned)), limit: query.limit };
+    // Browse/management view: reveal full content for anything the user may see — their own
+    // cards or shared public catalog content. The study queue is sanitized separately in
+    // LearningService, so revealing here never leaks answers into a review session.
+    return { rows: rows.map((card) => toCardResponse(card, true)), limit: query.limit };
   }
 
   async create(userId: string, dto: CreateCardDto): Promise<CardResponse> {
@@ -40,9 +43,11 @@ export class CardsService {
       .values({
         subjectId: dto.subjectId,
         type: dto.type,
+        language: dto.language ?? 'en',
         question: dto.question,
         answer: dto.answer ?? '',
         payload: buildPayload(dto),
+        translations: dto.translations ?? null,
         hints: dto.hints ?? [],
         tags: dto.tags ?? [],
       })
@@ -51,9 +56,10 @@ export class CardsService {
   }
 
   async get(userId: string, id: string): Promise<CardResponse> {
-    const card = await this.findVisibleCard(userId, id);
-    if (!card) throw ApiError.notFound('cards.notFound');
-    return toCardResponse(card.row, card.owned);
+    const row = await this.findVisibleCard(userId, id);
+    if (!row) throw ApiError.notFound('cards.notFound');
+    // Same as list(): full reveal for any visible card; edits stay owner-only (update/remove).
+    return toCardResponse(row, true);
   }
 
   async update(userId: string, id: string, dto: UpdateCardDto): Promise<CardResponse> {
@@ -72,9 +78,11 @@ export class CardsService {
     await this.db
       .update(cards)
       .set({
+        language: next.language ?? existing.language,
         question: next.question,
         answer: next.answer ?? '',
         payload: buildPayload(next),
+        ...(dto.translations !== undefined ? { translations: dto.translations } : {}),
         ...(dto.hints !== undefined ? { hints: dto.hints } : {}),
         ...(dto.tags !== undefined ? { tags: dto.tags } : {}),
         updatedAt: new Date().toISOString(),
@@ -95,6 +103,8 @@ export class CardsService {
     return {
       subjectId: card.subjectId,
       type: card.type,
+      language: dto.language ?? card.language,
+      translations: dto.translations ?? card.translations ?? undefined,
       question: dto.question ?? card.question,
       answer: dto.answer ?? card.answer,
       choices: dto.choices ?? (payload && 'choices' in payload ? payload.choices : undefined),
@@ -117,29 +127,24 @@ export class CardsService {
     if (!owned) throw ApiError.notFound('subjects.notFound');
   }
 
-  /** Asserts the subject is visible and returns whether the user owns it (for reveal). */
-  private async assertSubjectVisible(userId: string, subjectId: string): Promise<boolean> {
+  /** Asserts the subject exists and is visible to the user (their own or public). */
+  private async assertSubjectVisible(userId: string, subjectId: string): Promise<void> {
     const [subject] = await this.db
-      .select({ userId: subjects.userId })
+      .select({ id: subjects.id })
       .from(subjects)
       .where(and(eq(subjects.id, subjectId), canSeeSubject(userId)))
       .limit(1);
     if (!subject) throw ApiError.notFound('subjects.notFound');
-    return subject.userId === userId;
   }
 
-  private async findVisibleCard(
-    userId: string,
-    id: string
-  ): Promise<{ row: Card; owned: boolean } | null> {
+  private async findVisibleCard(userId: string, id: string): Promise<Card | null> {
     const [card] = await this.db
-      .select({ card: getTableColumns(cards), ownerId: subjects.userId })
+      .select(getTableColumns(cards))
       .from(cards)
       .innerJoin(subjects, eq(cards.subjectId, subjects.id))
       .where(and(eq(cards.id, id), canSeeSubject(userId)))
       .limit(1);
-    if (!card) return null;
-    return { row: card.card, owned: card.ownerId === userId };
+    return card ?? null;
   }
 
   private async findOwnedCard(userId: string, id: string): Promise<Card | null> {

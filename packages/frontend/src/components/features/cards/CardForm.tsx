@@ -1,7 +1,7 @@
 import { GripVertical, Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Card } from '@/api/queries/cards';
+import type { Card, CardLanguage } from '@/api/queries/cards';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,6 +28,7 @@ interface MatchPair {
 
 export interface CardFormData {
   type: CardType;
+  language: CardLanguage;
   question: string;
   answer: string;
   hints: string[];
@@ -52,6 +53,10 @@ const TYPE_LABEL_KEY: Record<CardType, string> = {
   'type-answer': 'cards.typeTypeAnswer',
   match: 'cards.typeMatch',
 };
+const LANGUAGES: { code: CardLanguage; labelKey: string }[] = [
+  { code: 'en', labelKey: 'settings.english' },
+  { code: 'pt', labelKey: 'settings.portuguese' },
+];
 
 let choiceCounter = 0;
 function makeChoiceId(): string {
@@ -78,6 +83,7 @@ interface FormErrors {
 export function CardForm({ open, onOpenChange, card, onSave, isSubmitting }: CardFormProps) {
   const { t } = useTranslation();
   const [type, setType] = useState<CardType>('open');
+  const [language, setLanguage] = useState<CardLanguage>('en');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [hints, setHints] = useState<string[]>([]);
@@ -91,6 +97,7 @@ export function CardForm({ open, onOpenChange, card, onSave, isSubmitting }: Car
   useEffect(() => {
     if (card) {
       setType(card.type);
+      setLanguage(card.language ?? 'en');
       setQuestion(card.question);
       setAnswer(card.answer);
       setHints([...card.hints]);
@@ -106,6 +113,7 @@ export function CardForm({ open, onOpenChange, card, onSave, isSubmitting }: Car
       );
     } else {
       setType('open');
+      setLanguage('en');
       setQuestion('');
       setAnswer('');
       setHints([]);
@@ -152,6 +160,7 @@ export function CardForm({ open, onOpenChange, card, onSave, isSubmitting }: Car
 
     const base: CardFormData = {
       type,
+      language,
       question,
       answer: answer.trim(),
       hints: hints.filter((h) => h.trim()),
@@ -232,6 +241,32 @@ export function CardForm({ open, onOpenChange, card, onSave, isSubmitting }: Car
                     )}
                   >
                     {t(TYPE_LABEL_KEY[value])}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          {/* Content language — editable (unlike type, which is immutable). */}
+          <fieldset className="space-y-2.5">
+            <legend className="mb-2.5 text-sm font-medium">{t('cards.language')}</legend>
+            <div className="grid grid-cols-2 gap-2">
+              {LANGUAGES.map(({ code, labelKey }) => {
+                const active = language === code;
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setLanguage(code)}
+                    className={cn(
+                      'rounded-xl border-2 px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer',
+                      active
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-secondary hover:border-primary'
+                    )}
+                  >
+                    {t(labelKey)}
                   </button>
                 );
               })}

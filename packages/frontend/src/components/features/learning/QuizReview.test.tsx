@@ -19,6 +19,7 @@ const card = {
   id: 'c1',
   subjectId: 's1',
   type: 'quiz',
+  language: 'en',
   question: 'Pick one',
   answer: '',
   hints: [],

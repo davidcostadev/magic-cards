@@ -103,6 +103,9 @@
     "progressReviewed": "{{reviewed}}/{{total}} reviewed",
     "progressDue": "{{count}} to review",
     "progressDone": "Up to date",
+    "statsTitle": "Statistics",
+    "statTotal": "Total cards",
+    "statDue": "To review",
     "noSubjects": "No subjects yet. Create your first one!",
     "deleteConfirm": "Are you sure you want to delete this subject?",
     "viewCards": "View Cards"

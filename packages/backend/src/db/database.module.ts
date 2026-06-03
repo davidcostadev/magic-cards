@@ -17,6 +17,7 @@ import { createDatabase, type DatabaseHandle, DB_HANDLE, DRIZZLE } from './clien
         createDatabase({
           url: config.get('DATABASE_URL', { infer: true }),
           path: config.get('DATABASE_PATH', { infer: true }),
+          migrate: config.get('DB_AUTO_MIGRATE', { infer: true }),
         }),
     },
     {

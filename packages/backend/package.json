@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "nest start --watch",
+    "dev": "node src/db/migrate.mjs && DB_AUTO_MIGRATE=false nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
     "test": "vitest run",
@@ -12,6 +12,8 @@
     "type:check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:dev": "node src/db/migrate.mjs",
+    "db:repair": "node src/db/repair.mjs",
     "gen:api": "nest build && node dist/openapi.js"
   },
   "dependencies": {

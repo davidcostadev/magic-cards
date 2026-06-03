@@ -69,4 +69,21 @@ describe('CardForm', () => {
       expect.objectContaining({ type: 'type-answer', shortAnswer: 'Partial' })
     );
   });
+
+  it('defaults the card language to English', async () => {
+    const onSave = renderForm();
+    await userEvent.type(screen.getByLabelText('cards.question'), 'Q');
+    await userEvent.type(screen.getByLabelText('cards.answer'), 'A');
+    await userEvent.click(screen.getByRole('button', { name: 'common.save' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ language: 'en' }));
+  });
+
+  it('saves the selected card language', async () => {
+    const onSave = renderForm();
+    await userEvent.type(screen.getByLabelText('cards.question'), 'Q');
+    await userEvent.type(screen.getByLabelText('cards.answer'), 'A');
+    await userEvent.click(screen.getByRole('button', { name: 'settings.portuguese' }));
+    await userEvent.click(screen.getByRole('button', { name: 'common.save' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ language: 'pt' }));
+  });
 });

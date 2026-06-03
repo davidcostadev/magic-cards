@@ -239,10 +239,12 @@ Zod discriminated union on `type` (the column defaults to `open`, so legacy/open
 - `type-answer` → `{ shortAnswer }` — a short typed answer; `answer` is the explanation.
 - `match` → `{ matchPairs: [{ left, right }] }` — associate pairs; `answer` (explanation) optional.
 
-The grading data (`isCorrect`, `shortAnswer`, the match pairing) is **owner-only**. Card responses are
-sanitized for anyone who doesn't own the card — and *always* for the study queue — so the answer can't
-be read off the payload: `choices` drop `isCorrect`, `shortAnswer` is omitted, and `matchPairs` becomes
-`matchItems: { lefts, rights }` with `rights` deterministically shuffled (seeded by card id). See §6.
+The grading data (`isCorrect`, `shortAnswer`, the match pairing) is **revealed when browsing or
+previewing** a Card via the cards endpoints — for any Card a user can see, their own *or* shared public
+content — so a preview can show the full answer. It is withheld **only by the study queue**
+(`LearningService` always maps with `reveal: false`): the answer/explanation is blanked and `choices`
+drop `isCorrect` / `shortAnswer` is omitted, so the answer can't be read off the study payload before
+the learner answers. Editing stays **owner-only** (the update/delete endpoints reject non-owners). See §6.
 
 #### cardProgress
 | Column | Type | Constraints |

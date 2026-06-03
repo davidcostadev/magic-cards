@@ -228,6 +228,69 @@ describe('POST /v1/catalog/import + GET /v1/catalog/export (API key)', () => {
     expect(exp.body.cards).toHaveLength(4); // not 8
   });
 
+  it('imports a card language and round-trips it through export', async () => {
+    const res = await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/import')
+        .send({
+          subjects: [{ id: 'io-lang', title: 'Lang deck' }],
+          cards: [
+            {
+              id: 'io-lang-c1',
+              subjectId: 'io-lang',
+              question: 'Pergunta',
+              answer: 'Resposta',
+              language: 'pt',
+            },
+          ],
+        })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.cards.created).toBe(1);
+
+    const exp = await withKey(request(app.getHttpServer()).get('/v1/catalog/export'));
+    const card = exp.body.cards.find((c: { id: string }) => c.id === 'io-lang-c1');
+    expect(card.language).toBe('pt');
+  });
+
+  it('round-trips card translations through import/export', async () => {
+    await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/import')
+        .send({
+          subjects: [{ id: 'io-tr', title: 'Translated deck' }],
+          cards: [
+            {
+              id: 'io-tr-c1',
+              subjectId: 'io-tr',
+              question: 'What is a closure?',
+              answer: 'A function plus scope.',
+              translations: {
+                pt: { question: 'O que é uma closure?', answer: 'Função + escopo.' },
+              },
+            },
+          ],
+        })
+    );
+    const exp = await withKey(request(app.getHttpServer()).get('/v1/catalog/export'));
+    const card = exp.body.cards.find((c: { id: string }) => c.id === 'io-tr-c1');
+    expect(card.translations.pt.question).toBe('O que é uma closure?');
+  });
+
+  it('defaults an imported card without a language to "en"', async () => {
+    await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/import')
+        .send({
+          subjects: [{ id: 'io-def', title: 'Default deck' }],
+          cards: [{ id: 'io-def-c1', subjectId: 'io-def', question: 'Q', answer: 'A' }],
+        })
+    );
+    const exp = await withKey(request(app.getHttpServer()).get('/v1/catalog/export'));
+    const card = exp.body.cards.find((c: { id: string }) => c.id === 'io-def-c1');
+    expect(card.language).toBe('en');
+  });
+
   it('skips invalid cards (per-item errors) but imports the valid ones', async () => {
     const res = await withKey(
       request(app.getHttpServer())
@@ -290,5 +353,94 @@ describe('public content is visible + studyable by any user', () => {
       request(app.getHttpServer()).patch(`/v1/subjects/${subject.id}`).send({ title: 'Hacked' })
     );
     expect(edit.status).toBe(404);
+  });
+});
+
+describe('browsing public cards reveals full answers (but stays read-only)', () => {
+  it('a non-owner sees answers, the correct choice, and the accepted answer via GET /v1/cards', async () => {
+    const subject = await publishSubject('Public JS');
+    await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/cards')
+        .send({ subjectId: subject.id, type: 'open', question: 'Open Q', answer: 'Open A' })
+    );
+    await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/cards')
+        .send({
+          subjectId: subject.id,
+          type: 'quiz',
+          question: 'Quiz Q',
+          answer: 'B wins',
+          choices: [
+            { id: 'a', text: 'A', isCorrect: false },
+            { id: 'b', text: 'B', isCorrect: true },
+          ],
+        })
+    );
+    await withKey(
+      request(app.getHttpServer()).post('/v1/catalog/cards').send({
+        subjectId: subject.id,
+        type: 'type-answer',
+        question: 'TA Q',
+        answer: 'explanation',
+        shortAnswer: 'Partial',
+      })
+    );
+
+    const token = await signupAndToken(app, 'reader@test.com', 'reader');
+    const res = await request(app.getHttpServer())
+      .get(`/v1/cards?subject=${subject.id}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+
+    const byQ = (q: string) => res.body.data.find((c: { question: string }) => c.question === q);
+
+    expect(byQ('Open Q').answer).toBe('Open A');
+
+    const quiz = byQ('Quiz Q');
+    expect(quiz.answer).toBe('B wins');
+    expect(quiz.choices.find((c: { id: string }) => c.id === 'b').isCorrect).toBe(true);
+
+    const ta = byQ('TA Q');
+    expect(ta.answer).toBe('explanation');
+    expect(ta.shortAnswer).toBe('Partial');
+
+    // Still read-only: a user cannot edit a public card.
+    const edit = await request(app.getHttpServer())
+      .patch(`/v1/cards/${quiz.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ answer: 'Hacked' });
+    expect(edit.status).toBe(404);
+  });
+
+  it('still sanitizes the study queue for public content (anti-spoiler)', async () => {
+    const subject = await publishSubject('Public Quiz Deck');
+    await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/cards')
+        .send({
+          subjectId: subject.id,
+          type: 'quiz',
+          question: 'Spoiler Q',
+          answer: 'secret',
+          choices: [
+            { id: 'a', text: 'A', isCorrect: false },
+            { id: 'b', text: 'B', isCorrect: true },
+          ],
+        })
+    );
+
+    const token = await signupAndToken(app, 'studier@test.com', 'studier');
+    const queue = await request(app.getHttpServer())
+      .get('/v1/review_queue')
+      .set('Authorization', `Bearer ${token}`);
+    const card = queue.body.new.find((c: { question: string }) => c.question === 'Spoiler Q');
+    expect(card).toBeDefined();
+    // The study payload never carries the answer or the correct marker.
+    expect(card.answer).toBe('');
+    expect(card.choices.every((c: { isCorrect?: boolean }) => c.isCorrect === undefined)).toBe(
+      true
+    );
   });
 });

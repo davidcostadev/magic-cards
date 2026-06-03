@@ -16,6 +16,12 @@ export const envSchema = z
     CORS_ORIGIN: z.string().default('http://localhost:5000,http://localhost:5173'),
     // Publishes public catalog content via /v1/catalog/*. Unset → catalog disabled.
     CONTENT_API_KEY: z.string().min(16).optional(),
+    // Apply migrations on app boot (default true). The dev watch server runs with this set to
+    // "false" so hot-reloads never touch DDL; migrations run via the explicit db:migrate:dev step.
+    DB_AUTO_MIGRATE: z
+      .string()
+      .optional()
+      .transform((v) => v !== 'false'),
   })
   .superRefine((cfg, ctx) => {
     if (cfg.NODE_ENV !== 'production') return;

@@ -6,6 +6,8 @@ import { subjectKeys } from './subjects';
 export type Card = components['schemas']['CardResponseDto'];
 export type CreateCardInput = components['schemas']['CreateCardDto'];
 export type UpdateCardInput = components['schemas']['UpdateCardDto'];
+/** Supported content languages for a card (e.g. 'en' | 'pt'), derived from the API contract. */
+export type CardLanguage = Card['language'];
 
 export const cardKeys = {
   all: ['cards'] as const,
@@ -16,11 +18,27 @@ export function useCards(subjectId: string) {
   return useQuery({
     queryKey: cardKeys.list(subjectId),
     queryFn: async () => {
-      const { data, error } = await apiClient.GET('/v1/cards', {
-        params: { query: { subject: subjectId } },
-      });
-      if (error || !data) throw error;
-      return data.data;
+      // Page through the cursor so the entire deck is loaded — the list page does its own
+      // client-side search and pagination over the full set (a subject holds at most a few
+      // hundred cards). The API caps `limit` at 100, so this is 1–3 requests in practice.
+      const all: Card[] = [];
+      let startingAfter: string | undefined;
+      for (;;) {
+        const { data, error } = await apiClient.GET('/v1/cards', {
+          params: {
+            query: {
+              subject: subjectId,
+              limit: 100,
+              ...(startingAfter ? { starting_after: startingAfter } : {}),
+            },
+          },
+        });
+        if (error || !data) throw error;
+        all.push(...data.data);
+        if (!data.has_more || data.data.length === 0) break;
+        startingAfter = data.data[data.data.length - 1].id;
+      }
+      return all;
     },
   });
 }

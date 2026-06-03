@@ -1,6 +1,6 @@
 import { Link, useParams } from '@tanstack/react-router';
-import { ArrowLeft, GraduationCap, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight, GraduationCap, Plus, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type Card,
@@ -9,29 +9,49 @@ import {
   useDeleteCard,
   useUpdateCard,
 } from '@/api/queries/cards';
-import { useSubject } from '@/api/queries/subjects';
+import { useSubject, useSubjectStats } from '@/api/queries/subjects';
 import { CardForm, type CardFormData } from '@/components/features/cards/CardForm';
 import { CardList } from '@/components/features/cards/CardList';
+import { CardView } from '@/components/features/cards/CardView';
+import { filterCards } from '@/components/features/cards/filterCards';
 import { getSubjectIcon } from '@/components/features/subjects/subjectIcons';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { CardContent, CardHeader, CardTitle, Card as UiCard } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/utils/cn';
+
+const PAGE_SIZE = 20;
 
 export function SubjectDetailPage() {
   const { subjectId } = useParams({ from: '/subjects/$subjectId' });
   const { t } = useTranslation();
   const { data: subject, isLoading: subjectLoading, isError } = useSubject(subjectId);
   const { data: cards = [] } = useCards(subjectId);
+  const { data: stats } = useSubjectStats(subjectId);
   const createCard = useCreateCard();
   const updateCard = useUpdateCard();
   const deleteCard = useDeleteCard();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewingCard, setViewingCard] = useState<Card | null>(null);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(0);
+
+  const filteredCards = useMemo(() => filterCards(cards, query), [cards, query]);
+  // A new search resets to the first page.
+  useEffect(() => {
+    setPage(0);
+  }, [query]);
+  const pageCount = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageCards = filteredCards.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   if (subjectLoading) {
     return (
-      <div className="p-5 md:p-7 space-y-5">
+      <div className="p-4 sm:p-6 md:p-7 space-y-5">
         <Skeleton className="h-5 w-24" />
         <div className="flex items-center gap-4">
           <Skeleton className="h-14 w-14 rounded-xl" />
@@ -69,7 +89,7 @@ export function SubjectDetailPage() {
   };
 
   return (
-    <div className="p-5 md:p-7">
+    <div className="p-4 sm:p-6 md:p-7">
       <div className="mb-7">
         <Link
           to="/subjects"
@@ -78,22 +98,34 @@ export function SubjectDetailPage() {
           <ArrowLeft className="h-5 w-5" />
           {t('common.back')}
         </Link>
-        <div className="flex items-center gap-4 mb-5">
-          <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
-            style={{ backgroundColor: `${color}20`, color }}
-          >
-            <Icon className="h-7 w-7" />
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <div
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
+              style={{ backgroundColor: `${color}20`, color }}
+            >
+              <Icon className="h-7 w-7" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold truncate sm:text-3xl">{subject.title}</h1>
+              <p className="text-sm text-muted-foreground line-clamp-2 sm:text-base">
+                {isPublic ? t('subjects.sharedReadOnly') : (subject.description ?? '')}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold truncate sm:text-3xl">{subject.title}</h1>
-            <p className="text-sm text-muted-foreground line-clamp-2 sm:text-base">
-              {isPublic ? t('subjects.sharedReadOnly') : (subject.description ?? '')}
-            </p>
-          </div>
+          {cards.length > 0 && (
+            <Link
+              to="/learn/$subjectId"
+              params={{ subjectId }}
+              className={cn(buttonVariants(), 'hidden shrink-0 sm:inline-flex')}
+            >
+              <GraduationCap className="mr-2 h-5 w-5" />
+              {t('cards.startStudying')}
+            </Link>
+          )}
         </div>
-        <div className="flex gap-3">
-          {!isPublic && (
+        {!isPublic && (
+          <div className="flex gap-3">
             <Button
               variant="outline"
               className="flex-1 sm:flex-none"
@@ -105,28 +137,122 @@ export function SubjectDetailPage() {
               <Plus className="mr-2 h-5 w-5" />
               {t('cards.createCard')}
             </Button>
-          )}
-          {cards.length > 0 && (
-            <Link
-              to="/learn/$subjectId"
-              params={{ subjectId }}
-              className={cn(buttonVariants(), 'hidden sm:inline-flex')}
-            >
-              <GraduationCap className="mr-2 h-5 w-5" />
-              {t('cards.startStudying')}
-            </Link>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      <CardList
-        cards={cards}
-        readOnly={isPublic}
-        onEdit={(card) => {
-          setEditingCard(card);
-          setFormOpen(true);
+      {cards.length > 0 && (
+        <UiCard className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">{t('subjects.statsTitle')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="flex flex-wrap gap-x-10 gap-y-3">
+              <div>
+                <p className="text-3xl font-bold tabular-nums">
+                  {stats?.totalCards ?? cards.length}
+                </p>
+                <p className="text-sm text-muted-foreground">{t('subjects.statTotal')}</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold tabular-nums text-primary">{stats?.due ?? 0}</p>
+                <p className="text-sm text-muted-foreground">{t('subjects.statDue')}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-5 border-t pt-5 sm:grid-cols-4">
+              {(
+                [
+                  { key: 'new', label: t('dashboard.new'), color: 'bg-blue-500' },
+                  { key: 'learning', label: t('dashboard.learning'), color: 'bg-warning' },
+                  { key: 'reviewing', label: t('dashboard.reviewing'), color: 'bg-primary' },
+                  { key: 'mastered', label: t('dashboard.mastered'), color: 'bg-success' },
+                ] as const
+              ).map(({ key, label, color }) => (
+                <div key={key} className="text-center">
+                  <div className={`mx-auto mb-2.5 h-3 w-16 rounded-full ${color}`} />
+                  <p className="text-3xl font-bold tabular-nums">{stats?.[key] ?? 0}</p>
+                  <p className="text-sm text-muted-foreground">{label}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </UiCard>
+      )}
+
+      {cards.length > 0 && (
+        <div className="relative mb-5 max-w-md">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('cards.search')}
+            aria-label={t('cards.search')}
+            className="pl-11"
+          />
+        </div>
+      )}
+
+      {cards.length > 0 && filteredCards.length === 0 ? (
+        <p className="py-16 text-center text-lg text-muted-foreground">{t('cards.noResults')}</p>
+      ) : (
+        <>
+          <CardList
+            cards={pageCards}
+            readOnly={isPublic}
+            onView={(card) => {
+              setViewingCard(card);
+              setViewOpen(true);
+            }}
+            onEdit={(card) => {
+              setEditingCard(card);
+              setFormOpen(true);
+            }}
+            onDelete={(id) => deleteCard.mutate({ id, subjectId })}
+          />
+
+          {pageCount > 1 && (
+            <nav
+              className="mt-5 flex items-center justify-center gap-4"
+              aria-label={t('cards.pagination')}
+            >
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={t('common.previous')}
+                disabled={safePage === 0}
+                onClick={() => setPage(safePage - 1)}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {safePage + 1} / {pageCount}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={t('common.next')}
+                disabled={safePage >= pageCount - 1}
+                onClick={() => setPage(safePage + 1)}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </nav>
+          )}
+        </>
+      )}
+
+      <CardView
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        card={viewingCard}
+        canEdit={!isPublic}
+        onEdit={() => {
+          if (viewingCard) {
+            setEditingCard(viewingCard);
+            setFormOpen(true);
+          }
         }}
-        onDelete={(id) => deleteCard.mutate({ id, subjectId })}
       />
 
       <CardForm

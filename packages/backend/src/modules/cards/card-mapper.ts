@@ -3,8 +3,9 @@ import type { CardResponse } from './dto/card.dto';
 
 /**
  * Maps a stored card row to its API response, un-nesting the `payload` jsonb into the
- * type-specific fields. `reveal` is true only for the owner (authoring); for non-owners
- * studying via the review queue the grading data is stripped:
+ * type-specific fields. `reveal` is true for the browse/authoring view (the cards endpoints
+ * serve full content for anything a user may see — their own or shared public cards). It is
+ * false only for the study queue (LearningService), where the grading data must be stripped:
  *
  * - quiz        → choices keep `isCorrect` only when revealed
  * - type-answer → `shortAnswer` only when revealed
@@ -20,6 +21,7 @@ export function toCardResponse(card: Card, reveal: boolean): CardResponse {
     id: card.id,
     subjectId: card.subjectId,
     type: card.type,
+    language: card.language,
     question: card.question,
     hints: card.hints,
     tags: card.tags,
@@ -27,13 +29,14 @@ export function toCardResponse(card: Card, reveal: boolean): CardResponse {
     updatedAt: card.updatedAt,
   };
 
+  const translations = card.translations ?? undefined;
   if (card.type === 'open') {
-    return { ...base, answer: card.answer };
+    return { ...base, answer: card.answer, translations };
   }
 
   const payload = card.payload;
   if (reveal) {
-    return { ...base, answer: card.answer, ...revealedPayload(payload) };
+    return { ...base, answer: card.answer, ...revealedPayload(payload), translations };
   }
 
   // Studied / browsed by a non-owner: hide the answer and all grading data.

@@ -405,4 +405,23 @@ describe('GET /v1/review_queue/counts', () => {
     expect(scoped.body.total).toBe(3); // only the 3 cards in `subjectId`, not the other subject's
     expect(scoped.body.byType).toEqual({ open: 2, quiz: 1, 'type-answer': 0, match: 0 });
   });
+
+  it('drops a card from the counts once it is reviewed and scheduled for the future', async () => {
+    const cardId = await addCard('Reviewed');
+    await addCard('Never reviewed');
+
+    const before = await auth(request(app.getHttpServer()).get('/v1/review_queue/counts'));
+    expect(before.body.byType.open).toBe(2);
+
+    // A passing review schedules the card ~1 day out, so it is no longer due right now.
+    await auth(
+      request(app.getHttpServer())
+        .post('/v1/reviews')
+        .send({ cardId, quality: 4, timeSpent: 1000, wasHintUsed: false })
+    );
+
+    const after = await auth(request(app.getHttpServer()).get('/v1/review_queue/counts'));
+    expect(after.body.byType.open).toBe(1); // only the never-reviewed card is still studyable
+    expect(after.body.total).toBe(1);
+  });
 });

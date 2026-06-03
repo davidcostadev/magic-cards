@@ -1,14 +1,13 @@
 import { Link } from '@tanstack/react-router';
-import { GraduationCap, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Subject, SubjectProgress } from '@/api/queries/subjects';
 import { getSubjectIcon } from '@/components/features/subjects/subjectIcons';
 import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/utils/cn';
 
 interface SubjectCardProps {
   subject: Subject;
@@ -39,7 +38,7 @@ export function SubjectCard({ subject, cardCount, progress, onEdit, onDelete }: 
   };
 
   return (
-    <Card className="group relative transition-shadow hover:shadow-md">
+    <Card className="group relative transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:bg-accent/40 hover:shadow-lg active:translate-y-0 active:scale-[0.99] active:shadow-md">
       {subject.isPublic && (
         <Badge variant="secondary" className="absolute right-3 top-3 z-10">
           {t('subjects.shared')}
@@ -130,51 +129,39 @@ export function SubjectCard({ subject, cardCount, progress, onEdit, onDelete }: 
         <CardContent className="px-5 pb-4 pt-0">
           <p className="text-sm text-muted-foreground line-clamp-2">{subject.description ?? ''}</p>
         </CardContent>
-      </Link>
-      {progress && progress.total > 0 && (
-        <div className="px-5 pb-4">
-          <Progress
-            value={progress.reviewed}
-            max={progress.total}
-            className="h-2"
-            aria-label={t('subjects.progressReviewed', {
-              reviewed: progress.reviewed,
-              total: progress.total,
-            })}
-          />
-          <div className="mt-1.5 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">
-              {t('subjects.progressReviewed', {
+        {progress && progress.total > 0 && (
+          <div className="px-5 pb-5">
+            <Progress
+              value={progress.reviewed}
+              max={progress.total}
+              className="h-2"
+              aria-label={t('subjects.progressReviewed', {
                 reviewed: progress.reviewed,
                 total: progress.total,
               })}
-            </span>
-            {progress.due > 0 ? (
-              <span className="font-medium text-primary">
-                {t('subjects.progressDue', { count: progress.due })}
+            />
+            <div className="mt-1.5 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {t('subjects.progressReviewed', {
+                  reviewed: progress.reviewed,
+                  total: progress.total,
+                })}
               </span>
-            ) : (
-              progress.reviewed >= progress.total && (
-                <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                  {t('subjects.progressDone')}
+              {progress.due > 0 ? (
+                <span className="font-medium text-primary">
+                  {t('subjects.progressDue', { count: progress.due })}
                 </span>
-              )
-            )}
+              ) : (
+                progress.reviewed >= progress.total && (
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                    {t('subjects.progressDone')}
+                  </span>
+                )
+              )}
+            </div>
           </div>
-        </div>
-      )}
-      {cardCount > 0 && (
-        <div className="px-5 pb-5">
-          <Link
-            to="/learn/$subjectId"
-            params={{ subjectId: subject.id }}
-            className={cn(buttonVariants({ size: 'sm' }), 'w-full')}
-          >
-            <GraduationCap className="mr-2 h-5 w-5" />
-            {t('cards.startStudying')}
-          </Link>
-        </div>
-      )}
+        )}
+      </Link>
     </Card>
   );
 }

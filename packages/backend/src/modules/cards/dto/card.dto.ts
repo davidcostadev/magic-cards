@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { listResponseSchema, paginationQuerySchema } from '../../../common/pagination';
-import { CARD_TYPES } from '../../../db/schema';
+import { CARD_LANGUAGES, CARD_TYPES } from '../../../db/schema';
 
 const choiceInputSchema = z.object({
   id: z.string().min(1),
@@ -14,6 +14,18 @@ const matchPairSchema = z.object({
   right: z.string().min(1),
 });
 
+/** Alternate-language versions of a card's question/answer, keyed by language code. */
+const cardTranslationSchema = z.object({
+  question: z.string().min(1),
+  answer: z.string(),
+});
+// Explicit per-language keys (kept in sync with CARD_LANGUAGES) so the inferred type is PARTIAL —
+// a card may carry only some languages. A plain z.record(enum, …) would require every key.
+export const cardTranslationsSchema = z.object({
+  en: cardTranslationSchema.optional(),
+  pt: cardTranslationSchema.optional(),
+});
+
 const MIN_CHOICES = 2;
 const MAX_CHOICES = 8;
 const MIN_PAIRS = 2;
@@ -22,6 +34,10 @@ const MAX_PAIRS = 12;
 /** Per-type rules. `type` defaults to `open`, so legacy open-card payloads stay valid. */
 const cardInputShape = {
   question: z.string().min(1),
+  // Content language of the card; defaults to 'en' at the DB level when omitted.
+  language: z.enum(CARD_LANGUAGES).optional(),
+  // Alternate-language versions (e.g. a `pt` entry on an `en` card) — viewed via the modal toggle.
+  translations: cardTranslationsSchema.optional(),
   // open/quiz/type-answer: the answer/explanation. match: optional explanation.
   answer: z.string().optional(),
   choices: z.array(choiceInputSchema).max(MAX_CHOICES).optional(), // quiz
@@ -104,8 +120,10 @@ export const cardResponseSchema = z.object({
   id: z.string(),
   subjectId: z.string(),
   type: z.enum(CARD_TYPES),
+  language: z.enum(CARD_LANGUAGES),
   question: z.string(),
   answer: z.string(),
+  translations: cardTranslationsSchema.optional(),
   hints: z.array(z.string()),
   tags: z.array(z.string()),
   choices: z.array(choiceResponseSchema).optional(), // quiz

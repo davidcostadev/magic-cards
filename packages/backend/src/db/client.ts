@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -24,11 +24,44 @@ function migrationsFolder(): string {
   return process.env.MIGRATIONS_DIR ?? resolve(process.cwd(), 'src/db/migrations');
 }
 
+/**
+ * Advertise that this server owns the on-disk PGlite dir by writing `<dir>.lock` with our PID.
+ * The explicit `db:migrate:dev` / `db:repair` scripts read this and REFUSE to run while a live
+ * server holds it — that script-vs-server concurrency is what corrupts the embedded store. The
+ * server itself only advertises (it overwrites, never throws) so a `nest --watch` restart that
+ * briefly overlaps processes can't crash-loop the boot. Returns a release function.
+ */
+export function acquireDevLock(dataDir: string): () => void {
+  const lockPath = `${dataDir}.lock`;
+  writeFileSync(lockPath, String(process.pid));
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    try {
+      if (existsSync(lockPath) && Number(readFileSync(lockPath, 'utf8').trim()) === process.pid) {
+        rmSync(lockPath, { force: true });
+      }
+    } catch {
+      // best-effort cleanup
+    }
+  };
+  process.once('exit', release);
+  return release;
+}
+
 export interface DatabaseOptions {
   /** Real Postgres connection string (production, E2E, or local override). */
   url?: string;
   /** PGlite data dir for zero-setup local dev when no `url` is given. */
   path?: string;
+  /**
+   * Apply pending migrations on connect (default true). The dev watch server runs with this
+   * false (via `DB_AUTO_MIGRATE=false`) so hot-reloads never run DDL — migrations are applied
+   * once by the explicit `db:migrate:dev` step (also run on `pnpm dev` startup). Tests and the
+   * OpenAPI generator always migrate their throwaway in-memory database.
+   */
+  migrate?: boolean;
 }
 
 /**
@@ -36,28 +69,45 @@ export interface DatabaseOptions {
  * (PGlite) so local dev needs no database server. Both run the same migrations.
  */
 export async function createDatabase(options: DatabaseOptions): Promise<DatabaseHandle> {
+  const shouldMigrate = options.migrate ?? true;
   if (options.url) {
     const pool = new Pool({ connectionString: options.url });
     const db = drizzlePg(pool, { schema });
-    await migratePg(db, { migrationsFolder: migrationsFolder() });
+    if (shouldMigrate) await migratePg(db, { migrationsFolder: migrationsFolder() });
     return { db, close: () => pool.end() };
   }
 
   const dataDir = options.path && options.path !== ':memory:' ? resolve(options.path) : undefined;
   if (dataDir) mkdirSync(dataDir, { recursive: true });
-  return pgliteHandle(new PGlite(dataDir));
+  // Guard against a second process opening the same on-disk PGlite dir (corrupts it).
+  const release = dataDir ? acquireDevLock(dataDir) : () => {};
+  try {
+    const handle = await pgliteHandle(new PGlite(dataDir), shouldMigrate);
+    return {
+      db: handle.db,
+      close: async () => {
+        release();
+        await handle.close();
+      },
+    };
+  } catch (e) {
+    release();
+    throw e;
+  }
 }
 
 /** In-memory embedded Postgres for the test suite. */
 export async function createTestDatabase(): Promise<DatabaseHandle> {
-  return pgliteHandle(new PGlite());
+  return pgliteHandle(new PGlite(), true);
 }
 
-async function pgliteHandle(client: PGlite): Promise<DatabaseHandle> {
+async function pgliteHandle(client: PGlite, shouldMigrate: boolean): Promise<DatabaseHandle> {
   await client.waitReady;
   const db = drizzlePglite(client as never, { schema }) as unknown as DrizzleDB;
-  await migratePglite(db as unknown as PgliteDatabase<typeof schema>, {
-    migrationsFolder: migrationsFolder(),
-  });
+  if (shouldMigrate) {
+    await migratePglite(db as unknown as PgliteDatabase<typeof schema>, {
+      migrationsFolder: migrationsFolder(),
+    });
+  }
   return { db, close: () => client.close() };
 }

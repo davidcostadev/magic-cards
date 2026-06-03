@@ -22,6 +22,27 @@
       "when": 1780327023776,
       "tag": "0002_nostalgic_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780421504486,
+      "tag": "0003_green_santa_claus",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780426542912,
+      "tag": "0004_smooth_jackal",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780429039662,
+      "tag": "0005_rapid_punisher",
+      "breakpoints": true
     }
   ]
 }

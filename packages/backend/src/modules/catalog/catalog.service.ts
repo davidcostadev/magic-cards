@@ -122,6 +122,8 @@ export class CatalogService implements OnModuleInit {
       const parsed = createCardSchema.safeParse({
         subjectId: c.subjectId,
         type: c.type ?? 'open',
+        language: c.language,
+        translations: c.translations,
         question: c.question,
         answer: c.answer,
         choices: c.choices,
@@ -142,6 +144,8 @@ export class CatalogService implements OnModuleInit {
       const set = {
         subjectId: d.subjectId,
         type: d.type,
+        language: d.language ?? 'en',
+        translations: d.translations ?? null,
         question: d.question,
         answer: d.answer ?? '',
         payload: buildPayload(d),

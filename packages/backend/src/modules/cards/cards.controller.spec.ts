@@ -143,6 +143,86 @@ describe('Cards CRUD', () => {
   });
 });
 
+describe('Card language', () => {
+  it('defaults language to "en" when omitted', async () => {
+    const res = await auth(
+      request(app.getHttpServer()).post('/v1/cards').send({ subjectId, question: 'Q', answer: 'A' })
+    );
+    expect(res.status).toBe(201);
+    expect(res.body.language).toBe('en');
+  });
+
+  it('persists the chosen language and returns it on read', async () => {
+    const created = await auth(
+      request(app.getHttpServer())
+        .post('/v1/cards')
+        .send({ subjectId, question: 'O que é hoisting?', answer: 'Içamento', language: 'pt' })
+    );
+    expect(created.body.language).toBe('pt');
+
+    const read = await auth(request(app.getHttpServer()).get(`/v1/cards/${created.body.id}`));
+    expect(read.body.language).toBe('pt');
+  });
+
+  it('updates a card language', async () => {
+    const created = await auth(
+      request(app.getHttpServer()).post('/v1/cards').send({ subjectId, question: 'Q', answer: 'A' })
+    );
+    const res = await auth(
+      request(app.getHttpServer()).patch(`/v1/cards/${created.body.id}`).send({ language: 'pt' })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.language).toBe('pt');
+  });
+
+  it('rejects an unsupported language with 400', async () => {
+    const res = await auth(
+      request(app.getHttpServer())
+        .post('/v1/cards')
+        .send({ subjectId, question: 'Q', answer: 'A', language: 'es' })
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('Card translations', () => {
+  it('persists alternate-language versions and returns them', async () => {
+    const res = await auth(
+      request(app.getHttpServer())
+        .post('/v1/cards')
+        .send({
+          subjectId,
+          question: 'What is a closure?',
+          answer: 'A function plus its captured scope.',
+          translations: {
+            pt: { question: 'O que é uma closure?', answer: 'Uma função e seu escopo capturado.' },
+          },
+        })
+    );
+    expect(res.status).toBe(201);
+    expect(res.body.translations.pt.question).toBe('O que é uma closure?');
+  });
+
+  it('preserves translations when an edit omits them', async () => {
+    const created = await auth(
+      request(app.getHttpServer())
+        .post('/v1/cards')
+        .send({
+          subjectId,
+          question: 'Q',
+          answer: 'A',
+          translations: { pt: { question: 'P', answer: 'R' } },
+        })
+    );
+    const res = await auth(
+      request(app.getHttpServer()).patch(`/v1/cards/${created.body.id}`).send({ answer: 'A2' })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.answer).toBe('A2');
+    expect(res.body.translations.pt.question).toBe('P');
+  });
+});
+
 describe('Interactive card types', () => {
   function post(body: Record<string, unknown>) {
     return auth(

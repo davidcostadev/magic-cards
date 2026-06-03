@@ -1,0 +1,1 @@
+ALTER TABLE "subjects" ADD COLUMN IF NOT EXISTS "language" text DEFAULT 'en' NOT NULL;

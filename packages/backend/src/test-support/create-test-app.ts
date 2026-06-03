@@ -1,6 +1,6 @@
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerStorage } from '@nestjs/throttler';
 import request from 'supertest';
 import { AppModule } from '../app.module';
 import { createTestDatabase, DB_HANDLE, DRIZZLE, type DrizzleDB } from '../db/client';
@@ -20,9 +20,20 @@ export async function createTestApp(): Promise<TestApp> {
     .useValue(handle)
     .overrideProvider(DRIZZLE)
     .useValue(handle.db)
-    // Don't rate-limit the test/integration suite.
+    // Don't rate-limit the test/integration suite. The guard override alone doesn't cover
+    // route-level `@Throttle()` decorators, so also stub the storage the guard reads from —
+    // it always reports "not blocked", disabling every throttle regardless of its limit.
     .overrideGuard(ThrottlerGuard)
     .useValue({ canActivate: () => true })
+    .overrideProvider(ThrottlerStorage)
+    .useValue({
+      increment: async () => ({
+        totalHits: 0,
+        timeToExpire: 0,
+        isBlocked: false,
+        timeToBlockExpire: 0,
+      }),
+    })
     .compile();
 
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());

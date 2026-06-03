@@ -103,6 +103,9 @@
     "progressReviewed": "{{reviewed}}/{{total}} revisados",
     "progressDue": "{{count}} para revisar",
     "progressDone": "Em dia",
+    "statsTitle": "Estatísticas",
+    "statTotal": "Total de cartões",
+    "statDue": "Para revisar",
     "noSubjects": "Nenhum assunto ainda. Crie o primeiro!",
     "deleteConfirm": "Tem certeza que deseja excluir este assunto?",
     "viewCards": "Ver Cartões"

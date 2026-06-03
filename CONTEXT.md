@@ -14,7 +14,7 @@ A learning unit with a **question** (Markdown, with syntax-highlighted code bloc
 - **`type-answer`** — type a short answer, compared leniently (case/accent/whitespace-insensitive) to the accepted **shortAnswer**. `answer` is the explanation.
 - **`match`** — associate **pairs** (left ↔ right), graded all-or-nothing.
 
-The `quiz`/`type-answer`/`match` types are **auto-graded by the server**: the grading data (which choice is correct, the accepted answer, the pairing) is owner-only and is never sent to the learner before they answer — the server grades the submitted response and returns the outcome (see Review).
+The `quiz`/`type-answer`/`match` types are **auto-graded by the server**: the grading data (which choice is correct, the accepted answer, the pairing) is shown when **browsing/previewing** a Card (your own or shared catalog content) but is **never sent in a study session before the learner answers** — the server grades the submitted response and returns the outcome (see Review). Shared (public) content is read-only: it can be previewed in full but only its owner can edit it.
 
 A Card has no static difficulty classification. Difficulty is an emergent property discovered by the SM-2 algorithm through the learner's actual performance (see Card Progress / ease factor).
 
