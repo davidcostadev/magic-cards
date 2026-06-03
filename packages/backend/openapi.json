@@ -211,6 +211,32 @@
         ]
       }
     },
+    "/v1/subjects/progress": {
+      "get": {
+        "operationId": "SubjectsController_progress",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectProgressListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "subjects"
+        ]
+      }
+    },
     "/v1/subjects/{id}": {
       "get": {
         "operationId": "SubjectsController_get",
@@ -1384,6 +1410,40 @@
           "cardCount",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "SubjectProgressListDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "subjectId": {
+                  "type": "string"
+                },
+                "total": {
+                  "type": "number"
+                },
+                "reviewed": {
+                  "type": "number"
+                },
+                "due": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "subjectId",
+                "total",
+                "reviewed",
+                "due"
+              ]
+            }
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "UpdateSubjectDto": {

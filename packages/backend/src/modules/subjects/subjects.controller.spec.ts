@@ -119,6 +119,38 @@ describe('Subjects CRUD', () => {
     });
   });
 
+  it('reports per-subject progress (total, reviewed, due) for the list view', async () => {
+    const subject = await auth(
+      request(app.getHttpServer()).post('/v1/subjects').send({ title: 'Progress' })
+    );
+    const id = subject.body.id;
+    const first = await auth(
+      request(app.getHttpServer())
+        .post('/v1/cards')
+        .send({ subjectId: id, question: 'q1', answer: 'a1' })
+    );
+    for (const q of ['q2', 'q3']) {
+      await auth(
+        request(app.getHttpServer())
+          .post('/v1/cards')
+          .send({ subjectId: id, question: q, answer: 'a' })
+      );
+    }
+
+    // Review one card well (quality 5) so it's scheduled into the future: reviewed, not due.
+    await auth(
+      request(app.getHttpServer())
+        .post('/v1/reviews')
+        .send({ cardId: first.body.id, quality: 5, timeSpent: 1000, wasHintUsed: false })
+    );
+
+    const res = await auth(request(app.getHttpServer()).get('/v1/subjects/progress'));
+    expect(res.status).toBe(200);
+    const entry = res.body.data.find((p: { subjectId: string }) => p.subjectId === id);
+    // 3 cards total, 1 reviewed (now scheduled ahead), 2 never-reviewed are still due.
+    expect(entry).toEqual({ subjectId: id, total: 3, reviewed: 1, due: 2 });
+  });
+
   it('rejects validation errors (empty title) with 400', async () => {
     const res = await auth(request(app.getHttpServer()).post('/v1/subjects').send({ title: '' }));
     expect(res.status).toBe(400);

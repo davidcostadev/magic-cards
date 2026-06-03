@@ -33,11 +33,25 @@ export const subjectStatsSchema = z.object({
   due: z.number(),
 });
 
+/** Per-subject study progress for the list view: how much is reviewed vs still to study. */
+export const subjectProgressSchema = z.object({
+  subjectId: z.string(),
+  total: z.number(), // every card in the subject
+  reviewed: z.number(), // cards the user has studied at least once
+  due: z.number(), // cards studyable now (overdue + never-reviewed)
+});
+
+export const subjectProgressListSchema = z.object({
+  data: z.array(subjectProgressSchema),
+});
+
 export class CreateSubjectDto extends createZodDto(createSubjectSchema) {}
 export class UpdateSubjectDto extends createZodDto(updateSubjectSchema) {}
 export class SubjectResponseDto extends createZodDto(subjectResponseSchema) {}
 export class SubjectListDto extends createZodDto(listResponseSchema(subjectResponseSchema)) {}
 export class SubjectStatsDto extends createZodDto(subjectStatsSchema) {}
+export class SubjectProgressListDto extends createZodDto(subjectProgressListSchema) {}
 
 export type SubjectResponse = z.infer<typeof subjectResponseSchema>;
 export type SubjectStats = z.infer<typeof subjectStatsSchema>;
+export type SubjectProgress = z.infer<typeof subjectProgressSchema>;

@@ -100,6 +100,9 @@
     "color": "Cor",
     "icon": "Ícone",
     "cardCount": "{{count}} cartões",
+    "progressReviewed": "{{reviewed}}/{{total}} revisados",
+    "progressDue": "{{count}} para revisar",
+    "progressDone": "Em dia",
     "noSubjects": "Nenhum assunto ainda. Crie o primeiro!",
     "deleteConfirm": "Tem certeza que deseja excluir este assunto?",
     "viewCards": "Ver Cartões"

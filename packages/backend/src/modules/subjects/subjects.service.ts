@@ -8,6 +8,7 @@ import { cardProgress, cards, subjects } from '../../db/schema';
 import { Sm2Service } from '../learning/sm2.service';
 import type {
   CreateSubjectDto,
+  SubjectProgress,
   SubjectResponse,
   SubjectStats,
   UpdateSubjectDto,
@@ -112,6 +113,48 @@ export class SubjectsService {
     due += neverReviewed;
 
     return { totalCards: total, ...counts, due };
+  }
+
+  /**
+   * Per-subject study progress across all the user's visible subjects, in one pass:
+   * `total` cards, how many are `reviewed` (have a progress row), and how many are `due`
+   * right now (overdue progress + never-reviewed cards). Powers the progress bar on the
+   * subjects list without an N+1 of per-subject stat calls. Subjects with no cards are omitted.
+   */
+  async progressBySubject(userId: string): Promise<SubjectProgress[]> {
+    const now = new Date().toISOString();
+    const totals = await this.db
+      .select({ subjectId: cards.subjectId, total: sql<number>`count(*)::int` })
+      .from(cards)
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      .where(canSeeSubject(userId))
+      .groupBy(cards.subjectId);
+
+    const seen = await this.db
+      .select({
+        subjectId: cards.subjectId,
+        reviewed: sql<number>`count(*)::int`,
+        dueSeen: sql<number>`coalesce(sum(case when ${cardProgress.nextReviewDate} <= ${now} then 1 else 0 end), 0)::int`,
+      })
+      .from(cardProgress)
+      .innerJoin(cards, eq(cardProgress.cardId, cards.id))
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      .where(and(eq(cardProgress.userId, userId), canSeeSubject(userId)))
+      .groupBy(cards.subjectId);
+
+    const seenById = new Map(seen.map((s) => [s.subjectId, s]));
+    return totals.map((t) => {
+      const s = seenById.get(t.subjectId);
+      const reviewed = s?.reviewed ?? 0;
+      const dueSeen = s?.dueSeen ?? 0;
+      // Never-reviewed cards are immediately studyable, so they count as due too.
+      return {
+        subjectId: t.subjectId,
+        total: t.total,
+        reviewed,
+        due: dueSeen + (t.total - reviewed),
+      };
+    });
   }
 
   /** Owner-only (mutations) — public content is read-only to users. */

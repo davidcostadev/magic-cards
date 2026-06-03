@@ -7,6 +7,8 @@ import type { AuthUser } from '../../common/types/authenticated-request';
 import {
   CreateSubjectDto,
   SubjectListDto,
+  type SubjectProgress,
+  SubjectProgressListDto,
   type SubjectResponse,
   SubjectResponseDto,
   type SubjectStats,
@@ -36,6 +38,13 @@ export class SubjectsController {
   @ApiOkResponse({ type: SubjectResponseDto })
   create(@CurrentUser() user: AuthUser, @Body() body: CreateSubjectDto): Promise<SubjectResponse> {
     return this.subjects.create(user.id, body);
+  }
+
+  // Declared before `:id` so the static path isn't captured as a subject id.
+  @Get('progress')
+  @ApiOkResponse({ type: SubjectProgressListDto })
+  async progress(@CurrentUser() user: AuthUser): Promise<{ data: SubjectProgress[] }> {
+    return { data: await this.subjects.progressBySubject(user.id) };
   }
 
   @Get(':id')

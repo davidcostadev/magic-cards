@@ -4,6 +4,7 @@ import type { components } from '@/api/schema';
 
 export type Subject = components['schemas']['SubjectResponseDto'];
 export type SubjectStats = components['schemas']['SubjectStatsDto'];
+export type SubjectProgress = components['schemas']['SubjectProgressListDto']['data'][number];
 export type CreateSubjectInput = components['schemas']['CreateSubjectDto'];
 export type UpdateSubjectInput = components['schemas']['UpdateSubjectDto'];
 
@@ -12,6 +13,7 @@ export const subjectKeys = {
   list: () => [...subjectKeys.all, 'list'] as const,
   detail: (id: string) => [...subjectKeys.all, 'detail', id] as const,
   stats: (id: string) => [...subjectKeys.all, 'stats', id] as const,
+  progress: () => [...subjectKeys.all, 'progress'] as const,
 };
 
 export function useSubjects() {
@@ -34,6 +36,18 @@ export function useSubject(id: string) {
       });
       if (error || !data) throw error;
       return data;
+    },
+  });
+}
+
+/** Per-subject progress (total / reviewed / due) for every visible subject, in one request. */
+export function useSubjectsProgress() {
+  return useQuery({
+    queryKey: subjectKeys.progress(),
+    queryFn: async () => {
+      const { data, error } = await apiClient.GET('/v1/subjects/progress');
+      if (error || !data) throw error;
+      return data.data;
     },
   });
 }

@@ -6,6 +6,7 @@ import {
   useCreateSubject,
   useDeleteSubject,
   useSubjects,
+  useSubjectsProgress,
   useUpdateSubject,
 } from '@/api/queries/subjects';
 import { CreateSubjectModal } from '@/components/features/subjects/CreateSubjectModal';
@@ -18,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function SubjectsPage() {
   const { t } = useTranslation();
   const { data: subjects = [], isLoading, isError } = useSubjects();
+  const { data: progressList } = useSubjectsProgress();
   const createSubject = useCreateSubject();
   const updateSubject = useUpdateSubject();
   const deleteSubject = useDeleteSubject();
@@ -34,6 +36,11 @@ export function SubjectsPage() {
       (s) => s.title.toLowerCase().includes(q) || (s.description ?? '').toLowerCase().includes(q)
     );
   }, [subjects, query]);
+
+  const progressById = useMemo(
+    () => new Map((progressList ?? []).map((p) => [p.subjectId, p])),
+    [progressList]
+  );
 
   const handleSave = (data: {
     title: string;
@@ -121,6 +128,7 @@ export function SubjectsPage() {
                   key={subject.id}
                   subject={subject}
                   cardCount={subject.cardCount}
+                  progress={progressById.get(subject.id)}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
