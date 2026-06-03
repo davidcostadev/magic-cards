@@ -1,10 +1,13 @@
 name: CI
 
+# CI is disabled: it no longer runs automatically on push or PR.
+# Re-enable by restoring the `push`/`pull_request` triggers below.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
