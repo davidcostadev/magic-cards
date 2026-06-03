@@ -428,8 +428,20 @@ export interface components {
                 subjectId: string;
                 /** @enum {string} */
                 type: "open" | "quiz" | "type-answer" | "match";
+                /** @enum {string} */
+                language: "en" | "pt";
                 question: string;
                 answer: string;
+                translations?: {
+                    en?: {
+                        question: string;
+                        answer: string;
+                    };
+                    pt?: {
+                        question: string;
+                        answer: string;
+                    };
+                };
                 hints: string[];
                 tags: string[];
                 choices?: {
@@ -458,6 +470,18 @@ export interface components {
              */
             type: "open" | "quiz" | "type-answer" | "match";
             question: string;
+            /** @enum {string} */
+            language?: "en" | "pt";
+            translations?: {
+                en?: {
+                    question: string;
+                    answer: string;
+                };
+                pt?: {
+                    question: string;
+                    answer: string;
+                };
+            };
             answer?: string;
             choices?: {
                 id: string;
@@ -477,8 +501,20 @@ export interface components {
             subjectId: string;
             /** @enum {string} */
             type: "open" | "quiz" | "type-answer" | "match";
+            /** @enum {string} */
+            language: "en" | "pt";
             question: string;
             answer: string;
+            translations?: {
+                en?: {
+                    question: string;
+                    answer: string;
+                };
+                pt?: {
+                    question: string;
+                    answer: string;
+                };
+            };
             hints: string[];
             tags: string[];
             choices?: {
@@ -500,6 +536,18 @@ export interface components {
         };
         UpdateCardDto: {
             question?: string;
+            /** @enum {string} */
+            language?: "en" | "pt";
+            translations?: {
+                en?: {
+                    question: string;
+                    answer: string;
+                };
+                pt?: {
+                    question: string;
+                    answer: string;
+                };
+            };
             answer?: string;
             choices?: {
                 id: string;
@@ -520,8 +568,20 @@ export interface components {
                 subjectId: string;
                 /** @enum {string} */
                 type: "open" | "quiz" | "type-answer" | "match";
+                /** @enum {string} */
+                language: "en" | "pt";
                 question: string;
                 answer: string;
+                translations?: {
+                    en?: {
+                        question: string;
+                        answer: string;
+                    };
+                    pt?: {
+                        question: string;
+                        answer: string;
+                    };
+                };
                 hints: string[];
                 tags: string[];
                 choices?: {
@@ -546,8 +606,20 @@ export interface components {
                 subjectId: string;
                 /** @enum {string} */
                 type: "open" | "quiz" | "type-answer" | "match";
+                /** @enum {string} */
+                language: "en" | "pt";
                 question: string;
                 answer: string;
+                translations?: {
+                    en?: {
+                        question: string;
+                        answer: string;
+                    };
+                    pt?: {
+                        question: string;
+                        answer: string;
+                    };
+                };
                 hints: string[];
                 tags: string[];
                 choices?: {
@@ -572,6 +644,13 @@ export interface components {
         ReviewQueueCountsResponseDto: {
             total: number;
             byType: {
+                open: number;
+                quiz: number;
+                "type-answer": number;
+                match: number;
+            };
+            reviewableTotal: number;
+            reviewableByType: {
                 open: number;
                 quiz: number;
                 "type-answer": number;
@@ -670,6 +749,18 @@ export interface components {
                 subjectId: string;
                 /** @enum {string} */
                 type?: "open" | "quiz" | "type-answer" | "match";
+                /** @enum {string} */
+                language?: "en" | "pt";
+                translations?: {
+                    en?: {
+                        question: string;
+                        answer: string;
+                    };
+                    pt?: {
+                        question: string;
+                        answer: string;
+                    };
+                };
                 question: string;
                 answer?: string;
                 choices?: {
@@ -714,8 +805,20 @@ export interface components {
                 subjectId: string;
                 /** @enum {string} */
                 type: "open" | "quiz" | "type-answer" | "match";
+                /** @enum {string} */
+                language: "en" | "pt";
                 question: string;
                 answer: string;
+                translations?: {
+                    en?: {
+                        question: string;
+                        answer: string;
+                    };
+                    pt?: {
+                        question: string;
+                        answer: string;
+                    };
+                };
                 hints: string[];
                 tags: string[];
                 choices?: {
@@ -1082,6 +1185,7 @@ export interface operations {
             query?: {
                 subject?: string;
                 type?: "open" | "quiz" | "type-answer" | "match";
+                ahead?: boolean;
             };
             header?: never;
             path?: never;
@@ -1104,6 +1208,7 @@ export interface operations {
             query?: {
                 subject?: string;
                 type?: "open" | "quiz" | "type-answer" | "match";
+                ahead?: boolean;
             };
             header?: never;
             path?: never;
@@ -1126,6 +1231,7 @@ export interface operations {
             query?: {
                 subject?: string;
                 type?: "open" | "quiz" | "type-answer" | "match";
+                ahead?: boolean;
             };
             header?: never;
             path?: never;

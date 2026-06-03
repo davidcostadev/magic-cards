@@ -40,20 +40,24 @@ function orderedSession(queue: ReviewQueue): Card[] {
 export function LearningSessionPage() {
   const params = useParams({ strict: false });
   const subjectId = (params as { subjectId?: string }).subjectId;
-  const { mode } = useSearch({ strict: false }) as { mode?: StudyMode };
+  const { mode, ahead } = useSearch({ strict: false }) as { mode?: StudyMode; ahead?: boolean };
   const navigate = useNavigate();
   const { t } = useTranslation();
   const counts = useTypeCounts(subjectId, !mode);
 
   const chooseMode = useCallback(
     (picked: StudyMode) => {
+      // Nothing due for this mode → start a review-ahead session (study cards before they're due).
+      const data = counts.data;
+      const due = !data ? 0 : picked === 'all' ? data.total : data.byType[picked];
+      const search = due === 0 ? { mode: picked, ahead: true } : { mode: picked };
       navigate({
         to: subjectId ? '/learn/$subjectId' : '/learn',
         params: subjectId ? { subjectId } : {},
-        search: { mode: picked },
+        search,
       });
     },
-    [navigate, subjectId]
+    [navigate, subjectId, counts.data]
   );
 
   if (!mode) {
@@ -64,7 +68,9 @@ export function LearningSessionPage() {
         </div>
       );
     }
-    if (counts.data.total === 0) {
+    // Only a subject with no cards at all is a dead end; if cards exist but none are due,
+    // the chooser stays open and offers review-ahead.
+    if (counts.data.reviewableTotal === 0) {
       return (
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center p-5">
           <GraduationCap className="h-16 w-16 text-muted-foreground" />
@@ -76,30 +82,43 @@ export function LearningSessionPage() {
       );
     }
     return (
-      <StudyModeModal counts={counts.data.byType} total={counts.data.total} onSelect={chooseMode} />
+      <StudyModeModal
+        counts={counts.data.byType}
+        total={counts.data.total}
+        reviewable={counts.data.reviewableByType}
+        reviewableTotal={counts.data.reviewableTotal}
+        onSelect={chooseMode}
+      />
     );
   }
 
   const type: CardType | undefined = mode === 'all' ? undefined : mode;
   return (
-    <LearningSession key={`${subjectId ?? 'all'}:${mode}`} subjectId={subjectId} type={type} />
+    <LearningSession
+      key={`${subjectId ?? 'all'}:${mode}:${ahead ? 'ahead' : 'due'}`}
+      subjectId={subjectId}
+      type={type}
+      ahead={!!ahead}
+    />
   );
 }
 
 interface LearningSessionProps {
   subjectId?: string;
   type?: CardType;
+  /** Review-ahead: pull already-seen cards that aren't due yet (used when nothing is due). */
+  ahead?: boolean;
 }
 
 /** Runs one study session: snapshots the deck, tracks progress, and handles the exit dialog. */
-function LearningSession({ subjectId, type }: LearningSessionProps) {
+function LearningSession({ subjectId, type, ahead = false }: LearningSessionProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { setInSession, exitRequested, requestExit, cancelExit } = useLearningSessions();
   const { user } = useAuth();
   const dailyGoal = user?.dailyGoal ?? DEFAULT_DAILY_GOAL;
 
-  const { data: queue, isLoading } = useReviewQueue(subjectId, type);
+  const { data: queue, isLoading } = useReviewQueue(subjectId, type, ahead);
   const submitReview = useSubmitReview();
 
   // Snapshot the queue once so mid-session invalidations don't reshuffle the deck.

@@ -577,6 +577,14 @@
                 "match"
               ]
             }
+          },
+          {
+            "name": "ahead",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -627,6 +635,14 @@
                 "match"
               ]
             }
+          },
+          {
+            "name": "ahead",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -676,6 +692,14 @@
                 "type-answer",
                 "match"
               ]
+            }
+          },
+          {
+            "name": "ahead",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -1448,11 +1472,55 @@
                     "match"
                   ]
                 },
+                "language": {
+                  "type": "string",
+                  "enum": [
+                    "en",
+                    "pt"
+                  ]
+                },
                 "question": {
                   "type": "string"
                 },
                 "answer": {
                   "type": "string"
+                },
+                "translations": {
+                  "type": "object",
+                  "properties": {
+                    "en": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    },
+                    "pt": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    }
+                  }
                 },
                 "hints": {
                   "type": "array",
@@ -1542,6 +1610,7 @@
                 "id",
                 "subjectId",
                 "type",
+                "language",
                 "question",
                 "answer",
                 "hints",
@@ -1579,6 +1648,50 @@
           "question": {
             "type": "string",
             "minLength": 1
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "pt"
+            ]
+          },
+          "translations": {
+            "type": "object",
+            "properties": {
+              "en": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              },
+              "pt": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              }
+            }
           },
           "answer": {
             "type": "string"
@@ -1670,11 +1783,55 @@
               "match"
             ]
           },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "pt"
+            ]
+          },
           "question": {
             "type": "string"
           },
           "answer": {
             "type": "string"
+          },
+          "translations": {
+            "type": "object",
+            "properties": {
+              "en": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              },
+              "pt": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              }
+            }
           },
           "hints": {
             "type": "array",
@@ -1764,6 +1921,7 @@
           "id",
           "subjectId",
           "type",
+          "language",
           "question",
           "answer",
           "hints",
@@ -1778,6 +1936,50 @@
           "question": {
             "type": "string",
             "minLength": 1
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "pt"
+            ]
+          },
+          "translations": {
+            "type": "object",
+            "properties": {
+              "en": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              },
+              "pt": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              }
+            }
           },
           "answer": {
             "type": "string"
@@ -1870,11 +2072,55 @@
                     "match"
                   ]
                 },
+                "language": {
+                  "type": "string",
+                  "enum": [
+                    "en",
+                    "pt"
+                  ]
+                },
                 "question": {
                   "type": "string"
                 },
                 "answer": {
                   "type": "string"
+                },
+                "translations": {
+                  "type": "object",
+                  "properties": {
+                    "en": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    },
+                    "pt": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    }
+                  }
                 },
                 "hints": {
                   "type": "array",
@@ -1964,6 +2210,7 @@
                 "id",
                 "subjectId",
                 "type",
+                "language",
                 "question",
                 "answer",
                 "hints",
@@ -1993,11 +2240,55 @@
                     "match"
                   ]
                 },
+                "language": {
+                  "type": "string",
+                  "enum": [
+                    "en",
+                    "pt"
+                  ]
+                },
                 "question": {
                   "type": "string"
                 },
                 "answer": {
                   "type": "string"
+                },
+                "translations": {
+                  "type": "object",
+                  "properties": {
+                    "en": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    },
+                    "pt": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    }
+                  }
                 },
                 "hints": {
                   "type": "array",
@@ -2087,6 +2378,7 @@
                 "id",
                 "subjectId",
                 "type",
+                "language",
                 "question",
                 "answer",
                 "hints",
@@ -2134,11 +2426,39 @@
               "type-answer",
               "match"
             ]
+          },
+          "reviewableTotal": {
+            "type": "number"
+          },
+          "reviewableByType": {
+            "type": "object",
+            "properties": {
+              "open": {
+                "type": "number"
+              },
+              "quiz": {
+                "type": "number"
+              },
+              "type-answer": {
+                "type": "number"
+              },
+              "match": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "open",
+              "quiz",
+              "type-answer",
+              "match"
+            ]
           }
         },
         "required": [
           "total",
-          "byType"
+          "byType",
+          "reviewableTotal",
+          "reviewableByType"
         ]
       },
       "CreateReviewDto": {
@@ -2547,6 +2867,50 @@
                     "match"
                   ]
                 },
+                "language": {
+                  "type": "string",
+                  "enum": [
+                    "en",
+                    "pt"
+                  ]
+                },
+                "translations": {
+                  "type": "object",
+                  "properties": {
+                    "en": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    },
+                    "pt": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    }
+                  }
+                },
                 "question": {
                   "type": "string",
                   "minLength": 1
@@ -2754,11 +3118,55 @@
                     "match"
                   ]
                 },
+                "language": {
+                  "type": "string",
+                  "enum": [
+                    "en",
+                    "pt"
+                  ]
+                },
                 "question": {
                   "type": "string"
                 },
                 "answer": {
                   "type": "string"
+                },
+                "translations": {
+                  "type": "object",
+                  "properties": {
+                    "en": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    },
+                    "pt": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    }
+                  }
                 },
                 "hints": {
                   "type": "array",
@@ -2848,6 +3256,7 @@
                 "id",
                 "subjectId",
                 "type",
+                "language",
                 "question",
                 "answer",
                 "hints",

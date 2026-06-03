@@ -39,6 +39,9 @@ export const reviewQueueQuerySchema = z.object({
   subject: z.string().min(1).optional(),
   // Optionally restrict the session to a single card type (e.g. only quizzes).
   type: z.enum(CARD_TYPES).optional(),
+  // Review-ahead: relax the due gate so already-seen, not-yet-due cards can be studied.
+  // Query strings arrive as text, so coerce the literal "true" (booleans pass through too).
+  ahead: z.preprocess((v) => v === 'true' || v === true, z.boolean()).optional(),
 });
 
 export const cardProgressResponseSchema = z.object({
@@ -84,8 +87,12 @@ export const cardTypeCountsSchema = z.object({
 });
 
 export const reviewQueueCountsResponseSchema = z.object({
+  // Studyable right now (new or overdue).
   total: z.number(),
   byType: cardTypeCountsSchema,
+  // The entire visible pool, regardless of schedule — what review-ahead can draw from.
+  reviewableTotal: z.number(),
+  reviewableByType: cardTypeCountsSchema,
 });
 
 export class CreateReviewDto extends createZodDto(createReviewSchema) {}

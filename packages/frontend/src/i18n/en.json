@@ -10,7 +10,9 @@
     "back": "Back",
     "confirm": "Confirm",
     "close": "Close",
-    "options": "Options"
+    "options": "Options",
+    "previous": "Previous",
+    "next": "Next"
   },
   "validation": {
     "required": "This field is required",
@@ -141,7 +143,11 @@
     "hintCount_other": "{{count}} hints",
     "hintNumber": "Hint {{n}}",
     "markdownPlaceholder": "Supports **Markdown** and ```code blocks```",
-    "tagPlaceholder": "Type and press Enter"
+    "tagPlaceholder": "Type and press Enter",
+    "search": "Search cards...",
+    "noResults": "No cards match your search.",
+    "correct": "Correct answer",
+    "pagination": "Card pages"
   },
   "learn": {
     "title": "Learning Session",
@@ -165,6 +171,8 @@
     "modeQuizzes": "Quizzes",
     "modeAll": "All ({{count}} cards)",
     "modeCardCount": "{{count}} cards",
+    "modeToReview": "{{count}} to review",
+    "reviewAhead": "review ahead",
     "eliminateChoice": "Eliminate",
     "modeTypeAnswer": "Type the Answer",
     "modeMatch": "Match Pairs",

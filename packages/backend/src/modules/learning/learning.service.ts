@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, getTableColumns, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns, isNull, lte, or, sql } from 'drizzle-orm';
 import { ApiError } from '../../common/errors/api-error';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
@@ -40,11 +40,16 @@ export class LearningService {
    * capped at the goal), then new (never-reviewed) cards to top the session up to the goal.
    * So a session holds at most `dailyGoal` cards. An optional `type` restricts the batch to a
    * single card type (e.g. only quizzes).
+   *
+   * In **review-ahead** mode (`ahead`), the due gate is relaxed: already-seen cards scheduled
+   * for the future are pulled in too (still soonest-due first), so a learner who is all caught
+   * up can keep practising. Genuinely overdue cards still come first; new cards top up the rest.
    */
   async getSessionCards(
     userId: string,
     subjectId?: string,
-    type?: Card['type']
+    type?: Card['type'],
+    ahead = false
   ): Promise<SessionCards> {
     if (subjectId) await this.assertSubjectVisible(userId, subjectId);
 
@@ -67,7 +72,8 @@ export class LearningService {
         and(
           eq(cardProgress.userId, userId),
           canSeeSubject(userId),
-          lte(cardProgress.nextReviewDate, now),
+          // Normal sessions only serve due/overdue cards; ahead mode drops this gate.
+          ahead ? undefined : lte(cardProgress.nextReviewDate, now),
           subjectFilter,
           typeFilter
         )
@@ -100,42 +106,79 @@ export class LearningService {
   }
 
   /**
-   * Counts the visible cards of each type (optionally within one subject) — powers the
-   * "choose what to study" screen, which needs a per-type total and to disable empty modes.
+   * Counts cards per type for the "choose what to study" screen, in two tiers:
+   * - `byType` / `total`: studyable RIGHT NOW (never reviewed, or due) — the same gate as
+   *   {@link getSessionCards}, so a mode with nothing due reflects today's session exactly.
+   * - `reviewableByType` / `reviewableTotal`: the entire visible pool regardless of schedule,
+   *   so the UI can show a "due / total" fraction and offer review-ahead once nothing is due.
+   * Both are optionally scoped to one subject.
    */
   async getTypeCounts(
     userId: string,
     subjectId?: string
-  ): Promise<{ total: number; byType: Record<Card['type'], number> }> {
+  ): Promise<{
+    total: number;
+    byType: Record<Card['type'], number>;
+    reviewableTotal: number;
+    reviewableByType: Record<Card['type'], number>;
+  }> {
+    const now = new Date().toISOString();
     const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
-    const rows = await this.db
+    const dueRows = await this.db
+      .select({ type: cards.type, count: sql<number>`count(*)::int` })
+      .from(cards)
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      .leftJoin(
+        cardProgress,
+        and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
+      )
+      .where(
+        and(
+          canSeeSubject(userId),
+          subjectFilter,
+          // Never reviewed (no progress row) OR overdue — the same gate as the study queue.
+          or(isNull(cardProgress.id), lte(cardProgress.nextReviewDate, now))
+        )
+      )
+      .groupBy(cards.type);
+
+    // The whole visible pool, regardless of due date — what review-ahead can draw from.
+    const allRows = await this.db
       .select({ type: cards.type, count: sql<number>`count(*)::int` })
       .from(cards)
       .innerJoin(subjects, eq(cards.subjectId, subjects.id))
       .where(and(canSeeSubject(userId), subjectFilter))
       .groupBy(cards.type);
 
-    const byType: Record<Card['type'], number> = {
+    const zero = (): Record<Card['type'], number> => ({
       open: 0,
       quiz: 0,
       'type-answer': 0,
       match: 0,
-    };
+    });
+    const byType = zero();
+    const reviewableByType = zero();
     let total = 0;
-    for (const row of rows) {
+    let reviewableTotal = 0;
+    for (const row of dueRows) {
       byType[row.type] = row.count;
       total += row.count;
     }
-    return { total, byType };
+    for (const row of allRows) {
+      reviewableByType[row.type] = row.count;
+      reviewableTotal += row.count;
+    }
+    return { total, byType, reviewableTotal, reviewableByType };
   }
 
   /** The single next card to study: most overdue, else the next new card, else null. */
   async getNextCard(
     userId: string,
     subjectId?: string,
-    type?: Card['type']
+    type?: Card['type'],
+    ahead = false
   ): Promise<CardResponse | null> {
-    const { due, new: newCards } = await this.getSessionCards(userId, subjectId, type);
+    const { due, new: newCards } = await this.getSessionCards(userId, subjectId, type, ahead);
     return due[0] ?? newCards[0] ?? null;
   }
 

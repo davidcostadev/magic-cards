@@ -10,7 +10,9 @@
     "back": "Voltar",
     "confirm": "Confirmar",
     "close": "Fechar",
-    "options": "Opções"
+    "options": "Opções",
+    "previous": "Anterior",
+    "next": "Próximo"
   },
   "validation": {
     "required": "Campo obrigatório",
@@ -141,7 +143,11 @@
     "hintCount_other": "{{count}} dicas",
     "hintNumber": "Dica {{n}}",
     "markdownPlaceholder": "Suporta **Markdown** e ```blocos de código```",
-    "tagPlaceholder": "Digite e pressione Enter"
+    "tagPlaceholder": "Digite e pressione Enter",
+    "search": "Buscar cards...",
+    "noResults": "Nenhum card corresponde à busca.",
+    "correct": "Resposta correta",
+    "pagination": "Páginas de cartões"
   },
   "learn": {
     "title": "Sessão de Estudo",
@@ -165,6 +171,8 @@
     "modeQuizzes": "Quizzes",
     "modeAll": "Todos ({{count}} cartões)",
     "modeCardCount": "{{count}} cartões",
+    "modeToReview": "{{count}} para revisar",
+    "reviewAhead": "revisar adiantado",
     "eliminateChoice": "Eliminar",
     "modeTypeAnswer": "Digite a Resposta",
     "modeMatch": "Combine os Pares",

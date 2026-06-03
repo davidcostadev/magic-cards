@@ -33,12 +33,22 @@ const OnboardingPage = lazy(() =>
 const STUDY_MODES = ['all', 'open', 'quiz', 'type-answer', 'match'] as const;
 export type StudyMode = (typeof STUDY_MODES)[number];
 
-/** Parses `?mode=` for the learn routes; an absent/unknown value shows the chooser. */
-function validateLearnSearch(search: Record<string, unknown>): { mode?: StudyMode } {
+/**
+ * Parses the learn routes' search. `?mode=` chooses what to study (absent/unknown shows the
+ * chooser); `?ahead=true` runs a review-ahead session (study already-seen cards before they're due).
+ */
+function validateLearnSearch(search: Record<string, unknown>): {
+  mode?: StudyMode;
+  ahead?: boolean;
+} {
   const mode = search.mode;
-  return typeof mode === 'string' && (STUDY_MODES as readonly string[]).includes(mode)
-    ? { mode: mode as StudyMode }
-    : {};
+  const validMode =
+    typeof mode === 'string' && (STUDY_MODES as readonly string[]).includes(mode)
+      ? (mode as StudyMode)
+      : undefined;
+  if (!validMode) return {};
+  const ahead = search.ahead === true || search.ahead === 'true';
+  return ahead ? { mode: validMode, ahead: true } : { mode: validMode };
 }
 
 function isAuthenticated() {

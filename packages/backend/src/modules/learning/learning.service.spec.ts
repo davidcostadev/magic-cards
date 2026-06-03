@@ -29,6 +29,18 @@ function addDueProgress(cardId: string, daysOverdue: number) {
   });
 }
 
+function addFutureProgress(cardId: string, daysAhead: number) {
+  return db.insert(cardProgress).values({
+    userId: 'u1',
+    cardId,
+    interval: 10,
+    easeFactor: 2.5,
+    repetitions: 3,
+    nextReviewDate: new Date(Date.now() + daysAhead * DAY_MS).toISOString(),
+    status: 'reviewing',
+  });
+}
+
 beforeEach(async () => {
   handle = await createTestDatabase();
   db = handle.db;
@@ -87,6 +99,60 @@ describe('LearningService.getSessionCards', () => {
     const { due, new: newCards } = await service().getSessionCards('u1');
     expect(due).toHaveLength(0);
     expect(newCards).toHaveLength(0);
+  });
+});
+
+describe('LearningService.getSessionCards — review ahead', () => {
+  it('includes not-yet-due (already-seen) cards when ahead=true, soonest-due first', async () => {
+    await addCard('c1');
+    await addCard('c2');
+    await addCard('c3');
+    await addFutureProgress('c1', 5);
+    await addFutureProgress('c2', 2);
+    await addFutureProgress('c3', 8);
+
+    const due = await service().getSessionCards('u1', undefined, undefined, true);
+    expect(due.due.map((c) => c.id)).toEqual(['c2', 'c1', 'c3']);
+    expect(due.new).toHaveLength(0);
+  });
+
+  it('still serves genuinely overdue cards before upcoming ones in ahead mode', async () => {
+    await addCard('over');
+    await addCard('soon');
+    await addDueProgress('over', 2);
+    await addFutureProgress('soon', 3);
+
+    const { due } = await service().getSessionCards('u1', undefined, undefined, true);
+    expect(due.map((c) => c.id)).toEqual(['over', 'soon']);
+  });
+
+  it('leaves the normal (non-ahead) session unchanged — future cards stay excluded', async () => {
+    await addCard('c1');
+    await addFutureProgress('c1', 5);
+
+    const { due, new: newCards } = await service().getSessionCards(
+      'u1',
+      undefined,
+      undefined,
+      false
+    );
+    expect(due).toHaveLength(0);
+    expect(newCards).toHaveLength(0);
+  });
+});
+
+describe('LearningService.getTypeCounts — reviewable pool', () => {
+  it('reports the full reviewable pool separately from the due-now counts', async () => {
+    await addCard('c1');
+    await addCard('c2');
+    await addDueProgress('c1', 1);
+    await addFutureProgress('c2', 5);
+
+    const counts = await service().getTypeCounts('u1');
+    expect(counts.byType.open).toBe(1);
+    expect(counts.total).toBe(1);
+    expect(counts.reviewableByType.open).toBe(2);
+    expect(counts.reviewableTotal).toBe(2);
   });
 });
 

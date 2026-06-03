@@ -18,23 +18,25 @@ export type CardType = components['schemas']['CardResponseDto']['type'];
 export type CardTypeCounts = components['schemas']['ReviewQueueCountsResponseDto'];
 
 export const reviewKeys = {
-  queue: (subject?: string, type?: CardType) =>
-    ['review_queue', subject ?? 'all', type ?? 'all'] as const,
+  queue: (subject?: string, type?: CardType, ahead = false) =>
+    ['review_queue', subject ?? 'all', type ?? 'all', ahead ? 'ahead' : 'due'] as const,
   counts: (subject?: string) => ['review_queue', 'counts', subject ?? 'all'] as const,
 };
 
 /**
  * Fetches the study batch (due first, then capped new cards) for a session.
- * An optional `type` narrows the batch to a single card type. Pass `enabled: false`
+ * An optional `type` narrows the batch to a single card type. With `ahead`, the due gate is
+ * relaxed so already-seen, not-yet-due cards are pulled in (review-ahead). Pass `enabled: false`
  * to hold off fetching until the learner has chosen a study mode.
  */
-export function useReviewQueue(subject?: string, type?: CardType, enabled = true) {
+export function useReviewQueue(subject?: string, type?: CardType, ahead = false, enabled = true) {
   return useQuery({
-    queryKey: reviewKeys.queue(subject, type),
+    queryKey: reviewKeys.queue(subject, type, ahead),
     queryFn: async () => {
-      const query: { subject?: string; type?: CardType } = {};
+      const query: { subject?: string; type?: CardType; ahead?: boolean } = {};
       if (subject) query.subject = subject;
       if (type) query.type = type;
+      if (ahead) query.ahead = true;
       const { data, error } = await apiClient.GET('/v1/review_queue', { params: { query } });
       if (error || !data) throw error;
       return data;
