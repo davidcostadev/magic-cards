@@ -17,6 +17,7 @@ export type CardType = components['schemas']['CardResponseDto']['type'];
 
 export type CardTypeCounts = components['schemas']['ReviewQueueCountsResponseDto'];
 export type EliminateChoiceInput = components['schemas']['EliminateChoiceDto'];
+export type CheckReviewInput = components['schemas']['CheckReviewDto'];
 
 export const reviewKeys = {
   queue: (subject?: string, type?: CardType, ahead = false) =>
@@ -91,6 +92,22 @@ export function useSubmitReview() {
       queryClient.invalidateQueries({ queryKey: subjectKeys.all });
       queryClient.invalidateQueries({ queryKey: cardKeys.all });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
+/**
+ * Grades a re-practised answer in the session's short loop WITHOUT scheduling or recording it —
+ * the first attempt already applied SM-2 and counted toward the daily goal. Returns the same
+ * `Grade` shape, so re-shown auto-graded cards still get correctness + the right answer. Stateless,
+ * so no cache invalidation.
+ */
+export function useCheckReview() {
+  return useMutation({
+    mutationFn: async (body: CheckReviewInput): Promise<Grade> => {
+      const { data, error } = await apiClient.POST('/v1/reviews/check', { body });
+      if (error || !data) throw error;
+      return data;
     },
   });
 }

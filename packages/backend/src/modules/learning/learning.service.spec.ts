@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDatabase, type DatabaseHandle, type DrizzleDB } from '../../db/client';
-import { cardProgress, cards, subjects, users } from '../../db/schema';
+import { cardProgress, cards, reviewHistory, subjects, users } from '../../db/schema';
 import { GradingService } from './grading.service';
 import { LearningService } from './learning.service';
 import { Sm2Service } from './sm2.service';
@@ -53,14 +53,14 @@ afterEach(async () => {
 });
 
 describe('LearningService.getSessionCards', () => {
-  it('fills new cards up to the daily goal (default 20) when nothing is due', async () => {
+  it('fills new cards up to the session size (10) when nothing is due', async () => {
     for (let i = 1; i <= 25; i++) await addCard(`c${i}`);
     const { due, new: newCards } = await service().getSessionCards('u1');
     expect(due).toHaveLength(0);
-    expect(newCards).toHaveLength(20);
+    expect(newCards).toHaveLength(10);
   });
 
-  it('counts due cards against the daily goal — due first, new fills the rest', async () => {
+  it('counts due cards against the session size — due first, new fills the rest', async () => {
     for (let i = 1; i <= 25; i++) await addCard(`c${i}`);
     await addDueProgress('c1', 1);
     await addDueProgress('c2', 2);
@@ -68,8 +68,8 @@ describe('LearningService.getSessionCards', () => {
 
     const { due, new: newCards } = await service().getSessionCards('u1');
     expect(due).toHaveLength(3);
-    expect(newCards).toHaveLength(17);
-    expect(due.length + newCards.length).toBe(20);
+    expect(newCards).toHaveLength(7);
+    expect(due.length + newCards.length).toBe(10);
   });
 
   it('orders overdue cards most-overdue first', async () => {
@@ -172,5 +172,62 @@ describe('LearningService.getNextCard', () => {
 
   it('returns null when the queue is empty', async () => {
     expect(await service().getNextCard('u1')).toBeNull();
+  });
+});
+
+describe('LearningService.checkReview', () => {
+  function addQuiz(id: string) {
+    return db.insert(cards).values({
+      id,
+      subjectId: 's1',
+      type: 'quiz',
+      question: id,
+      answer: 'because b',
+      payload: {
+        choices: [
+          { id: 'a', text: 'A', isCorrect: false },
+          { id: 'b', text: 'B', isCorrect: true },
+        ],
+      },
+    });
+  }
+
+  it('grades a correct answer and reveals the explanation', async () => {
+    await addQuiz('q1');
+    const grade = await service().checkReview('u1', {
+      cardId: 'q1',
+      response: { type: 'quiz', choiceId: 'b' },
+    });
+    expect(grade.correct).toBe(true);
+    expect(grade.correctChoiceId).toBe('b');
+    expect(grade.explanation).toBe('because b');
+  });
+
+  it('grades a wrong answer as incorrect but still reveals the right choice', async () => {
+    await addQuiz('q1');
+    const grade = await service().checkReview('u1', {
+      cardId: 'q1',
+      response: { type: 'quiz', choiceId: 'a' },
+    });
+    expect(grade.correct).toBe(false);
+    expect(grade.correctChoiceId).toBe('b');
+  });
+
+  it('persists nothing — no progress and no review history (re-practice only)', async () => {
+    await addQuiz('q1');
+    await service().checkReview('u1', { cardId: 'q1', response: { type: 'quiz', choiceId: 'a' } });
+    await service().checkReview('u1', { cardId: 'q1', response: { type: 'quiz', choiceId: 'b' } });
+    expect(await db.select().from(cardProgress)).toHaveLength(0);
+    expect(await db.select().from(reviewHistory)).toHaveLength(0);
+  });
+
+  it("returns 404 for another user's card", async () => {
+    await addQuiz('q1');
+    await db
+      .insert(users)
+      .values({ id: 'u2', email: 'u2@t.com', passwordHash: 'x', username: 'u2' });
+    await expect(
+      service().checkReview('u2', { cardId: 'q1', response: { type: 'quiz', choiceId: 'b' } })
+    ).rejects.toThrow();
   });
 });

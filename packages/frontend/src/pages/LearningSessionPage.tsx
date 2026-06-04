@@ -6,6 +6,7 @@ import type { Card } from '@/api/queries/cards';
 import {
   type CardType,
   type ReviewQueue,
+  useCheckReview,
   useEliminateChoice,
   useReviewQueue,
   useSubmitReview,
@@ -16,6 +17,12 @@ import { CardReview, type ReviewSubmission } from '@/components/features/learnin
 import { ReportCardSheet } from '@/components/features/learning/ReportCardSheet';
 import { SessionSummary } from '@/components/features/learning/SessionSummary';
 import { type StudyMode, StudyModeModal } from '@/components/features/learning/StudyModeModal';
+import {
+  advance,
+  initSession,
+  isRelearning,
+  type SessionState,
+} from '@/components/features/learning/sessionQueue';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -123,23 +130,23 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
 
   const { data: queue, isLoading } = useReviewQueue(subjectId, type, ahead);
   const submitReview = useSubmitReview();
+  const checkReview = useCheckReview();
   const eliminateChoice = useEliminateChoice();
 
-  // Snapshot the queue once so mid-session invalidations don't reshuffle the deck.
-  const [sessionCards, setSessionCards] = useState<Card[] | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [completed, setCompleted] = useState(false);
+  // Snapshot the queue once so mid-session invalidations don't reshuffle the deck. The session
+  // queue then grows as wrong cards are requeued for re-practice (the short loop).
+  const [session, setSession] = useState<SessionState | null>(null);
   const startTime = useRef(Date.now());
 
   useEffect(() => {
-    if (queue && sessionCards === null) {
-      setSessionCards(orderedSession(queue));
+    if (queue && session === null) {
+      setSession(initSession(orderedSession(queue)));
       startTime.current = Date.now();
     }
-  }, [queue, sessionCards]);
+  }, [queue, session]);
 
-  const activeSession = !!sessionCards && sessionCards.length > 0 && !completed;
+  const activeSession = !!session && session.deck.length > 0 && !session.completed;
+  const cardIndex = session?.index;
 
   useEffect(() => {
     setInSession(activeSession);
@@ -148,7 +155,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [currentIndex]);
+  }, [cardIndex]);
 
   const confirmExit = useCallback(() => {
     setInSession(false);
@@ -173,7 +180,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
   // Close the report sheet when the card advances, and clear the overlay lock on unmount.
   useEffect(() => {
     setOverlayOpen(false);
-  }, [currentIndex, setOverlayOpen]);
+  }, [cardIndex, setOverlayOpen]);
   useEffect(() => () => setOverlayOpen(false), [setOverlayOpen]);
 
   useEffect(() => {
@@ -188,7 +195,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [exitRequested, confirmExit]);
 
-  if (isLoading || sessionCards === null) {
+  if (isLoading || session === null) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center p-5">
         <p className="text-lg text-muted-foreground">{t('common.loading')}</p>
@@ -196,7 +203,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
     );
   }
 
-  if (sessionCards.length === 0) {
+  if (session.deck.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center p-5">
         <GraduationCap className="h-16 w-16 text-muted-foreground" />
@@ -208,21 +215,32 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
     );
   }
 
-  if (completed) {
+  if (session.completed) {
     return (
       <SessionSummary
-        cardsReviewed={sessionCards.length}
-        correctCount={correctCount}
+        cardsReviewed={session.firstPassLength}
+        correctCount={session.firstPassCorrect}
         timeSpentMs={Date.now() - startTime.current}
       />
     );
   }
 
-  const currentCard = sessionCards[currentIndex];
+  const currentCard = session.deck[session.index];
+  const relearning = isRelearning(session);
 
-  // Runs the review mutation. Open cards carry a self-assessed `quality`; the auto-graded
-  // types carry their `response` and the server returns the grade for the UI to display.
+  // Runs the review for the current answer. On the first pass it submits (server schedules via
+  // SM-2 + records it). While re-practising a requeued mistake (`relearning`) it only CHECKS:
+  // auto-graded cards are re-graded server-side for feedback without rescheduling/recounting,
+  // and open cards are self-assessed on the client (no server call needed).
   const handleSubmit = async (input: ReviewSubmission) => {
+    if (relearning) {
+      if (!input.response) return undefined;
+      try {
+        return await checkReview.mutateAsync({ cardId: currentCard.id, response: input.response });
+      } catch {
+        return undefined;
+      }
+    }
     try {
       const data = await submitReview.mutateAsync({
         cardId: currentCard.id,
@@ -248,22 +266,29 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
   };
 
   const handleAdvance = (correct: boolean) => {
-    if (correct) setCorrectCount((prev) => prev + 1);
-    if (currentIndex + 1 >= sessionCards.length) {
-      setCompleted(true);
-    } else {
-      setCurrentIndex((prev) => prev + 1);
-    }
+    setSession((prev) => (prev ? advance(prev, correct) : prev));
   };
 
   return (
     <>
+      {relearning && (
+        <div className="mx-auto mb-3 flex max-w-2xl justify-center px-4">
+          <span
+            role="status"
+            className="rounded-full bg-warning/15 px-3 py-1 text-sm font-medium text-warning"
+          >
+            {t('learn.reviewingMistakes')}
+          </span>
+        </div>
+      )}
+
       <CardReview
-        key={currentCard.id}
+        // Keyed by deck position (not card id) so a requeued card remounts and resets its state.
+        key={session.index}
         card={currentCard}
-        currentIndex={currentIndex}
-        totalCards={sessionCards.length}
-        dailyGoalProgress={currentIndex}
+        currentIndex={Math.min(session.index, session.firstPassLength - 1)}
+        totalCards={session.firstPassLength}
+        dailyGoalProgress={session.index}
         dailyGoal={dailyGoal}
         onSubmit={handleSubmit}
         onAdvance={handleAdvance}

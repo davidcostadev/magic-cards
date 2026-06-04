@@ -787,6 +787,42 @@
         ]
       }
     },
+    "/v1/reviews/check": {
+      "post": {
+        "operationId": "ReviewsController_check",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckReviewResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
     "/v1/quiz_hints": {
       "post": {
         "operationId": "ReviewsController_eliminate",
@@ -2776,6 +2812,129 @@
           "cardId",
           "timeSpent",
           "wasHintUsed"
+        ]
+      },
+      "CheckReviewDto": {
+        "type": "object",
+        "properties": {
+          "cardId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "response": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "quiz"
+                  },
+                  "choiceId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "choiceId"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "type-answer"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "text"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "match"
+                  },
+                  "pairs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "left": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "right": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "left",
+                        "right"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "pairs"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "cardId",
+          "response"
+        ]
+      },
+      "CheckReviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "correct": {
+            "type": "boolean"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "correctChoiceId": {
+            "type": "string"
+          },
+          "correctText": {
+            "type": "string"
+          },
+          "correctPairs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "left": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "right": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "left",
+                "right"
+              ]
+            }
+          }
+        },
+        "required": [
+          "correct",
+          "explanation"
         ]
       },
       "SubmitReviewResponseDto": {

@@ -11,11 +11,11 @@ import {
   type MatchPair,
   reviewHistory,
   subjects,
-  users,
 } from '../../db/schema';
 import { toCardResponse } from '../cards/card-mapper';
 import type { CardResponse } from '../cards/dto/card.dto';
 import type {
+  CheckReviewInput,
   CreateReviewInput,
   EliminateChoiceInput,
   EliminateChoiceResult,
@@ -26,7 +26,12 @@ import { GradingService } from './grading.service';
 import { Sm2Service } from './sm2.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const DEFAULT_DAILY_GOAL = 20;
+/**
+ * How many cards a single learn session serves — distinct from the user's daily goal (the
+ * day's target, which drives the dashboard/streak). A learner with a goal of 20 does ~2
+ * sessions of this size to hit it. Kept small so a session is a short, completable batch.
+ */
+const SESSION_SIZE = 10;
 
 export interface SessionCards {
   due: CardResponse[];
@@ -42,10 +47,10 @@ export class LearningService {
   ) {}
 
   /**
-   * Builds the study batch to fill the daily goal: overdue cards first (most overdue first,
-   * capped at the goal), then new (never-reviewed) cards to top the session up to the goal.
-   * So a session holds at most `dailyGoal` cards. An optional `type` restricts the batch to a
-   * single card type (e.g. only quizzes).
+   * Builds the study batch for one session: overdue cards first (most overdue first, capped at
+   * {@link SESSION_SIZE}), then new (never-reviewed) cards to top the session up to that size.
+   * So a session holds at most `SESSION_SIZE` cards — independent of the user's daily goal. An
+   * optional `type` restricts the batch to a single card type (e.g. only quizzes).
    *
    * In **review-ahead** mode (`ahead`), the due gate is relaxed: already-seen cards scheduled
    * for the future are pulled in too (still soonest-due first), so a learner who is all caught
@@ -60,12 +65,6 @@ export class LearningService {
     if (subjectId) await this.assertSubjectVisible(userId, subjectId);
 
     const now = new Date().toISOString();
-    const [user] = await this.db
-      .select({ goal: users.dailyGoal })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-    const dailyGoal = user?.goal ?? DEFAULT_DAILY_GOAL;
     const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
     const typeFilter = type ? eq(cards.type, type) : undefined;
 
@@ -85,10 +84,10 @@ export class LearningService {
         )
       )
       .orderBy(asc(cardProgress.nextReviewDate))
-      .limit(dailyGoal);
+      .limit(SESSION_SIZE);
 
-    // New cards top the session up to the daily goal after due reviews take their share.
-    const maxNew = Math.max(0, dailyGoal - due.length);
+    // New cards top the session up to the session size after due reviews take their share.
+    const maxNew = Math.max(0, SESSION_SIZE - due.length);
     const newCards =
       maxNew > 0
         ? await this.db
@@ -268,6 +267,27 @@ export class LearningService {
   }
 
   /**
+   * Grades an auto-correctable answer WITHOUT persisting anything — no SM-2, no progress upsert,
+   * no review-history row. Used by the in-session short loop, where a wrong card is re-practised
+   * until the learner clears it: scheduling and counting already happened on the first attempt,
+   * so a re-attempt only needs feedback.
+   */
+  async checkReview(userId: string, input: CheckReviewInput): Promise<GradeResult> {
+    const [card] = await this.db
+      .select({ type: cards.type, answer: cards.answer, payload: cards.payload })
+      .from(cards)
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      .where(and(eq(cards.id, input.cardId), canSeeSubject(userId)))
+      .limit(1);
+    if (!card) throw ApiError.notFound('cards.notFound');
+    // Only the auto-graded types are checkable (open cards are self-assessed on the client).
+    if (input.response.type !== card.type) {
+      throw ApiError.badRequest('errors.validation', 'response');
+    }
+    return this.gradeAutoResponse(card, input.response);
+  }
+
+  /**
    * Quiz "eliminate" hint: returns the next wrong choice to grey out (or `null` once two remain).
    * Decided server-side because the study payload never carries which choice is correct — so the
    * client can't pick a wrong one to disable itself. Counts toward `wasHintUsed` on the client.
@@ -292,8 +312,8 @@ export class LearningService {
 
   /**
    * Derives the SM-2 quality for a review. `open` cards are self-assessed (the client's
-   * `quality` is trusted); the auto-graded types are corrected here from the learner's
-   * `response`, so the answer never has to be shipped to the client.
+   * `quality` is trusted); the auto-graded types are corrected from the learner's `response`,
+   * so the answer never has to be shipped to the client.
    */
   private resolveQuality(
     card: { type: Card['type']; answer: string; payload: Card['payload'] },
@@ -309,8 +329,21 @@ export class LearningService {
       throw ApiError.badRequest('errors.validation', 'response');
     }
 
-    let correct: boolean;
+    const grade = this.gradeAutoResponse(card, response);
+    return { quality: this.grading.qualityForCorrectness(grade.correct), grade };
+  }
+
+  /**
+   * Grades an auto-correctable response (quiz / type-answer / match) against the card, returning
+   * the feedback revealed after answering. Shared by {@link submitReview} (which also schedules)
+   * and {@link checkReview} (which only grades). The grading data lives only here on the server.
+   */
+  private gradeAutoResponse(
+    card: { answer: string; payload: Card['payload'] },
+    response: NonNullable<CreateReviewInput['response']>
+  ): GradeResult {
     const detail: Partial<GradeResult> = {};
+    let correct: boolean;
     if (response.type === 'quiz') {
       const choices = (card.payload as { choices: CardChoice[] } | null)?.choices ?? [];
       const result = this.grading.gradeQuiz(choices, response.choiceId);
@@ -328,10 +361,7 @@ export class LearningService {
       detail.correctPairs = result.correctPairs;
     }
 
-    return {
-      quality: this.grading.qualityForCorrectness(correct),
-      grade: { correct, explanation: card.answer, ...detail },
-    };
+    return { correct, explanation: card.answer, ...detail };
   }
 
   private async assertSubjectVisible(userId: string, subjectId: string): Promise<void> {

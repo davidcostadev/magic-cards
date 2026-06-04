@@ -35,6 +35,16 @@ export const createReviewSchema = z
     }
   });
 
+/**
+ * A "check" of an auto-graded answer — used by the in-session short loop to re-grade a card the
+ * learner is re-practising. Same `response` shape as a real review, but the endpoint only grades
+ * it and returns feedback: nothing is scheduled or recorded (the first attempt already did that).
+ */
+export const checkReviewSchema = z.object({
+  cardId: z.string().min(1),
+  response: reviewResponseSchema,
+});
+
 export const reviewQueueQuerySchema = z.object({
   subject: z.string().min(1).optional(),
   // Optionally restrict the session to a single card type (e.g. only quizzes).
@@ -111,6 +121,9 @@ export const reviewQueueCountsResponseSchema = z.object({
 });
 
 export class CreateReviewDto extends createZodDto(createReviewSchema) {}
+export class CheckReviewDto extends createZodDto(checkReviewSchema) {}
+/** A grade-only check returns just the grading feedback — same shape as a review's `grade`. */
+export class CheckReviewResponseDto extends createZodDto(gradeResultSchema) {}
 export class EliminateChoiceDto extends createZodDto(eliminateChoiceSchema) {}
 export class EliminateChoiceResponseDto extends createZodDto(eliminateChoiceResponseSchema) {}
 export class ReviewQueueQueryDto extends createZodDto(reviewQueueQuerySchema) {}
@@ -123,6 +136,7 @@ export type CardProgressResponse = z.infer<typeof cardProgressResponseSchema>;
 export type ReviewQueueResponse = z.infer<typeof reviewQueueResponseSchema>;
 export type ReviewQueueCountsResponse = z.infer<typeof reviewQueueCountsResponseSchema>;
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;
+export type CheckReviewInput = z.infer<typeof checkReviewSchema>;
 export type EliminateChoiceInput = z.infer<typeof eliminateChoiceSchema>;
 export type EliminateChoiceResult = z.infer<typeof eliminateChoiceResponseSchema>;
 export type GradeResult = z.infer<typeof gradeResultSchema>;

@@ -173,6 +173,7 @@
     "revealAnswer": "Reveal Answer",
     "nextCard": "Next Card",
     "progress": "Card {{current}} of {{total}}",
+    "reviewingMistakes": "Reviewing mistakes",
     "qualityWrong": "Wrong",
     "qualityRight": "Right",
     "timeUp": "Time's up!",

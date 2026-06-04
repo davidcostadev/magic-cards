@@ -54,11 +54,6 @@ export function Header() {
                   total: sessionInfo.totalCards,
                 })}
               </span>
-              <span className="text-sm text-muted-foreground hidden sm:block">
-                {t('learn.dailyGoalProgress')}:{' '}
-                {Math.min(sessionInfo.dailyGoalProgress, sessionInfo.dailyGoal)}/
-                {sessionInfo.dailyGoal}
-              </span>
             </div>
             <div className="flex items-center gap-3">
               {showTimer && (

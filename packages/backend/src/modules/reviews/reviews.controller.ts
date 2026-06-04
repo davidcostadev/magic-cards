@@ -6,10 +6,13 @@ import type { AuthUser } from '../../common/types/authenticated-request';
 import { CardResponseDto } from '../cards/dto/card.dto';
 import { LearningService } from '../learning/learning.service';
 import {
+  CheckReviewDto,
+  CheckReviewResponseDto,
   CreateReviewDto,
   EliminateChoiceDto,
   EliminateChoiceResponseDto,
   type EliminateChoiceResult,
+  type GradeResult,
   type ReviewQueueCountsResponse,
   ReviewQueueCountsResponseDto,
   ReviewQueueQueryDto,
@@ -73,6 +76,14 @@ export class ReviewsController {
     @Body() body: CreateReviewDto
   ): Promise<SubmitReviewResult> {
     return this.learning.submitReview(user.id, body);
+  }
+
+  // Grade-only: re-grades a re-practised answer in the short loop, without scheduling or recording.
+  @Post('reviews/check')
+  @HttpCode(200)
+  @ApiOkResponse({ type: CheckReviewResponseDto })
+  check(@CurrentUser() user: AuthUser, @Body() body: CheckReviewDto): Promise<GradeResult> {
+    return this.learning.checkReview(user.id, body);
   }
 
   // Quiz "eliminate" hint: greys out one wrong choice at a time (correctness stays server-side).

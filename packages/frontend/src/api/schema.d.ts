@@ -212,6 +212,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/reviews/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewsController_check"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/quiz_hints": {
         parameters: {
             query?: never;
@@ -750,6 +766,35 @@ export interface components {
             };
             timeSpent: number;
             wasHintUsed: boolean;
+        };
+        CheckReviewDto: {
+            cardId: string;
+            response: {
+                /** @constant */
+                type: "quiz";
+                choiceId: string;
+            } | {
+                /** @constant */
+                type: "type-answer";
+                text: string;
+            } | {
+                /** @constant */
+                type: "match";
+                pairs: {
+                    left: string;
+                    right: string;
+                }[];
+            };
+        };
+        CheckReviewResponseDto: {
+            correct: boolean;
+            explanation: string;
+            correctChoiceId?: string;
+            correctText?: string;
+            correctPairs?: {
+                left: string;
+                right: string;
+            }[];
         };
         SubmitReviewResponseDto: {
             progress: {
@@ -1399,6 +1444,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubmitReviewResponseDto"];
+                };
+            };
+        };
+    };
+    ReviewsController_check: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckReviewDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckReviewResponseDto"];
                 };
             };
         };

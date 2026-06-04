@@ -35,16 +35,45 @@ describe('Sm2Service.calculateNextReview', () => {
     expect(result.newInterval).toBe(Math.round(6 * 2.36)); // 14
   });
 
-  it('resets to a 1-day interval and 0 repetitions on a failed review (quality < 3)', () => {
-    const result = sm2.calculateNextReview(1, 30, 2.5, 5);
+  it('never lets the ease factor fall below the 1.3 floor', () => {
+    const result = sm2.calculateNextReview(1, 1, 1.3, 0);
+    expect(result.newEaseFactor).toBe(1.3);
+  });
+});
+
+describe('Sm2Service.calculateNextReview — lapse (failed review, quality < 3)', () => {
+  it('fully resets an immature card (interval < 7 days) to 1 day / 0 repetitions', () => {
+    const result = sm2.calculateNextReview(1, 5, 2.5, 2);
     expect(result.newInterval).toBe(1);
     expect(result.newRepetitions).toBe(0);
     expect(result.newEaseFactor).toBeCloseTo(1.96, 5); // 2.5 - 0.54
   });
 
-  it('never lets the ease factor fall below the 1.3 floor', () => {
-    const result = sm2.calculateNextReview(1, 1, 1.3, 0);
-    expect(result.newEaseFactor).toBe(1.3);
+  it('steps a mature card back instead of collapsing it (gentle lapse)', () => {
+    // A 30-day card → half the interval, repetitions stepped back (not zeroed), so one good
+    // review recovers it via the ×ease branch instead of climbing 1→3→… from scratch.
+    const result = sm2.calculateNextReview(1, 30, 2.5, 5);
+    expect(result.newInterval).toBe(15); // round(30 * 0.5)
+    expect(result.newRepetitions).toBe(3); // max(2, 5 - 2)
+    expect(result.newEaseFactor).toBeCloseTo(1.96, 5);
+  });
+
+  it('treats interval 7 as mature (boundary) and steps back', () => {
+    const result = sm2.calculateNextReview(2, 7, 2.0, 4);
+    expect(result.newInterval).toBe(4); // round(7 * 0.5) = 4 (3.5 → 4)
+    expect(result.newRepetitions).toBe(2); // max(2, 4 - 2)
+  });
+
+  it('treats interval 6 as immature (boundary) and fully resets', () => {
+    const result = sm2.calculateNextReview(2, 6, 2.0, 3);
+    expect(result.newInterval).toBe(1);
+    expect(result.newRepetitions).toBe(0);
+  });
+
+  it('never lets a mature lapse drop below 2 repetitions', () => {
+    const result = sm2.calculateNextReview(1, 10, 2.5, 3);
+    expect(result.newRepetitions).toBe(2); // max(2, 3 - 2)
+    expect(result.newInterval).toBe(5); // round(10 * 0.5)
   });
 });
 
