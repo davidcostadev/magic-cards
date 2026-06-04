@@ -183,6 +183,21 @@
   content: none;
 }
 
+/*
+ * Inline Markdown inside quiz choices (and similar labels). The chip tint is derived from
+ * currentColor so it reads on the plain secondary tile AND on the white-on-green/red answered
+ * states, without a fixed background that would clash with either.
+ */
+.md-inline code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.3em;
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .hljs-comment,
 .hljs-quote {
   color: var(--hl-comment);

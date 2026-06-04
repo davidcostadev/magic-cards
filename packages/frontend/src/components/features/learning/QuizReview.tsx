@@ -8,6 +8,7 @@ import { useLearningSessions } from '@/context/LearningContext';
 import { cn } from '@/utils/cn';
 import { isInteractiveTarget, isTypingTarget } from '@/utils/keyboard';
 import { HintReveal } from './HintReveal';
+import { InlineMarkdown } from './InlineMarkdown';
 import { MarkdownContent } from './MarkdownContent';
 import type { CardReviewProps } from './reviewTypes';
 import { useReviewSession } from './useReviewSession';
@@ -66,7 +67,8 @@ export function QuizReview({
     setSubmitting(false);
   }
 
-  // Keyboard: 1–9 picks a choice; Enter advances once answered.
+  // Keyboard: 1–9 picks a choice; H reveals the next hint; Enter reveals the answer (gives up)
+  // while unanswered, then advances once answered.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (exitRequested || isTypingTarget(e.target)) return;
@@ -78,7 +80,20 @@ export function QuizReview({
         }
         return;
       }
-      if (!submitting && /^[1-9]$/.test(key)) {
+      if (submitting) return;
+      if (key.toLowerCase() === 'h' && revealedHints < card.hints.length) {
+        e.preventDefault();
+        setRevealedHints((prev) => prev + 1);
+        return;
+      }
+      // Enter (when no choice is focused) gives up the card: reveal the answer without a pick,
+      // graded as not-correct — so "I don't know" never rides on a lucky guess.
+      if (key === 'Enter' && !isInteractiveTarget(document.activeElement)) {
+        e.preventDefault();
+        void submitChoice('');
+        return;
+      }
+      if (/^[1-9]$/.test(key)) {
         const choice = choices[Number(key) - 1];
         if (choice) {
           e.preventDefault();
@@ -88,7 +103,16 @@ export function QuizReview({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [answered, submitting, choices, grade, exitRequested, onAdvance]);
+  }, [
+    answered,
+    submitting,
+    choices,
+    grade,
+    exitRequested,
+    onAdvance,
+    revealedHints,
+    card.hints.length,
+  ]);
 
   const choiceStyle = (id: string) => {
     if (!answered)
@@ -139,11 +163,25 @@ export function QuizReview({
               ) : (
                 <Kbd className="h-8 w-8 shrink-0 text-sm">{index + 1}</Kbd>
               )}
-              <span>{choice.text}</span>
+              <InlineMarkdown text={choice.text} />
             </button>
           );
         })}
       </div>
+
+      {!answered && (
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => void submitChoice('')}
+          disabled={submitting}
+          className="w-full text-muted-foreground"
+          aria-keyshortcuts="Enter"
+        >
+          {t('learn.revealAnswer')}
+          <Kbd className="ml-2">{t('learn.keyEnter')}</Kbd>
+        </Button>
+      )}
 
       {answered && (
         <div className="space-y-3 animate-[fadeIn_200ms_ease-in]">
