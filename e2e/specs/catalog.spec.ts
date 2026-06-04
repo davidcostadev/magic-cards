@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { startStudying } from '../helpers';
 
 const API = 'http://localhost:3100';
 const API_KEY = 'e2e-content-key-1234567890';
@@ -8,10 +9,15 @@ test('published catalog content is visible and studyable by a new user', async (
   page,
   request,
 }) => {
+  // Catalog content is public and persists, so use a unique title to stay isolated across runs.
+  const unique = Date.now();
+  const subjectTitle = `Shared SQL ${unique}`;
+  const subjectName = new RegExp(subjectTitle);
+
   // Publish a public subject + card using the content API key.
   const subjectRes = await request.post(`${API}/v1/catalog/subjects`, {
     headers: { 'x-api-key': API_KEY },
-    data: { title: 'Shared SQL', color: '#336791' },
+    data: { title: subjectTitle, color: '#336791' },
   });
   expect(subjectRes.status()).toBe(201);
   const subject = await subjectRes.json();
@@ -24,7 +30,6 @@ test('published catalog content is visible and studyable by a new user', async (
   expect(cardRes.status()).toBe(201);
 
   // A brand-new learner signs up and goes through onboarding.
-  const unique = Date.now();
   await page.goto('/signup');
   await page.getByLabel('Username').fill(`cat_${unique}`);
   await page.getByLabel('Email').fill(`cat_${unique}@example.com`);
@@ -35,10 +40,10 @@ test('published catalog content is visible and studyable by a new user', async (
 
   // The shared subject shows up in their list (marked Shared)...
   await page.getByRole('link', { name: 'Subjects' }).first().click();
-  await expect(page.getByRole('link', { name: /Shared SQL/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: subjectName })).toBeVisible();
 
   // ...and they can study it.
-  await page.getByRole('link', { name: /Shared SQL/ }).click();
-  await page.getByRole('link', { name: 'Start Studying' }).first().click();
+  await page.getByRole('link', { name: subjectName }).click();
+  await startStudying(page, 'Flashcards');
   await expect(page.getByText('What does SELECT do?')).toBeVisible();
 });

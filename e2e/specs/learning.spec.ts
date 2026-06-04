@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { startStudying } from '../helpers';
 
 // Phase 1 flow: create a subject, add a card, and study it through one review (FRD-003).
 test('a learner can create a subject, add a card, and study it', async ({ page }) => {
@@ -31,7 +32,7 @@ test('a learner can create a subject, add a card, and study it', async ({ page }
   await expect(page.getByText('Big-O of binary search?')).toBeVisible();
 
   // Study the card: reveal the answer and rate it Right.
-  await page.getByRole('link', { name: 'Start Studying' }).first().click();
+  await startStudying(page, 'Flashcards');
   await expect(page.getByText('Big-O of binary search?')).toBeVisible();
   await page.getByRole('button', { name: 'Reveal Answer' }).click();
   await page.getByRole('button', { name: 'Right' }).click();

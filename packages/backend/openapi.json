@@ -787,6 +787,42 @@
         ]
       }
     },
+    "/v1/quiz_hints": {
+      "post": {
+        "operationId": "ReviewsController_eliminate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EliminateChoiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EliminateChoiceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
     "/v1/dashboard/stats": {
       "get": {
         "operationId": "DashboardController_stats",
@@ -2853,6 +2889,43 @@
         },
         "required": [
           "progress"
+        ]
+      },
+      "EliminateChoiceDto": {
+        "type": "object",
+        "properties": {
+          "cardId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "eliminatedChoiceIds": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "cardId"
+        ]
+      },
+      "EliminateChoiceResponseDto": {
+        "type": "object",
+        "properties": {
+          "choiceId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "choiceId"
         ]
       },
       "DashboardStatsDto": {

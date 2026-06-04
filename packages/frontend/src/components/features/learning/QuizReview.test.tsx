@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Card } from '@/api/queries/cards';
@@ -72,33 +72,101 @@ describe('QuizReview', () => {
     expect(onAdvance).toHaveBeenCalledWith(true);
   });
 
-  it('reveals the next hint with the H keyboard shortcut and flags the submission', async () => {
+  const threeChoiceCard = {
+    ...card,
+    choices: [
+      { id: 'a', text: 'Alpha' },
+      { id: 'b', text: 'Beta' },
+      { id: 'c', text: 'Gamma' },
+    ],
+  } as Card;
+
+  it('eliminates a wrong choice via the H shortcut, disables it, and flags the submission as hinted', async () => {
     const onSubmit = vi.fn().mockResolvedValue({
-      correct: false,
+      correct: true,
       correctChoiceId: 'b',
       explanation: '',
     });
-    const onAdvance = vi.fn();
+    // The server decides which choice is wrong — here it says "a".
+    const onEliminate = vi.fn().mockResolvedValue('a');
     render(
       <QuizReview
-        card={{ ...card, hints: ['Think about descriptor defaults'] }}
+        card={threeChoiceCard}
         currentIndex={0}
         totalCards={1}
         dailyGoalProgress={0}
         dailyGoal={20}
         onSubmit={onSubmit}
-        onAdvance={onAdvance}
+        onAdvance={vi.fn()}
+        onEliminate={onEliminate}
       />
     );
 
-    expect(screen.queryByText('Think about descriptor defaults')).not.toBeInTheDocument();
-
     await userEvent.keyboard('h');
 
-    expect(screen.getByText('Think about descriptor defaults')).toBeInTheDocument();
+    // Asks the server with the ids eliminated so far (none yet) and disables the returned choice.
+    expect(onEliminate).toHaveBeenCalledWith([]);
+    await waitFor(() => expect(screen.getByText('Alpha').closest('button')).toBeDisabled());
 
-    await userEvent.click(screen.getByText('Alpha'));
+    // Picking the correct choice still works and is flagged as hinted (SM-2 caps the quality).
+    await userEvent.click(screen.getByText('Beta'));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ wasHintUsed: true }));
+  });
+
+  it('stops offering eliminations once only two choices remain', async () => {
+    const onEliminate = vi.fn().mockResolvedValueOnce('a').mockResolvedValueOnce('c');
+    render(
+      <QuizReview
+        card={
+          {
+            ...card,
+            choices: [
+              { id: 'a', text: 'Alpha' },
+              { id: 'b', text: 'Beta' },
+              { id: 'c', text: 'Gamma' },
+              { id: 'd', text: 'Delta' },
+            ],
+          } as Card
+        }
+        currentIndex={0}
+        totalCards={1}
+        dailyGoalProgress={0}
+        dailyGoal={20}
+        onSubmit={vi.fn()}
+        onAdvance={vi.fn()}
+        onEliminate={onEliminate}
+      />
+    );
+
+    // 4 choices → at most two eliminations, leaving the answer plus one decoy.
+    expect(screen.getByText(/learn\.eliminateChoice/)).toBeInTheDocument();
+    await userEvent.keyboard('h');
+    await waitFor(() => expect(screen.getByText('Alpha').closest('button')).toBeDisabled());
+    await userEvent.keyboard('h');
+    await waitFor(() => expect(screen.getByText('Gamma').closest('button')).toBeDisabled());
+
+    expect(onEliminate).toHaveBeenCalledTimes(2);
+    expect(onEliminate).toHaveBeenLastCalledWith(['a']);
+    // No more eliminations offered, and a third H is a no-op.
+    expect(screen.queryByText(/learn\.eliminateChoice/)).not.toBeInTheDocument();
+    await userEvent.keyboard('h');
+    expect(onEliminate).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not offer the eliminate hint when only two choices exist', () => {
+    render(
+      <QuizReview
+        card={card}
+        currentIndex={0}
+        totalCards={1}
+        dailyGoalProgress={0}
+        dailyGoal={20}
+        onSubmit={vi.fn()}
+        onAdvance={vi.fn()}
+        onEliminate={vi.fn()}
+      />
+    );
+    expect(screen.queryByText(/learn\.eliminateChoice/)).not.toBeInTheDocument();
   });
 
   it('reveals the answer without a pick via the Reveal button (submits an empty choice)', async () => {

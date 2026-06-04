@@ -30,3 +30,13 @@ export async function openCardForm(page: Page, type: string, question: string): 
   await page.getByRole('button', { name: type, exact: true }).click();
   await page.getByLabel('Question').fill(question);
 }
+
+/**
+ * Click "Start Studying" and pick a study mode from the "How do you want to study?" chooser
+ * shown before every session. `mode` is the visible mode label — e.g. "Flashcards", "Quizzes",
+ * "Type the Answer", "Match Pairs".
+ */
+export async function startStudying(page: Page, mode: string): Promise<void> {
+  await page.getByRole('link', { name: 'Start Studying' }).first().click();
+  await page.getByRole('button', { name: mode }).click();
+}

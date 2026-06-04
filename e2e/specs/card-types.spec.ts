@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createSubjectAndOpen, openCardForm, signUpAndOnboard } from '../helpers';
+import { createSubjectAndOpen, openCardForm, signUpAndOnboard, startStudying } from '../helpers';
 
 // Interactive card types are auto-graded server-side. Each test authors a card via the form,
 // studies it, and confirms the server grades the answer and the session completes.
@@ -17,7 +17,7 @@ test('quiz: author a multiple-choice card, study it, and get graded correct', as
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Which keyword declares a constant?')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Start Studying' }).first().click();
+  await startStudying(page, 'Quizzes');
   // Choices are shuffled — pick by text. The correct one yields "Correct!".
   await page.getByRole('button', { name: 'const' }).click();
   await expect(page.getByText('Correct!')).toBeVisible();
@@ -37,7 +37,7 @@ test('type-answer: author a typed-answer card and pass it with lenient matching'
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Utility type that makes all props optional?')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Start Studying' }).first().click();
+  await startStudying(page, 'Type the Answer');
   // Lowercase + spacing differ from "Partial"; the server normalizes and accepts it.
   await page.getByPlaceholder('Type your answer...').fill('  partial ');
   await page.getByRole('button', { name: /Check/ }).click();
@@ -58,14 +58,47 @@ test('match: author a pairing card, match all pairs, and get graded correct', as
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Match the language abbreviations')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Start Studying' }).first().click();
-  // Pair each left with its right (rights are shuffled server-side; pick by text).
+  await startStudying(page, 'Match Pairs');
+  // Tap-to-match: pick a left then its right (tiles flash and are removed). Pairs are shuffled,
+  // so pick by text. Matching the final pair auto-grades the card — there's no "Check" step.
   await page.getByRole('button', { name: 'TS', exact: true }).click();
   await page.getByRole('button', { name: 'TypeScript', exact: true }).click();
   await page.getByRole('button', { name: 'PY', exact: true }).click();
   await page.getByRole('button', { name: 'Python', exact: true }).click();
-  await page.getByRole('button', { name: /Check/ }).click();
-  await expect(page.getByText('All matched!')).toBeVisible();
+  await expect(page.getByText(/no mistakes/)).toBeVisible(); // perfect match
   await page.getByRole('button', { name: /Next Card/ }).click();
   await expect(page.getByText('Session Complete!')).toBeVisible();
+});
+
+test('quiz: the eliminate hint disables wrong choices down to two, never the answer', async ({
+  page,
+}) => {
+  await signUpAndOnboard(page, 'qhint');
+  await createSubjectAndOpen(page, 'Hint Subject');
+
+  // Author a 4-choice quiz so two eliminations are possible (leaving the answer + one decoy).
+  await openCardForm(page, 'Quiz', 'Capital of France?');
+  await page.getByLabel('Explanation').fill('Paris is the capital.');
+  await page.getByRole('button', { name: 'Add Choice' }).click();
+  await page.getByRole('button', { name: 'Add Choice' }).click();
+  const choices = page.getByPlaceholder(/Choice/);
+  await choices.nth(0).fill('London');
+  await choices.nth(1).fill('Paris');
+  await choices.nth(2).fill('Berlin');
+  await choices.nth(3).fill('Madrid');
+  await page.getByRole('radio').nth(1).check(); // mark "Paris" as correct
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Capital of France?')).toBeVisible();
+
+  await startStudying(page, 'Quizzes');
+
+  // The server greys out one wrong choice per hint; after two, only the answer + one decoy
+  // remain and the hint is no longer offered.
+  await page.getByRole('button', { name: /Eliminate/ }).click();
+  await page.getByRole('button', { name: /Eliminate/ }).click();
+  await expect(page.getByRole('button', { name: /Eliminate/ })).toHaveCount(0);
+
+  // "Paris" is never eliminated — it is still selectable and grades correct.
+  await page.getByRole('button', { name: 'Paris' }).click();
+  await expect(page.getByText('Correct!')).toBeVisible();
 });

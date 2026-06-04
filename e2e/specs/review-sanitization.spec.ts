@@ -71,7 +71,15 @@ test('the review queue never leaks grading data', async ({ request }) => {
 
   const match = cards.find((c: { type: string }) => c.type === 'match');
   expect(match).toBeTruthy();
-  expect(match).not.toHaveProperty('matchPairs');
-  expect([...match.matchItems.lefts].sort()).toEqual(['PY', 'TS']);
-  expect([...match.matchItems.rights].sort()).toEqual(['Python', 'TypeScript']);
+  // Match cards intentionally ship `matchPairs` for client-side matching (every value is already
+  // on screen; see card-mapper). The grading still runs server-side, and the Markdown
+  // explanation is withheld until the answer is submitted.
+  expect(match.answer).toBe('');
+  const pairs = [...match.matchPairs].sort((a: { left: string }, b: { left: string }) =>
+    a.left.localeCompare(b.left)
+  );
+  expect(pairs).toEqual([
+    { left: 'PY', right: 'Python' },
+    { left: 'TS', right: 'TypeScript' },
+  ]);
 });

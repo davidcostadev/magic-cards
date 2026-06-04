@@ -44,6 +44,21 @@ export const reviewQueueQuerySchema = z.object({
   ahead: z.preprocess((v) => v === 'true' || v === true, z.boolean()).optional(),
 });
 
+/**
+ * Request a quiz "eliminate" hint: the server greys out one wrong choice. The client sends the
+ * ids it has already eliminated; correctness is never sent to the client, so elimination must
+ * be decided server-side (it knows which choices are wrong).
+ */
+export const eliminateChoiceSchema = z.object({
+  cardId: z.string().min(1),
+  eliminatedChoiceIds: z.array(z.string()).default([]),
+});
+
+/** `choiceId` is the next wrong choice to disable, or `null` once only two choices remain. */
+export const eliminateChoiceResponseSchema = z.object({
+  choiceId: z.string().nullable(),
+});
+
 export const cardProgressResponseSchema = z.object({
   id: z.string(),
   userId: z.string(),
@@ -96,6 +111,8 @@ export const reviewQueueCountsResponseSchema = z.object({
 });
 
 export class CreateReviewDto extends createZodDto(createReviewSchema) {}
+export class EliminateChoiceDto extends createZodDto(eliminateChoiceSchema) {}
+export class EliminateChoiceResponseDto extends createZodDto(eliminateChoiceResponseSchema) {}
 export class ReviewQueueQueryDto extends createZodDto(reviewQueueQuerySchema) {}
 export class CardProgressResponseDto extends createZodDto(cardProgressResponseSchema) {}
 export class SubmitReviewResponseDto extends createZodDto(submitReviewResponseSchema) {}
@@ -106,5 +123,7 @@ export type CardProgressResponse = z.infer<typeof cardProgressResponseSchema>;
 export type ReviewQueueResponse = z.infer<typeof reviewQueueResponseSchema>;
 export type ReviewQueueCountsResponse = z.infer<typeof reviewQueueCountsResponseSchema>;
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;
+export type EliminateChoiceInput = z.infer<typeof eliminateChoiceSchema>;
+export type EliminateChoiceResult = z.infer<typeof eliminateChoiceResponseSchema>;
 export type GradeResult = z.infer<typeof gradeResultSchema>;
 export type SubmitReviewResult = z.infer<typeof submitReviewResponseSchema>;

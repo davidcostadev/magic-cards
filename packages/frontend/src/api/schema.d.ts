@@ -212,6 +212,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/quiz_hints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewsController_eliminate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/dashboard/stats": {
         parameters: {
             query?: never;
@@ -760,6 +776,14 @@ export interface components {
                     right: string;
                 }[];
             };
+        };
+        EliminateChoiceDto: {
+            cardId: string;
+            /** @default [] */
+            eliminatedChoiceIds: string[];
+        };
+        EliminateChoiceResponseDto: {
+            choiceId: string | null;
         };
         DashboardStatsDto: {
             reviewedToday: number;
@@ -1375,6 +1399,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubmitReviewResponseDto"];
+                };
+            };
+        };
+    };
+    ReviewsController_eliminate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EliminateChoiceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EliminateChoiceResponseDto"];
                 };
             };
         };

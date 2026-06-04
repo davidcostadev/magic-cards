@@ -15,7 +15,13 @@ import {
 } from '../../db/schema';
 import { toCardResponse } from '../cards/card-mapper';
 import type { CardResponse } from '../cards/dto/card.dto';
-import type { CreateReviewInput, GradeResult, SubmitReviewResult } from '../reviews/dto/review.dto';
+import type {
+  CreateReviewInput,
+  EliminateChoiceInput,
+  EliminateChoiceResult,
+  GradeResult,
+  SubmitReviewResult,
+} from '../reviews/dto/review.dto';
 import { GradingService } from './grading.service';
 import { Sm2Service } from './sm2.service';
 
@@ -259,6 +265,29 @@ export class LearningService {
     });
 
     return grade ? { progress, grade } : { progress };
+  }
+
+  /**
+   * Quiz "eliminate" hint: returns the next wrong choice to grey out (or `null` once two remain).
+   * Decided server-side because the study payload never carries which choice is correct — so the
+   * client can't pick a wrong one to disable itself. Counts toward `wasHintUsed` on the client.
+   */
+  async eliminateChoice(
+    userId: string,
+    input: EliminateChoiceInput
+  ): Promise<EliminateChoiceResult> {
+    const { cardId, eliminatedChoiceIds } = input;
+    const [card] = await this.db
+      .select({ type: cards.type, payload: cards.payload })
+      .from(cards)
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      .where(and(eq(cards.id, cardId), canSeeSubject(userId)))
+      .limit(1);
+    if (!card) throw ApiError.notFound('cards.notFound');
+    if (card.type !== 'quiz') throw ApiError.badRequest('errors.validation', 'cardId');
+
+    const choices = (card.payload as { choices: CardChoice[] } | null)?.choices ?? [];
+    return { choiceId: this.grading.nextEliminableChoice(choices, eliminatedChoiceIds) };
   }
 
   /**

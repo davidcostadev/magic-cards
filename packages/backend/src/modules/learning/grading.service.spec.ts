@@ -86,6 +86,47 @@ describe('GradingService.gradeMatch (all-or-nothing)', () => {
   });
 });
 
+describe('GradingService.nextEliminableChoice (quiz "eliminate" hint)', () => {
+  const four: CardChoice[] = [
+    { id: 'a', text: 'Wrong', isCorrect: false },
+    { id: 'b', text: 'Right', isCorrect: true },
+    { id: 'c', text: 'Wrong', isCorrect: false },
+    { id: 'd', text: 'Wrong', isCorrect: false },
+  ];
+
+  it('returns a wrong choice to eliminate when more than two remain', () => {
+    const next = service().nextEliminableChoice(four, []);
+    expect(next).toBe('a');
+  });
+
+  it('never eliminates the correct choice', () => {
+    // Eliminate down to the floor; the survivor set must still contain the correct id.
+    const eliminated: string[] = [];
+    let next = service().nextEliminableChoice(four, eliminated);
+    while (next) {
+      expect(next).not.toBe('b');
+      eliminated.push(next);
+      next = service().nextEliminableChoice(four, eliminated);
+    }
+    expect(four.length - eliminated.length).toBe(2);
+    expect(eliminated).not.toContain('b');
+  });
+
+  it('stops (returns null) once only two choices remain — the correct one plus one decoy', () => {
+    // Three choices → exactly one elimination is allowed.
+    expect(service().nextEliminableChoice(choices, [])).toBe('a');
+    expect(service().nextEliminableChoice(choices, ['a'])).toBeNull();
+  });
+
+  it('ignores already-eliminated ids it is given and picks the next remaining wrong one', () => {
+    expect(service().nextEliminableChoice(four, ['a'])).toBe('c');
+  });
+
+  it('ignores ids that are not real choices (and never miscounts them as eliminations)', () => {
+    expect(service().nextEliminableChoice(four, ['zzz'])).toBe('a');
+  });
+});
+
 describe('GradingService.qualityForCorrectness', () => {
   it('maps a correct answer to SM-2 quality 4 (passing, neutral ease)', () => {
     expect(service().qualityForCorrectness(true)).toBe(4);

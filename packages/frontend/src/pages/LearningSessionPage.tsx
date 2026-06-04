@@ -6,6 +6,7 @@ import type { Card } from '@/api/queries/cards';
 import {
   type CardType,
   type ReviewQueue,
+  useEliminateChoice,
   useReviewQueue,
   useSubmitReview,
   useTypeCounts,
@@ -122,6 +123,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
 
   const { data: queue, isLoading } = useReviewQueue(subjectId, type, ahead);
   const submitReview = useSubmitReview();
+  const eliminateChoice = useEliminateChoice();
 
   // Snapshot the queue once so mid-session invalidations don't reshuffle the deck.
   const [sessionCards, setSessionCards] = useState<Card[] | null>(null);
@@ -235,6 +237,16 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
     }
   };
 
+  // Quiz "eliminate" hint: the server picks one wrong choice to grey out (it never ships which
+  // choice is correct), returning the id to disable — or null once only two choices remain.
+  const handleEliminate = async (eliminatedChoiceIds: string[]) => {
+    try {
+      return await eliminateChoice.mutateAsync({ cardId: currentCard.id, eliminatedChoiceIds });
+    } catch {
+      return null;
+    }
+  };
+
   const handleAdvance = (correct: boolean) => {
     if (correct) setCorrectCount((prev) => prev + 1);
     if (currentIndex + 1 >= sessionCards.length) {
@@ -255,6 +267,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
         dailyGoal={dailyGoal}
         onSubmit={handleSubmit}
         onAdvance={handleAdvance}
+        onEliminate={handleEliminate}
       />
 
       {/* Subtle, always-available way to flag the current card as wrong or improvable. */}

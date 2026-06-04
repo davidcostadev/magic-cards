@@ -35,6 +35,22 @@ export class GradingService {
     };
   }
 
+  /**
+   * The "eliminate" hint for quiz cards: picks the next *wrong* choice to grey out, given the
+   * ids already eliminated. Returns `null` once only two choices remain, so the learner is always
+   * left with the correct answer plus one decoy (a 50/50). The correct choice is never returned,
+   * and the truth never leaves the server — the client only learns which id to disable.
+   */
+  nextEliminableChoice(choices: CardChoice[], eliminatedIds: string[]): string | null {
+    const eliminated = new Set(
+      choices.filter((c) => eliminatedIds.includes(c.id)).map((c) => c.id)
+    );
+    // Keep at least two choices on screen, so stop one short of removing every wrong option.
+    if (choices.length - eliminated.size <= 2) return null;
+    const next = choices.find((c) => !c.isCorrect && !eliminated.has(c.id));
+    return next?.id ?? null;
+  }
+
   gradeTypeAnswer(shortAnswer: string, text: string): TypeAnswerGrade {
     return {
       correct: this.normalize(shortAnswer) === this.normalize(text),

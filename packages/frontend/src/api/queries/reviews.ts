@@ -16,6 +16,7 @@ export type ReviewResponse = NonNullable<ReviewInput['response']>;
 export type CardType = components['schemas']['CardResponseDto']['type'];
 
 export type CardTypeCounts = components['schemas']['ReviewQueueCountsResponseDto'];
+export type EliminateChoiceInput = components['schemas']['EliminateChoiceDto'];
 
 export const reviewKeys = {
   queue: (subject?: string, type?: CardType, ahead = false) =>
@@ -59,6 +60,21 @@ export function useTypeCounts(subject?: string, enabled = true) {
     },
     staleTime: 0,
     enabled,
+  });
+}
+
+/**
+ * Quiz "eliminate" hint: asks the server to grey out one more wrong choice (it knows which are
+ * wrong — the study payload never carries that). Returns the choice id to disable, or `null` once
+ * only two choices remain. Stateless, so no cache invalidation; the caller tracks eliminated ids.
+ */
+export function useEliminateChoice() {
+  return useMutation({
+    mutationFn: async (body: EliminateChoiceInput): Promise<string | null> => {
+      const { data, error } = await apiClient.POST('/v1/quiz_hints', { body });
+      if (error || !data) throw error;
+      return data.choiceId;
+    },
   });
 }
 

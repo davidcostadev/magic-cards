@@ -23,4 +23,9 @@ export interface CardReviewProps {
   onSubmit: (input: ReviewSubmission) => Promise<Grade | undefined>;
   /** Advance to the next card (or finish), recording whether this answer was correct. */
   onAdvance: (correct: boolean) => void;
+  /**
+   * Quiz only: asks the server to eliminate one more wrong choice, given the ids already
+   * eliminated. Resolves with the choice id to disable, or `null` when only two remain.
+   */
+  onEliminate?: (eliminatedChoiceIds: string[]) => Promise<string | null>;
 }

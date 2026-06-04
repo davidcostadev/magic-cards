@@ -7,6 +7,9 @@ import { CardResponseDto } from '../cards/dto/card.dto';
 import { LearningService } from '../learning/learning.service';
 import {
   CreateReviewDto,
+  EliminateChoiceDto,
+  EliminateChoiceResponseDto,
+  type EliminateChoiceResult,
   type ReviewQueueCountsResponse,
   ReviewQueueCountsResponseDto,
   ReviewQueueQueryDto,
@@ -70,5 +73,16 @@ export class ReviewsController {
     @Body() body: CreateReviewDto
   ): Promise<SubmitReviewResult> {
     return this.learning.submitReview(user.id, body);
+  }
+
+  // Quiz "eliminate" hint: greys out one wrong choice at a time (correctness stays server-side).
+  @Post('quiz_hints')
+  @HttpCode(200)
+  @ApiOkResponse({ type: EliminateChoiceResponseDto })
+  eliminate(
+    @CurrentUser() user: AuthUser,
+    @Body() body: EliminateChoiceDto
+  ): Promise<EliminateChoiceResult> {
+    return this.learning.eliminateChoice(user.id, body);
   }
 }

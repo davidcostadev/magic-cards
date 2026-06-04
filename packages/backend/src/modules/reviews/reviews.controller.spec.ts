@@ -267,6 +267,53 @@ describe('POST /v1/reviews', () => {
   });
 });
 
+describe('POST /v1/quiz_hints (eliminate hint)', () => {
+  async function addQuiz(): Promise<string> {
+    return addTypedCard({
+      type: 'quiz',
+      question: 'Pick the right one',
+      answer: 'B is right.',
+      choices: [
+        { id: 'a', text: 'Nope', isCorrect: false },
+        { id: 'b', text: 'Yes', isCorrect: true },
+        { id: 'c', text: 'Also nope', isCorrect: false },
+      ],
+    });
+  }
+
+  it('eliminates a wrong choice without ever revealing the correct one', async () => {
+    const cardId = await addQuiz();
+    const res = await auth(
+      request(app.getHttpServer()).post('/v1/quiz_hints').send({ cardId, eliminatedChoiceIds: [] })
+    );
+    expect(res.status).toBe(200);
+    expect(['a', 'c']).toContain(res.body.choiceId);
+    expect(res.body.choiceId).not.toBe('b'); // never the answer
+  });
+
+  it('returns null once only two choices remain (answer + one decoy)', async () => {
+    const cardId = await addQuiz();
+    const first = await auth(
+      request(app.getHttpServer()).post('/v1/quiz_hints').send({ cardId, eliminatedChoiceIds: [] })
+    );
+    const res = await auth(
+      request(app.getHttpServer())
+        .post('/v1/quiz_hints')
+        .send({ cardId, eliminatedChoiceIds: [first.body.choiceId] })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.choiceId).toBeNull();
+  });
+
+  it('rejects the hint for a non-quiz card', async () => {
+    const cardId = await addCard('Open card');
+    const res = await auth(
+      request(app.getHttpServer()).post('/v1/quiz_hints').send({ cardId, eliminatedChoiceIds: [] })
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('GET /v1/review_queue — sanitization', () => {
   it('never leaks quiz grading data to the study payload', async () => {
     await addTypedCard({

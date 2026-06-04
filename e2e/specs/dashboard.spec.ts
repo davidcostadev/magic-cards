@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createSubjectAndOpen, signUpAndOnboard } from '../helpers';
+import { createSubjectAndOpen, signUpAndOnboard, startStudying } from '../helpers';
 
 // After a study session the dashboard should reflect the reviews and render its stat sections.
 test('the dashboard reflects a completed study session', async ({ page }) => {
@@ -18,7 +18,7 @@ test('the dashboard reflects a completed study session', async ({ page }) => {
   }
 
   // Study both cards: one Right, one Wrong (so accuracy is meaningful).
-  await page.getByRole('link', { name: 'Start Studying' }).first().click();
+  await startStudying(page, 'Flashcards');
   await page.getByRole('button', { name: 'Reveal Answer' }).click();
   await page.getByRole('button', { name: 'Right' }).click();
   await page.getByRole('button', { name: 'Reveal Answer' }).click();

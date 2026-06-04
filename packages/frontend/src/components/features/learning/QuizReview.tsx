@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react';
+import { Check, Lightbulb, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Grade } from '@/api/queries/reviews';
@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { useLearningSessions } from '@/context/LearningContext';
 import { cn } from '@/utils/cn';
 import { isInteractiveTarget, isTypingTarget } from '@/utils/keyboard';
-import { HintReveal } from './HintReveal';
 import { InlineMarkdown } from './InlineMarkdown';
 import { MarkdownContent } from './MarkdownContent';
 import type { CardReviewProps } from './reviewTypes';
@@ -33,16 +32,24 @@ export function QuizReview({
   dailyGoal,
   onSubmit,
   onAdvance,
+  onEliminate,
 }: CardReviewProps) {
   const { t } = useTranslation();
   const { exitRequested, overlayOpen } = useLearningSessions();
   const choices = useMemo(() => shuffle(card.choices ?? []), [card.choices]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [revealedHints, setRevealedHints] = useState(0);
+  // The quiz "hint" eliminates wrong choices instead of showing text — each H disables one more,
+  // down to two (the answer plus one decoy). Which choice is wrong is decided server-side.
+  const [eliminatedIds, setEliminatedIds] = useState<string[]>([]);
+  const [eliminating, setEliminating] = useState(false);
   const [grade, setGrade] = useState<Grade | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const usedHint = revealedHints > 0;
+  const usedHint = eliminatedIds.length > 0;
   const answered = grade !== null;
+  // Always leave two choices standing, so the most you can remove is everything-but-two.
+  const maxEliminations = Math.max(0, choices.length - 2);
+  const canEliminate =
+    !answered && !!onEliminate && !eliminating && eliminatedIds.length < maxEliminations;
 
   const { elapsedMs } = useReviewSession({
     currentIndex,
@@ -67,8 +74,18 @@ export function QuizReview({
     setSubmitting(false);
   }
 
-  // Keyboard: 1–9 picks a choice; H reveals the next hint; Enter reveals the answer (gives up)
-  // while unanswered, then advances once answered.
+  // Hint: have the server grey out one more wrong choice (it knows which are wrong; the payload
+  // never tells the client). Counts as a used hint, so SM-2 caps this card's quality.
+  async function eliminate() {
+    if (!onEliminate || !canEliminate) return;
+    setEliminating(true);
+    const id = await onEliminate(eliminatedIds);
+    if (id) setEliminatedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setEliminating(false);
+  }
+
+  // Keyboard: 1–9 picks a choice (eliminated ones are skipped); H eliminates a wrong choice;
+  // Enter reveals the answer (gives up) while unanswered, then advances once answered.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (exitRequested || overlayOpen || isTypingTarget(e.target)) return;
@@ -81,9 +98,9 @@ export function QuizReview({
         return;
       }
       if (submitting) return;
-      if (key.toLowerCase() === 'h' && revealedHints < card.hints.length) {
+      if (key.toLowerCase() === 'h' && canEliminate) {
         e.preventDefault();
-        setRevealedHints((prev) => prev + 1);
+        void eliminate();
         return;
       }
       // Enter (when no choice is focused) gives up the card: reveal the answer without a pick,
@@ -95,7 +112,7 @@ export function QuizReview({
       }
       if (/^[1-9]$/.test(key)) {
         const choice = choices[Number(key) - 1];
-        if (choice) {
+        if (choice && !eliminatedIds.includes(choice.id)) {
           e.preventDefault();
           void submitChoice(choice.id);
         }
@@ -111,13 +128,16 @@ export function QuizReview({
     exitRequested,
     overlayOpen,
     onAdvance,
-    revealedHints,
-    card.hints.length,
+    canEliminate,
+    eliminatedIds,
   ]);
 
   const choiceStyle = (id: string) => {
-    if (!answered)
+    if (!answered) {
+      if (eliminatedIds.includes(id))
+        return 'border-border bg-muted opacity-40 line-through cursor-not-allowed';
       return 'border-border bg-secondary hover:border-primary hover:bg-accent cursor-pointer';
+    }
     if (id === grade.correctChoiceId) return 'border-success bg-success text-white';
     if (id === selectedId) return 'border-destructive bg-destructive text-white';
     return 'border-border bg-muted opacity-50';
@@ -127,13 +147,18 @@ export function QuizReview({
     <div className="mx-auto max-w-2xl space-y-4 p-4">
       <MarkdownContent text={card.question} />
 
-      {!answered && (
-        <HintReveal
-          hints={card.hints}
-          revealedCount={revealedHints}
-          onRevealNext={() => setRevealedHints((prev) => prev + 1)}
-          shortcutKey="H"
-        />
+      {canEliminate && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void eliminate()}
+          disabled={eliminating}
+          aria-keyshortcuts="H"
+        >
+          <Lightbulb className="mr-2 h-5 w-5" />
+          {t('learn.eliminateChoice')} ({eliminatedIds.length + 1}/{maxEliminations})
+          <Kbd className="ml-2">H</Kbd>
+        </Button>
       )}
 
       <div className="space-y-3">
@@ -141,13 +166,14 @@ export function QuizReview({
           const showCorrect = answered && choice.id === grade.correctChoiceId;
           const showWrong =
             answered && choice.id === selectedId && choice.id !== grade.correctChoiceId;
+          const eliminated = !answered && eliminatedIds.includes(choice.id);
           return (
             <button
               key={choice.id}
               type="button"
               onClick={() => void submitChoice(choice.id)}
-              disabled={answered || submitting}
-              aria-keyshortcuts={!answered ? String(index + 1) : undefined}
+              disabled={answered || submitting || eliminated}
+              aria-keyshortcuts={!answered && !eliminated ? String(index + 1) : undefined}
               className={cn(
                 'flex w-full items-center gap-4 rounded-2xl border-2 p-5 text-left text-base font-semibold transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:active:scale-100 disabled:cursor-not-allowed',
                 choiceStyle(choice.id)
@@ -157,7 +183,7 @@ export function QuizReview({
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center">
                   <Check className="h-6 w-6" />
                 </span>
-              ) : showWrong ? (
+              ) : showWrong || eliminated ? (
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center">
                   <X className="h-6 w-6" />
                 </span>
