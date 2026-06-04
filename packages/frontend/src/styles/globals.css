@@ -76,6 +76,16 @@
   }
 }
 
+/* Bottom-sheet entrance: slides up from below the viewport edge (mobile). */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @keyframes shake {
   0%,
   100% {

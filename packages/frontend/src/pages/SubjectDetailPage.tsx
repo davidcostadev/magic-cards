@@ -1,5 +1,13 @@
 import { Link, useParams } from '@tanstack/react-router';
-import { ArrowLeft, ChevronLeft, ChevronRight, GraduationCap, Plus, Search } from 'lucide-react';
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Flag,
+  GraduationCap,
+  Plus,
+  Search,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,6 +17,7 @@ import {
   useDeleteCard,
   useUpdateCard,
 } from '@/api/queries/cards';
+import { useCardReports } from '@/api/queries/reports';
 import { useSubject, useSubjectStats } from '@/api/queries/subjects';
 import { CardForm, type CardFormData } from '@/components/features/cards/CardForm';
 import { CardList } from '@/components/features/cards/CardList';
@@ -28,6 +37,7 @@ export function SubjectDetailPage() {
   const { t } = useTranslation();
   const { data: subject, isLoading: subjectLoading, isError } = useSubject(subjectId);
   const { data: cards = [] } = useCards(subjectId);
+  const { data: reports = [] } = useCardReports(subjectId);
   const { data: stats } = useSubjectStats(subjectId);
   const createCard = useCreateCard();
   const updateCard = useUpdateCard();
@@ -38,13 +48,19 @@ export function SubjectDetailPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
   const [query, setQuery] = useState('');
+  const [showReportedOnly, setShowReportedOnly] = useState(false);
   const [page, setPage] = useState(0);
 
-  const filteredCards = useMemo(() => filterCards(cards, query), [cards, query]);
-  // A new search resets to the first page.
+  // The cards the current user has reported in this subject — drives the badge and the filter.
+  const reportedIds = useMemo(() => new Set(reports.map((r) => r.cardId)), [reports]);
+  const filteredCards = useMemo(() => {
+    const bySearch = filterCards(cards, query);
+    return showReportedOnly ? bySearch.filter((c) => reportedIds.has(c.id)) : bySearch;
+  }, [cards, query, showReportedOnly, reportedIds]);
+  // A new search or filter change resets to the first page.
   useEffect(() => {
     setPage(0);
-  }, [query]);
+  }, [query, showReportedOnly]);
   const pageCount = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
   const pageCards = filteredCards.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
@@ -180,16 +196,28 @@ export function SubjectDetailPage() {
       )}
 
       {cards.length > 0 && (
-        <div className="relative mb-5 max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('cards.search')}
-            aria-label={t('cards.search')}
-            className="pl-11"
-          />
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[12rem] max-w-md flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('cards.search')}
+              aria-label={t('cards.search')}
+              className="pl-11"
+            />
+          </div>
+          {reportedIds.size > 0 && (
+            <Button
+              variant={showReportedOnly ? 'default' : 'outline'}
+              aria-pressed={showReportedOnly}
+              onClick={() => setShowReportedOnly((v) => !v)}
+            >
+              <Flag className="mr-2 h-5 w-5" />
+              {t('reports.filterReported')} ({reportedIds.size})
+            </Button>
+          )}
         </div>
       )}
 
@@ -199,6 +227,7 @@ export function SubjectDetailPage() {
         <>
           <CardList
             cards={pageCards}
+            reportedIds={reportedIds}
             readOnly={isPublic}
             onView={(card) => {
               setViewingCard(card);

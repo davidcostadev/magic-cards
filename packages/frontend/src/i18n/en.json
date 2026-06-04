@@ -155,6 +155,18 @@
     "correct": "Correct answer",
     "pagination": "Card pages"
   },
+  "reports": {
+    "button": "Report",
+    "title": "Report this card",
+    "reasonIncorrect": "This card is wrong",
+    "reasonImprovement": "Could be improved",
+    "message": "Add a note (optional)",
+    "messagePlaceholder": "What's wrong, or how could it be better?",
+    "submit": "Send report",
+    "success": "Thanks for the report!",
+    "filterReported": "Reported",
+    "reportedBadge": "Reported"
+  },
   "learn": {
     "title": "Learning Session",
     "showHint": "Show Hint",

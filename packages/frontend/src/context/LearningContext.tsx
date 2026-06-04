@@ -18,6 +18,9 @@ interface LearningContextValue {
   exitRequested: boolean;
   requestExit: () => void;
   cancelExit: () => void;
+  /** True while a blocking overlay (e.g. the report sheet) is open — suppresses study shortcuts. */
+  overlayOpen: boolean;
+  setOverlayOpen: (value: boolean) => void;
   sessionInfo: SessionInfo;
   updateSessionInfo: (info: Partial<SessionInfo>) => void;
 }
@@ -38,6 +41,8 @@ const LearningContext = createContext<LearningContextValue>({
   exitRequested: false,
   requestExit: () => {},
   cancelExit: () => {},
+  overlayOpen: false,
+  setOverlayOpen: () => {},
   sessionInfo: defaultSessionInfo,
   updateSessionInfo: () => {},
 });
@@ -45,6 +50,7 @@ const LearningContext = createContext<LearningContextValue>({
 export function LearningProvider({ children }: { children: ReactNode }) {
   const [inSession, setInSession] = useState(false);
   const [exitRequested, setExitRequested] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo>(defaultSessionInfo);
 
   const updateSessionInfo = useCallback((info: Partial<SessionInfo>) => {
@@ -59,6 +65,8 @@ export function LearningProvider({ children }: { children: ReactNode }) {
         exitRequested,
         requestExit: () => setExitRequested(true),
         cancelExit: () => setExitRequested(false),
+        overlayOpen,
+        setOverlayOpen,
         sessionInfo,
         updateSessionInfo,
       }}

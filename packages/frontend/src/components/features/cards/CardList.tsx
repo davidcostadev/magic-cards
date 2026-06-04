@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { Flag, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Card as CardType } from '@/api/queries/cards';
 import { LanguageBadge } from '@/components/features/subjects/LanguageBadge';
@@ -14,6 +14,8 @@ interface CardListProps {
   onDelete: (id: string) => void;
   /** Hide edit/delete affordances (e.g. for shared/public content). */
   readOnly?: boolean;
+  /** Ids of cards the current user has reported — shown with a flag badge. */
+  reportedIds?: Set<string>;
 }
 
 const TYPE_LABEL_KEY: Record<CardType['type'], string> = {
@@ -23,7 +25,14 @@ const TYPE_LABEL_KEY: Record<CardType['type'], string> = {
   match: 'cards.typeMatch',
 };
 
-export function CardList({ cards, onView, onEdit, onDelete, readOnly }: CardListProps) {
+export function CardList({
+  cards,
+  onView,
+  onEdit,
+  onDelete,
+  readOnly,
+  reportedIds,
+}: CardListProps) {
   const { t } = useTranslation();
 
   if (cards.length === 0) {
@@ -53,6 +62,15 @@ export function CardList({ cards, onView, onEdit, onDelete, readOnly }: CardList
                     {card.type !== 'open' && (
                       <Badge variant="secondary" className="shrink-0">
                         {t(TYPE_LABEL_KEY[card.type])}
+                      </Badge>
+                    )}
+                    {reportedIds?.has(card.id) && (
+                      <Badge
+                        variant="secondary"
+                        className="shrink-0 gap-1 border border-destructive/30 bg-destructive/10 text-destructive"
+                      >
+                        <Flag className="h-3 w-3" />
+                        {t('reports.reportedBadge')}
                       </Badge>
                     )}
                     {cardLangs.map((l) => (

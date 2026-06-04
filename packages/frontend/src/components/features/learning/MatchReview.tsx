@@ -57,7 +57,7 @@ export function MatchReview({
   onAdvance,
 }: CardReviewProps) {
   const { t } = useTranslation();
-  const { exitRequested } = useLearningSessions();
+  const { exitRequested, overlayOpen } = useLearningSessions();
 
   const pairs: Pair[] = useMemo(() => card.matchPairs ?? [], [card.matchPairs]);
   const solution = useMemo(() => new Map(pairs.map((p) => [p.left, p.right])), [pairs]);
@@ -158,7 +158,7 @@ export function MatchReview({
   // Keyboard: numbers pick a left, letters pick a right; Enter advances once graded.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (exitRequested || isTypingTarget(e.target)) return;
+      if (exitRequested || overlayOpen || isTypingTarget(e.target)) return;
       if (answered) {
         if ((e.key === 'Enter' || e.key === ' ') && !isInteractiveTarget(document.activeElement)) {
           e.preventDefault();

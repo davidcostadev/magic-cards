@@ -1,5 +1,5 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { GraduationCap } from 'lucide-react';
+import { Flag, GraduationCap } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card } from '@/api/queries/cards';
@@ -12,6 +12,7 @@ import {
 } from '@/api/queries/reviews';
 import { Kbd } from '@/components/common/Kbd';
 import { CardReview, type ReviewSubmission } from '@/components/features/learning/CardReview';
+import { ReportCardSheet } from '@/components/features/learning/ReportCardSheet';
 import { SessionSummary } from '@/components/features/learning/SessionSummary';
 import { type StudyMode, StudyModeModal } from '@/components/features/learning/StudyModeModal';
 import { Button } from '@/components/ui/button';
@@ -114,7 +115,8 @@ interface LearningSessionProps {
 function LearningSession({ subjectId, type, ahead = false }: LearningSessionProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { setInSession, exitRequested, requestExit, cancelExit } = useLearningSessions();
+  const { setInSession, exitRequested, requestExit, cancelExit, overlayOpen, setOverlayOpen } =
+    useLearningSessions();
   const { user } = useAuth();
   const dailyGoal = user?.dailyGoal ?? DEFAULT_DAILY_GOAL;
 
@@ -152,9 +154,10 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
     navigate({ to: '/dashboard' });
   }, [setInSession, cancelExit, navigate]);
 
-  // Esc requests exit; the confirm dialog handles its own Esc-to-cancel.
+  // Esc requests exit; the confirm dialog handles its own Esc-to-cancel. While the report sheet
+  // is open, Esc belongs to the sheet (close it), so the session ignores it.
   useEffect(() => {
-    if (!activeSession) return;
+    if (!activeSession || overlayOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !exitRequested) {
         e.preventDefault();
@@ -163,7 +166,13 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeSession, exitRequested, requestExit]);
+  }, [activeSession, overlayOpen, exitRequested, requestExit]);
+
+  // Close the report sheet when the card advances, and clear the overlay lock on unmount.
+  useEffect(() => {
+    setOverlayOpen(false);
+  }, [currentIndex, setOverlayOpen]);
+  useEffect(() => () => setOverlayOpen(false), [setOverlayOpen]);
 
   useEffect(() => {
     if (!exitRequested) return;
@@ -247,6 +256,21 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
         onSubmit={handleSubmit}
         onAdvance={handleAdvance}
       />
+
+      {/* Subtle, always-available way to flag the current card as wrong or improvable. */}
+      <div className="mx-auto mt-2 flex max-w-2xl justify-center px-4 pb-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={() => setOverlayOpen(true)}
+        >
+          <Flag className="mr-2 h-4 w-4" />
+          {t('reports.button')}
+        </Button>
+      </div>
+
+      <ReportCardSheet open={overlayOpen} onOpenChange={setOverlayOpen} card={currentCard} />
 
       <Dialog
         open={exitRequested}

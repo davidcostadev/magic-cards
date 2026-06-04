@@ -35,7 +35,7 @@ export function QuizReview({
   onAdvance,
 }: CardReviewProps) {
   const { t } = useTranslation();
-  const { exitRequested } = useLearningSessions();
+  const { exitRequested, overlayOpen } = useLearningSessions();
   const choices = useMemo(() => shuffle(card.choices ?? []), [card.choices]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [revealedHints, setRevealedHints] = useState(0);
@@ -71,7 +71,7 @@ export function QuizReview({
   // while unanswered, then advances once answered.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (exitRequested || isTypingTarget(e.target)) return;
+      if (exitRequested || overlayOpen || isTypingTarget(e.target)) return;
       const key = e.key;
       if (answered) {
         if ((key === 'Enter' || key === ' ') && !isInteractiveTarget(document.activeElement)) {
@@ -109,6 +109,7 @@ export function QuizReview({
     choices,
     grade,
     exitRequested,
+    overlayOpen,
     onAdvance,
     revealedHints,
     card.hints.length,

@@ -43,6 +43,13 @@
       "when": 1780429039662,
       "tag": "0005_rapid_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780601012791,
+      "tag": "0006_cute_psylocke",
+      "breakpoints": true
     }
   ]
 }

@@ -25,7 +25,7 @@ export function TypeAnswerReview({
   onAdvance,
 }: CardReviewProps) {
   const { t } = useTranslation();
-  const { exitRequested } = useLearningSessions();
+  const { exitRequested, overlayOpen } = useLearningSessions();
   const [userAnswer, setUserAnswer] = useState('');
   const [revealedHints, setRevealedHints] = useState(0);
   const [grade, setGrade] = useState<Grade | null>(null);
@@ -68,7 +68,7 @@ export function TypeAnswerReview({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (exitRequested) return;
+      if (exitRequested || overlayOpen) return;
       // Alt+H reveals a hint even while the input is focused (a bare "h" would be typed).
       if (
         e.altKey &&
@@ -92,7 +92,7 @@ export function TypeAnswerReview({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [answered, revealedHints, card.hints.length, exitRequested, grade, onAdvance]);
+  }, [answered, revealedHints, card.hints.length, exitRequested, overlayOpen, grade, onAdvance]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">

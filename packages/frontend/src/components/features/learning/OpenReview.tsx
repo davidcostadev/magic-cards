@@ -24,7 +24,7 @@ export function OpenReview({
   onAdvance,
 }: CardReviewProps) {
   const { t } = useTranslation();
-  const { exitRequested } = useLearningSessions();
+  const { exitRequested, overlayOpen } = useLearningSessions();
   const [revealedHints, setRevealedHints] = useState(0);
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
@@ -53,7 +53,7 @@ export function OpenReview({
   // Keyboard flow: Space/Enter reveals, H shows a hint, then 1 = wrong, 2/Enter = right.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (exitRequested || isTypingTarget(e.target)) return;
+      if (exitRequested || overlayOpen || isTypingTarget(e.target)) return;
       const key = e.key;
       const enterOrSpace = key === 'Enter' || key === ' ';
 
@@ -90,7 +90,15 @@ export function OpenReview({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [answerRevealed, timedOut, revealedHints, card.hints.length, exitRequested, handleAnswer]);
+  }, [
+    answerRevealed,
+    timedOut,
+    revealedHints,
+    card.hints.length,
+    exitRequested,
+    overlayOpen,
+    handleAnswer,
+  ]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">

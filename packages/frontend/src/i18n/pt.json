@@ -155,6 +155,18 @@
     "correct": "Resposta correta",
     "pagination": "Páginas de cartões"
   },
+  "reports": {
+    "button": "Reportar",
+    "title": "Reportar este cartão",
+    "reasonIncorrect": "Este cartão está errado",
+    "reasonImprovement": "Pode melhorar",
+    "message": "Adicione um comentário (opcional)",
+    "messagePlaceholder": "O que está errado, ou como poderia melhorar?",
+    "submit": "Enviar report",
+    "success": "Obrigado pelo report!",
+    "filterReported": "Reportados",
+    "reportedBadge": "Reportado"
+  },
   "learn": {
     "title": "Sessão de Estudo",
     "showHint": "Mostrar Dica",

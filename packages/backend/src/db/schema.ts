@@ -143,6 +143,40 @@ export const cardProgress = pgTable(
   ]
 );
 
+/** Why a learner flagged a card: it's wrong, or it could be improved. */
+export const REPORT_REASONS = ['incorrect', 'improvement'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+/**
+ * A learner's report on a card — content feedback ("this is wrong" / "could be better").
+ * One report per (user, card): re-reporting updates the existing row. `subjectId` is
+ * denormalized (like `reviewHistory`) so the subject-scoped list filter is indexed and the
+ * report cascades away with its subject.
+ */
+export const cardReports = pgTable(
+  'card_reports',
+  {
+    id: primaryId(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    cardId: text('card_id')
+      .notNull()
+      .references(() => cards.id, { onDelete: 'cascade' }),
+    subjectId: text('subject_id')
+      .notNull()
+      .references(() => subjects.id, { onDelete: 'cascade' }),
+    reason: text('reason', { enum: REPORT_REASONS }).notNull(),
+    message: text('message'),
+    createdAt: text('created_at').notNull().$defaultFn(isoNow),
+    updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
+  },
+  (table) => [
+    uniqueIndex('card_reports_user_card_unique').on(table.userId, table.cardId),
+    index('card_reports_user_subject_idx').on(table.userId, table.subjectId),
+  ]
+);
+
 export const reviewHistory = pgTable(
   'review_history',
   {
@@ -174,3 +208,5 @@ export type CardProgress = typeof cardProgress.$inferSelect;
 export type NewCardProgress = typeof cardProgress.$inferInsert;
 export type ReviewHistory = typeof reviewHistory.$inferSelect;
 export type NewReviewHistory = typeof reviewHistory.$inferInsert;
+export type CardReport = typeof cardReports.$inferSelect;
+export type NewCardReport = typeof cardReports.$inferInsert;
