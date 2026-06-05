@@ -54,3 +54,25 @@ keep using the id as a cursor and timestamp comparisons stay simple string compa
   Docker image dropped the `python/make/g++` toolchain that `better-sqlite3` needed.
 - **Config is validated** (`@nestjs/config` + Zod): production now requires `DATABASE_URL`
   and `JWT_SECRET`, enforced at startup.
+
+## Addendum (2026-06-05): local dev moved to a real Postgres server
+
+Option 1 ("real server for dev") was reconsidered for **local dev only**, and adopted.
+
+**Why.** PGlite persists to disk only on a clean async `client.close()`. Under `nest start --watch`,
+restarts and non-graceful kills don't reliably let that flush finish, and the dev lock is advisory
+only (`db/client.ts`), so two processes can briefly touch the same dir. The result was **recurring
+corruption** of `data/pg` (`new PGlite('./data/pg')` aborting with WASM `Aborted()` before any SQL;
+multiple `data/pg.corrupt-*` backups accumulated). A real Postgres runs as a **separate server**, so
+backend restarts / kills / hot-reloads can't corrupt it — this eliminates the entire failure class.
+
+**What changed.** Dev now sets `DATABASE_URL` (a local Postgres; here a dedicated `magic_cards`
+database on an already-running server, no Docker needed). No application code changed — `db/client.ts`
+already selects `pg` when `DATABASE_URL` is set, and `migrate.mjs` already migrates a URL transactionally
+via node-postgres. PGlite is **retained** as the fallback when `DATABASE_URL` is unset and remains the
+engine for the in-memory test suite (so `@electric-sql/pglite` stays a dependency). `db:migrate:dev` /
+`db:repair` are now PGlite-only / legacy helpers.
+
+**Trade-off accepted.** Local dev no longer is strictly zero-setup — it needs a reachable Postgres —
+but in exchange the dev database stops corrupting. Tests and CI unit jobs are unaffected (still
+in-memory PGlite). The original decision (PGlite for dev) stands only as the documented fallback.

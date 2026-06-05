@@ -1,7 +1,17 @@
 # Plano: migrar o banco de **dev** do PGlite para Postgres real
 
-> Status: proposto · Escopo: ambiente de **desenvolvimento local** apenas. Produção/E2E já usam
-> Postgres real (`pg`); os testes continuam em PGlite **em memória** e **não mudam**.
+> **Status: EXECUTADO (2026-06-05).** Em vez do Docker Compose das §1/§3, apontamos o dev para um
+> **Postgres já em execução** em `localhost:5437` (servidor que também hospeda o app Eats2Seats). Para
+> isolar, criamos uma **base dedicada `magic_cards`** nesse servidor (`CREATE DATABASE magic_cards`,
+> role `root`/superuser) — sem misturar com `eats2seats_dev` (que tem `users` e ~70 tabelas). As
+> migrações `0000–0006` aplicaram limpas via `pnpm --filter backend db:migrate`. `DATABASE_URL` no
+> `.env` = `postgresql://root:123asd@localhost:5437/magic_cards`. **Sem `docker-compose.dev.yml` e sem
+> scripts `db:up`/`db:down`/`predev`** (o servidor já roda de forma independente). Restante do plano
+> (§5 dados, §6 PGlite fallback, §7 docs) seguido. Backup pré-migração: tag git
+> `pre-postgres-migration-20260605T054846` + `~/backups/magic-cards/backend-data-*.tar.gz`.
+>
+> Escopo: ambiente de **desenvolvimento local** apenas. Produção/E2E já usam Postgres real (`pg`); os
+> testes continuam em PGlite **em memória** e **não mudam**.
 
 ## Contexto / por que
 

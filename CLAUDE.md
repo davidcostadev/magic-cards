@@ -66,16 +66,22 @@ pnpm gen:api                      # Regenerate openapi.json + frontend client ty
 pnpm lint                         # Biome check all
 pnpm type:check                   # TypeScript check all
 pnpm --filter backend db:generate    # Generate migration from schema
-pnpm --filter backend db:migrate     # drizzle-kit migrate — for real Postgres (DATABASE_URL / CI / prod)
-pnpm --filter backend db:migrate:dev # Migrate the PGlite dev DB (./data/pg) — run with the dev server STOPPED
+pnpm --filter backend db:migrate     # drizzle-kit migrate — applies migrations to DATABASE_URL (dev Postgres / CI / prod)
+# PGlite-only / legacy — used ONLY when DATABASE_URL is unset (embedded-Postgres fallback):
+pnpm --filter backend db:migrate:dev # Migrate the embedded PGlite dev DB (./data/pg) — run with the dev server STOPPED
 pnpm --filter backend db:repair      # Rebuild a corrupted PGlite dev DB, preserving data (server STOPPED)
 ```
 
-> **Migrations are decoupled from hot-reload.** `pnpm dev` runs `db:migrate:dev` once, then starts
-> the watch server with `DB_AUTO_MIGRATE=false`, so a watcher restart can never interrupt a migration
-> (which corrupts PGlite). After `db:generate`, **restart `pnpm dev`** to apply the new migration —
-> don't run `db:migrate:dev` while the server holds `./data/pg` (concurrent PGlite access corrupts it).
-> If a migration ever gets interrupted, the next run fails fast (lockfile) → `db:repair`.
+> **Dev uses a real Postgres server.** Set `DATABASE_URL` in `packages/backend/.env` (a local Postgres)
+> and `pnpm dev` connects to it: it runs the migrate step once (transactional, via node-postgres), then
+> starts the watch server with `DB_AUTO_MIGRATE=false` so hot-reloads never run DDL. Because Postgres is
+> a separate server, restarting / killing the backend **cannot corrupt** the database. After
+> `db:generate`, **restart `pnpm dev`** (or run `pnpm --filter backend db:migrate`) to apply the new
+> migration.
+>
+> **PGlite fallback (only when `DATABASE_URL` is unset):** the embedded in-process DB persists to
+> `./data/pg` and corrupts if the process is killed mid-flush — that's what `db:migrate:dev` / `db:repair`
+> and the migration lockfile guard against. Tests always use in-memory PGlite, independent of `DATABASE_URL`.
 
 ### Code Quality
 - **Linter/Formatter**: Biome (no Prettier/ESLint)

@@ -61,8 +61,10 @@ server secret **`CONTENT_API_KEY`** via the `x-api-key` header — **not** a use
 
 ## 6. Database
 
-PostgreSQL everywhere (async data layer). Real **`pg`** in prod/E2E when `DATABASE_URL` is set;
-embedded **PGlite** (in-process WASM Postgres) for zero-setup dev (file at `DATABASE_PATH`) and tests
+PostgreSQL everywhere (async data layer). Real **`pg`** whenever `DATABASE_URL` is set — prod, E2E, and
+now **local dev** too (dev points at a real Postgres server; the embedded PGlite kept corrupting on
+hot-reload kills — see ADR 0006 addendum, 2026-06-05). **PGlite** (in-process WASM Postgres) remains
+the fallback when `DATABASE_URL` is unset (file at `DATABASE_PATH`) and is always used for tests
 (in-memory). Driver chosen at runtime. Schema is Drizzle `pgTable`, UUIDv7 text ids, ISO-text
 timestamps, `jsonb` hints/tags. Cascade FKs from subjects → cards → progress/history. See ADR 0006.
 
