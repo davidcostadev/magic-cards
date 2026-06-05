@@ -147,17 +147,20 @@ export function QuizReview({
     <div className="mx-auto max-w-2xl space-y-4 p-4">
       <MarkdownContent text={card.question} />
 
-      {canEliminate && (
+      {/* Keep the hint button mounted for the whole unanswered phase and toggle `disabled`
+          instead of unmounting it: unmounting while the request is in flight (or once every
+          hint is spent) shifted the choices up and down under the cursor. */}
+      {!answered && !!onEliminate && maxEliminations > 0 && (
         <Button
           type="button"
           variant="outline"
           onClick={() => void eliminate()}
-          disabled={eliminating}
+          disabled={!canEliminate}
           aria-keyshortcuts="H"
         >
           <Lightbulb className="mr-2 h-5 w-5" />
-          {t('learn.eliminateChoice')} ({eliminatedIds.length + 1}/{maxEliminations})
-          <Kbd className="ml-2">H</Kbd>
+          {t('learn.eliminateChoice')} ({Math.min(eliminatedIds.length + 1, maxEliminations)}/
+          {maxEliminations})<Kbd className="ml-2">H</Kbd>
         </Button>
       )}
 

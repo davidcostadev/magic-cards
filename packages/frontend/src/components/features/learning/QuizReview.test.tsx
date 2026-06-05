@@ -147,8 +147,9 @@ describe('QuizReview', () => {
 
     expect(onEliminate).toHaveBeenCalledTimes(2);
     expect(onEliminate).toHaveBeenLastCalledWith(['a']);
-    // No more eliminations offered, and a third H is a no-op.
-    expect(screen.queryByText(/learn\.eliminateChoice/)).not.toBeInTheDocument();
+    // No more eliminations offered: the button greys out (stays mounted so the choices below
+    // it don't shift) instead of vanishing, and a third H is a no-op.
+    expect(screen.getByText(/learn\.eliminateChoice/).closest('button')).toBeDisabled();
     await userEvent.keyboard('h');
     expect(onEliminate).toHaveBeenCalledTimes(2);
   });

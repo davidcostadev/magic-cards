@@ -19,6 +19,7 @@ import { SessionSummary } from '@/components/features/learning/SessionSummary';
 import { type StudyMode, StudyModeModal } from '@/components/features/learning/StudyModeModal';
 import {
   advance,
+  clearedCount,
   initSession,
   isRelearning,
   type SessionState,
@@ -286,7 +287,10 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
         // Keyed by deck position (not card id) so a requeued card remounts and resets its state.
         key={session.index}
         card={currentCard}
-        currentIndex={Math.min(session.index, session.firstPassLength - 1)}
+        // Header progress counts cards CLEARED (answered correctly), not deck position, so a
+        // card requeued for re-practice keeps the counter climbing toward the goal instead of
+        // freezing at "N of N" while mistakes are re-practised.
+        currentIndex={clearedCount(session)}
         totalCards={session.firstPassLength}
         dailyGoalProgress={session.index}
         dailyGoal={dailyGoal}

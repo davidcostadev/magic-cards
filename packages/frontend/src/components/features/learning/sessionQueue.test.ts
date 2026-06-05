@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Card } from '@/api/queries/cards';
-import { advance, currentCard, initSession, isRelearning } from './sessionQueue';
+import { advance, clearedCount, currentCard, initSession, isRelearning } from './sessionQueue';
 
 const card = (id: string) => ({ id }) as Card;
 
@@ -60,5 +60,40 @@ describe('sessionQueue', () => {
     const s = initSession([]);
     expect(s.completed).toBe(true);
     expect(currentCard(s)).toBeUndefined();
+  });
+
+  describe('clearedCount (header progress)', () => {
+    it('advances only on correct answers during the first pass', () => {
+      let s = initSession([card('a'), card('b'), card('c')]);
+      expect(clearedCount(s)).toBe(0); // working on the 1st card
+      s = advance(s, true); // 'a' cleared
+      expect(clearedCount(s)).toBe(1);
+      s = advance(s, false); // 'b' wrong → requeued, no progress toward the goal
+      expect(clearedCount(s)).toBe(1);
+      s = advance(s, true); // 'c' cleared
+      expect(clearedCount(s)).toBe(2);
+    });
+
+    it('keeps climbing during re-practice instead of freezing at the deck size', () => {
+      let s = initSession([card('a'), card('b')]);
+      s = advance(s, false); // 'a' wrong → requeued
+      s = advance(s, true); // 'b' cleared, now re-practising 'a'
+      expect(isRelearning(s)).toBe(true);
+      // 1 of 2 cleared while re-practising the mistake — not stuck at 2 of 2.
+      expect(clearedCount(s)).toBe(1);
+      s = advance(s, true); // 'a' finally cleared
+      expect(clearedCount(s)).toBe(2);
+      expect(s.completed).toBe(true);
+    });
+
+    it('does not advance when a re-practised card is missed again', () => {
+      let s = initSession([card('a')]);
+      s = advance(s, false); // wrong → requeued
+      expect(clearedCount(s)).toBe(0);
+      s = advance(s, false); // wrong again → still not cleared
+      expect(clearedCount(s)).toBe(0);
+      s = advance(s, true); // cleared
+      expect(clearedCount(s)).toBe(1);
+    });
   });
 });

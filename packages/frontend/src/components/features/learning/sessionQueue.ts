@@ -48,3 +48,14 @@ export function currentCard(state: SessionState): Card | undefined {
 export function isRelearning(state: SessionState): boolean {
   return state.index >= state.firstPassLength;
 }
+
+/**
+ * How many distinct cards have been CLEARED (answered correctly) so far. Since a correct answer
+ * is never requeued, this equals the number of correct answers given. It drives the header's
+ * "card x of y": counting cleared cards rather than deck position means a card requeued for
+ * re-practice keeps the counter climbing toward the goal instead of freezing at "y of y" — every
+ * still-queued card (`deck.length - index`) is one that hasn't been cleared yet.
+ */
+export function clearedCount(state: SessionState): number {
+  return state.firstPassLength - (state.deck.length - state.index);
+}
