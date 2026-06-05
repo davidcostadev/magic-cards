@@ -1,6 +1,7 @@
 import { Flag, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Card as CardType } from '@/api/queries/cards';
+import { CardStatsPanel } from '@/components/features/learning/CardStatsPanel';
 import { LanguageBadge } from '@/components/features/subjects/LanguageBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,8 @@ export function CardList({
                       {t('cards.hintCount', { count: card.hints.length })}
                     </p>
                   )}
+                  {/* Opt-in "nerd stats": self-hides unless the preference is on. */}
+                  <CardStatsPanel cardId={card.id} variant="inline" className="mt-1.5" />
                 </div>
                 {!readOnly && (
                   // Raised above the stretched overlay so the actions stay clickable.

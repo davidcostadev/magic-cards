@@ -225,9 +225,28 @@
     "lightMode": "Claro",
     "dailyGoal": "Meta Diária",
     "dailyGoalDescription": "Número de cartões para revisar por dia",
+    "nerdStats": "Estatísticas nerd",
+    "nerdStatsDescription": "Mostra seu desempenho por cartão ao estudar e ao visualizar cartões",
+    "on": "Ligado",
+    "off": "Desligado",
     "english": "Inglês",
     "portuguese": "Português",
     "saved": "Configurações salvas!"
+  },
+  "cardStats": {
+    "title": "Suas estatísticas",
+    "correct": "acertos",
+    "incorrect": "erros",
+    "accuracy": "acurácia",
+    "avgTime": "tempo médio",
+    "hinted": "com dica",
+    "ease": "facilidade",
+    "interval": "intervalo",
+    "repetitions": "repetições",
+    "status": "status",
+    "nextReview": "próxima revisão",
+    "noData": "Sem revisões ainda",
+    "inlineSummary": "{{accuracy}}% de acurácia · {{count}} revisões"
   },
   "onboarding": {
     "welcome": "Bem-vindo ao Magic Cards",

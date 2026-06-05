@@ -14,6 +14,7 @@ import {
 } from '@/api/queries/reviews';
 import { Kbd } from '@/components/common/Kbd';
 import { CardReview, type ReviewSubmission } from '@/components/features/learning/CardReview';
+import { CardStatsPanel } from '@/components/features/learning/CardStatsPanel';
 import { ReportCardSheet } from '@/components/features/learning/ReportCardSheet';
 import { SessionSummary } from '@/components/features/learning/SessionSummary';
 import { type StudyMode, StudyModeModal } from '@/components/features/learning/StudyModeModal';
@@ -300,7 +301,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
       />
 
       {/* Subtle, always-available way to flag the current card as wrong or improvable. */}
-      <div className="mx-auto mt-2 flex max-w-2xl justify-center px-4 pb-8">
+      <div className="mx-auto mt-3 flex max-w-2xl justify-center px-4">
         <Button
           variant="ghost"
           size="sm"
@@ -310,6 +311,11 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
           <Flag className="mr-2 h-4 w-4" />
           {t('reports.button')}
         </Button>
+      </div>
+
+      {/* "Nerd stats": opt-in per-card performance, gated on the user's preference. Never the answer. */}
+      <div className="mx-auto mt-2 max-w-2xl px-4 pb-8">
+        <CardStatsPanel cardId={currentCard.id} />
       </div>
 
       <ReportCardSheet open={overlayOpen} onOpenChange={setOverlayOpen} card={currentCard} />

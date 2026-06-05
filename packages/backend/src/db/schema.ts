@@ -31,6 +31,8 @@ export const users = pgTable('users', {
   language: text('language').notNull().default('en'),
   theme: text('theme').notNull().default('light'),
   dailyGoal: integer('daily_goal').notNull().default(20),
+  // "Nerd stats" mode: surfaces per-card performance panels around the app (learn, card preview).
+  nerdStats: boolean('nerd_stats').notNull().default(false),
   createdAt: text('created_at').notNull().$defaultFn(isoNow),
   updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
 });

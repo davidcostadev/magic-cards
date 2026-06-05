@@ -1,14 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, getTableColumns } from 'drizzle-orm';
+import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import { ApiError } from '../../common/errors/api-error';
 import { cursorWhere } from '../../common/pagination';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
-import { type Card, cards, subjects } from '../../db/schema';
+import { type Card, cardProgress, cards, reviewHistory, subjects } from '../../db/schema';
 import { buildPayload, toCardResponse } from './card-mapper';
 import {
   type CardListQuery,
   type CardResponse,
+  type CardStats,
   type CreateCardDto,
   createCardSchema,
   type UpdateCardDto,
@@ -60,6 +61,56 @@ export class CardsService {
     if (!row) throw ApiError.notFound('cards.notFound');
     // Same as list(): full reveal for any visible card; edits stay owner-only (update/remove).
     return toCardResponse(row, true);
+  }
+
+  /**
+   * The current user's performance on a card ("nerd stats"): review-history aggregates plus the
+   * SM-2 scheduler state. Counts are this user's only — difficulty is per-user, never shared (a
+   * card's ease factor lives in that user's `card_progress` row). Reveals no answer content.
+   */
+  async getStats(userId: string, id: string): Promise<CardStats> {
+    const card = await this.findVisibleCard(userId, id);
+    if (!card) throw ApiError.notFound('cards.notFound');
+
+    const [agg] = await this.db
+      .select({
+        total: sql<number>`count(*)::int`,
+        correct: sql<number>`coalesce(sum(case when ${reviewHistory.quality} >= 3 then 1 else 0 end), 0)::int`,
+        avgTime: sql<number>`coalesce(round(avg(${reviewHistory.timeSpent})), 0)::int`,
+        hinted: sql<number>`coalesce(sum(case when ${reviewHistory.wasHintUsed} then 1 else 0 end), 0)::int`,
+      })
+      .from(reviewHistory)
+      .where(and(eq(reviewHistory.userId, userId), eq(reviewHistory.cardId, id)));
+
+    const [progress] = await this.db
+      .select({
+        easeFactor: cardProgress.easeFactor,
+        interval: cardProgress.interval,
+        repetitions: cardProgress.repetitions,
+        status: cardProgress.status,
+        lastReviewDate: cardProgress.lastReviewDate,
+        nextReviewDate: cardProgress.nextReviewDate,
+      })
+      .from(cardProgress)
+      .where(and(eq(cardProgress.userId, userId), eq(cardProgress.cardId, id)))
+      .limit(1);
+
+    const total = agg?.total ?? 0;
+    const correct = agg?.correct ?? 0;
+    return {
+      totalReviews: total,
+      correctCount: correct,
+      incorrectCount: total - correct,
+      accuracy: total > 0 ? Math.round((correct / total) * 100) : 0,
+      avgTimeMs: agg?.avgTime ?? 0,
+      hintedCount: agg?.hinted ?? 0,
+      easeFactor: progress?.easeFactor ?? null,
+      interval: progress?.interval ?? null,
+      repetitions: progress?.repetitions ?? null,
+      status: progress?.status ?? null,
+      lastReviewDate: progress?.lastReviewDate ?? null,
+      nextReviewDate: progress?.nextReviewDate ?? null,
+    };
   }
 
   async update(userId: string, id: string, dto: UpdateCardDto): Promise<CardResponse> {

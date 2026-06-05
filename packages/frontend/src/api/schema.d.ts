@@ -148,6 +148,22 @@ export interface paths {
         patch: operations["CardsController_update"];
         trace?: never;
     };
+    "/v1/cards/{id}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CardsController_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/review_queue": {
         parameters: {
             query?: never;
@@ -422,6 +438,7 @@ export interface components {
                 language: string;
                 theme: string;
                 dailyGoal: number;
+                nerdStats: boolean;
                 createdAt: string;
                 updatedAt: string;
             };
@@ -439,6 +456,7 @@ export interface components {
             language: string;
             theme: string;
             dailyGoal: number;
+            nerdStats: boolean;
             createdAt: string;
             updatedAt: string;
         };
@@ -447,6 +465,7 @@ export interface components {
             /** @enum {string} */
             theme?: "light" | "dark";
             dailyGoal?: number;
+            nerdStats?: boolean;
         };
         SubjectListDto: {
             /** @constant */
@@ -622,6 +641,20 @@ export interface components {
             createdAt: string;
             updatedAt: string;
         };
+        CardStatsDto: {
+            totalReviews: number;
+            correctCount: number;
+            incorrectCount: number;
+            accuracy: number;
+            avgTimeMs: number;
+            hintedCount: number;
+            easeFactor: number | null;
+            interval: number | null;
+            repetitions: number | null;
+            status: ("new" | "learning" | "reviewing" | "mastered") | null;
+            lastReviewDate: string | null;
+            nextReviewDate: string | null;
+        };
         UpdateCardDto: {
             question?: string;
             /** @enum {string} */
@@ -767,6 +800,32 @@ export interface components {
             timeSpent: number;
             wasHintUsed: boolean;
         };
+        SubmitReviewResponseDto: {
+            progress: {
+                id: string;
+                userId: string;
+                cardId: string;
+                interval: number;
+                easeFactor: number;
+                repetitions: number;
+                nextReviewDate: string;
+                lastReviewDate: string | null;
+                /** @enum {string} */
+                status: "new" | "learning" | "reviewing" | "mastered";
+                createdAt: string;
+                updatedAt: string;
+            };
+            grade?: {
+                correct: boolean;
+                explanation: string;
+                correctChoiceId?: string;
+                correctText?: string;
+                correctPairs?: {
+                    left: string;
+                    right: string;
+                }[];
+            };
+        };
         CheckReviewDto: {
             cardId: string;
             response: {
@@ -795,32 +854,6 @@ export interface components {
                 left: string;
                 right: string;
             }[];
-        };
-        SubmitReviewResponseDto: {
-            progress: {
-                id: string;
-                userId: string;
-                cardId: string;
-                interval: number;
-                easeFactor: number;
-                repetitions: number;
-                nextReviewDate: string;
-                lastReviewDate: string | null;
-                /** @enum {string} */
-                status: "new" | "learning" | "reviewing" | "mastered";
-                createdAt: string;
-                updatedAt: string;
-            };
-            grade?: {
-                correct: boolean;
-                explanation: string;
-                correctChoiceId?: string;
-                correctText?: string;
-                correctPairs?: {
-                    left: string;
-                    right: string;
-                }[];
-            };
         };
         EliminateChoiceDto: {
             cardId: string;
@@ -1352,6 +1385,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardResponseDto"];
+                };
+            };
+        };
+    };
+    CardsController_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardStatsDto"];
                 };
             };
         };

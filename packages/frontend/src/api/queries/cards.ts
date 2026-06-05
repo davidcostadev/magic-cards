@@ -6,13 +6,34 @@ import { subjectKeys } from './subjects';
 export type Card = components['schemas']['CardResponseDto'];
 export type CreateCardInput = components['schemas']['CreateCardDto'];
 export type UpdateCardInput = components['schemas']['UpdateCardDto'];
+/** Per-card performance for the current user ("nerd stats"). */
+export type CardStats = components['schemas']['CardStatsDto'];
 /** Supported content languages for a card (e.g. 'en' | 'pt'), derived from the API contract. */
 export type CardLanguage = Card['language'];
 
 export const cardKeys = {
   all: ['cards'] as const,
   list: (subjectId: string) => [...cardKeys.all, 'list', subjectId] as const,
+  stats: (cardId: string) => [...cardKeys.all, 'stats', cardId] as const,
 };
+
+/**
+ * The current user's performance on a card. Gated by `enabled` (the caller passes the user's
+ * "nerd stats" preference) so we never fetch when the panels are hidden.
+ */
+export function useCardStats(cardId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: cardKeys.stats(cardId),
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await apiClient.GET('/v1/cards/{id}/stats', {
+        params: { path: { id: cardId } },
+      });
+      if (error || !data) throw error;
+      return data;
+    },
+  });
+}
 
 export function useCards(subjectId: string) {
   return useQuery({

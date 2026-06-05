@@ -29,6 +29,11 @@ export function SettingsPage() {
     updatePreferences({ theme: newTheme });
   };
 
+  const nerdStats = user?.nerdStats ?? false;
+  const handleNerdStatsChange = (enabled: boolean) => {
+    updatePreferences({ nerdStats: enabled });
+  };
+
   const dailyGoalValid = Number.isFinite(dailyGoal) && dailyGoal >= 1 && dailyGoal <= 100;
 
   const handleDailyGoalSave = () => {
@@ -106,6 +111,32 @@ export function SettingsPage() {
                 key={value}
                 variant={theme === value ? 'default' : 'outline'}
                 onClick={() => handleThemeChange(value)}
+                className="flex-1"
+                size="lg"
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">{t('settings.nerdStats')}</CardTitle>
+          <CardDescription>{t('settings.nerdStatsDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            {[
+              { value: true, label: t('settings.on') },
+              { value: false, label: t('settings.off') },
+            ].map(({ value, label }) => (
+              <Button
+                key={String(value)}
+                variant={nerdStats === value ? 'default' : 'outline'}
+                onClick={() => handleNerdStatsChange(value)}
+                aria-pressed={nerdStats === value}
                 className="flex-1"
                 size="lg"
               >

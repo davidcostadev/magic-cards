@@ -6,6 +6,7 @@ export interface User {
   cardLanguage: string;
   theme: string;
   dailyGoal: number;
+  nerdStats: boolean;
   createdAt: string;
   updatedAt: string;
 }

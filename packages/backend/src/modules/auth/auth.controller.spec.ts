@@ -35,6 +35,7 @@ describe('POST /v1/auth/signup', () => {
       language: 'en',
       theme: 'light',
       dailyGoal: 20,
+      nerdStats: false,
     });
     expect(res.body.user.id).toEqual(expect.any(String));
     expect(res.body.user).not.toHaveProperty('passwordHash');
@@ -138,9 +139,14 @@ describe('GET/PATCH /v1/me', () => {
     const res = await request(app.getHttpServer())
       .patch('/v1/me')
       .set('Authorization', `Bearer ${token}`)
-      .send({ theme: 'dark', dailyGoal: 50, language: 'pt' });
+      .send({ theme: 'dark', dailyGoal: 50, language: 'pt', nerdStats: true });
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ theme: 'dark', dailyGoal: 50, language: 'pt' });
+    expect(res.body).toMatchObject({
+      theme: 'dark',
+      dailyGoal: 50,
+      language: 'pt',
+      nerdStats: true,
+    });
   });
 });

@@ -18,6 +18,10 @@ vi.mock('@/components/ui/dialog', () => ({
 vi.mock('@/components/features/learning/MarkdownContent', () => ({
   MarkdownContent: ({ text }: { text: string }) => <div>{text}</div>,
 }));
+// Self-gated, provider-dependent; covered by its own test. Stub it out here.
+vi.mock('@/components/features/learning/CardStatsPanel', () => ({
+  CardStatsPanel: () => null,
+}));
 
 const base = {
   id: 'c1',

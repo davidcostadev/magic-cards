@@ -136,13 +136,35 @@ export const cardResponseSchema = z.object({
   updatedAt: z.string(),
 });
 
+/**
+ * Per-card performance for the current user ("nerd stats"). The aggregate counts come from
+ * `review_history`; the SM-2 fields come from `card_progress` and are null until the card has
+ * been reviewed at least once. Never reveals the answer — only the learner's own performance.
+ */
+export const cardStatsResponseSchema = z.object({
+  totalReviews: z.number(),
+  correctCount: z.number(), // reviews graded quality ≥ 3
+  incorrectCount: z.number(), // reviews graded quality < 3
+  accuracy: z.number(), // 0–100 (correct / total), 0 when never reviewed
+  avgTimeMs: z.number(), // mean time_spent across reviews, 0 when never reviewed
+  hintedCount: z.number(), // reviews where a hint was revealed
+  easeFactor: z.number().nullable(),
+  interval: z.number().nullable(),
+  repetitions: z.number().nullable(),
+  status: z.enum(['new', 'learning', 'reviewing', 'mastered']).nullable(),
+  lastReviewDate: z.string().nullable(),
+  nextReviewDate: z.string().nullable(),
+});
+
 export class CreateCardDto extends createZodDto(createCardSchema) {}
 export class UpdateCardDto extends createZodDto(updateCardSchema) {}
 export class CardListQueryDto extends createZodDto(cardListQuerySchema) {}
 export class CardResponseDto extends createZodDto(cardResponseSchema) {}
 export class CardListDto extends createZodDto(listResponseSchema(cardResponseSchema)) {}
+export class CardStatsDto extends createZodDto(cardStatsResponseSchema) {}
 
 export type CardResponse = z.infer<typeof cardResponseSchema>;
+export type CardStats = z.infer<typeof cardStatsResponseSchema>;
 export type CardListQuery = z.infer<typeof cardListQuerySchema>;
 export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type UpdateCardInput = z.infer<typeof updateCardSchema>;

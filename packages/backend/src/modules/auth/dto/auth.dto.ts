@@ -18,6 +18,7 @@ export const updateMeSchema = z
     language: z.string().min(2).max(10),
     theme: z.enum(['light', 'dark']),
     dailyGoal: z.number().int().min(1).max(500),
+    nerdStats: z.boolean(),
   })
   .partial();
 
@@ -28,6 +29,7 @@ export const userResponseSchema = z.object({
   language: z.string(),
   theme: z.string(),
   dailyGoal: z.number(),
+  nerdStats: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -55,6 +57,7 @@ export function toUserResponse(user: User): UserResponse {
     language: user.language,
     theme: user.theme,
     dailyGoal: user.dailyGoal,
+    nerdStats: user.nerdStats,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

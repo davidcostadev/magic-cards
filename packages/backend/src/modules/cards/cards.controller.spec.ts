@@ -356,3 +356,72 @@ describe('Interactive card types', () => {
     ]);
   });
 });
+
+describe('GET /v1/cards/:id/stats (nerd stats)', () => {
+  async function createOpenCard(): Promise<string> {
+    const res = await auth(
+      request(app.getHttpServer()).post('/v1/cards').send({ subjectId, question: 'Q', answer: 'A' })
+    );
+    return res.body.id;
+  }
+
+  function review(cardId: string, quality: number, timeSpent: number, wasHintUsed = false) {
+    return auth(
+      request(app.getHttpServer())
+        .post('/v1/reviews')
+        .send({ cardId, quality, timeSpent, wasHintUsed })
+    );
+  }
+
+  it('aggregates correct/incorrect counts, accuracy, avg time and hint usage', async () => {
+    const cardId = await createOpenCard();
+    await review(cardId, 4, 1000); // correct
+    await review(cardId, 2, 3000, true); // incorrect, hint used
+    await review(cardId, 5, 2000); // correct
+
+    const res = await auth(request(app.getHttpServer()).get(`/v1/cards/${cardId}/stats`));
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      totalReviews: 3,
+      correctCount: 2,
+      incorrectCount: 1,
+      accuracy: 67, // round(2/3 * 100)
+      avgTimeMs: 2000, // (1000 + 3000 + 2000) / 3
+      hintedCount: 1,
+    });
+    // SM-2 scheduler state is present once the card has been reviewed.
+    expect(typeof res.body.easeFactor).toBe('number');
+    expect(typeof res.body.repetitions).toBe('number');
+    expect(res.body.status).not.toBeNull();
+    expect(res.body.nextReviewDate).not.toBeNull();
+  });
+
+  it('returns zeros and null SM-2 state for a never-reviewed card', async () => {
+    const cardId = await createOpenCard();
+    const res = await auth(request(app.getHttpServer()).get(`/v1/cards/${cardId}/stats`));
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      totalReviews: 0,
+      correctCount: 0,
+      incorrectCount: 0,
+      accuracy: 0,
+      avgTimeMs: 0,
+      hintedCount: 0,
+      easeFactor: null,
+      interval: null,
+      repetitions: null,
+      status: null,
+      lastReviewDate: null,
+      nextReviewDate: null,
+    });
+  });
+
+  it("returns 404 for a card the user can't see", async () => {
+    const cardId = await createOpenCard();
+    const otherToken = await signupAndToken(app, 'other@test.com', 'other');
+    const res = await request(app.getHttpServer())
+      .get(`/v1/cards/${cardId}/stats`)
+      .set('Authorization', `Bearer ${otherToken}`);
+    expect(res.status).toBe(404);
+  });
+});

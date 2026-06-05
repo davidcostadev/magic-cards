@@ -7,6 +7,10 @@ import { CardList } from './CardList';
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
+// Self-gated, provider-dependent; covered by its own test. Stub it out here.
+vi.mock('@/components/features/learning/CardStatsPanel', () => ({
+  CardStatsPanel: () => null,
+}));
 
 const card = (over: Partial<Card> = {}): Card =>
   ({

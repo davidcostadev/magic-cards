@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "nerd_stats" boolean DEFAULT false NOT NULL;

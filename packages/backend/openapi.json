@@ -577,6 +577,41 @@
         ]
       }
     },
+    "/v1/cards/{id}/stats": {
+      "get": {
+        "operationId": "CardsController_stats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardStatsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "cards"
+        ]
+      }
+    },
     "/v1/review_queue": {
       "get": {
         "operationId": "ReviewsController_queue",
@@ -1318,6 +1353,9 @@
               "dailyGoal": {
                 "type": "number"
               },
+              "nerdStats": {
+                "type": "boolean"
+              },
               "createdAt": {
                 "type": "string"
               },
@@ -1332,6 +1370,7 @@
               "language",
               "theme",
               "dailyGoal",
+              "nerdStats",
               "createdAt",
               "updatedAt"
             ]
@@ -1384,6 +1423,9 @@
           "dailyGoal": {
             "type": "number"
           },
+          "nerdStats": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string"
           },
@@ -1398,6 +1440,7 @@
           "language",
           "theme",
           "dailyGoal",
+          "nerdStats",
           "createdAt",
           "updatedAt"
         ]
@@ -1421,6 +1464,9 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 500
+          },
+          "nerdStats": {
+            "type": "boolean"
           }
         }
       },
@@ -2187,6 +2233,109 @@
           "updatedAt"
         ]
       },
+      "CardStatsDto": {
+        "type": "object",
+        "properties": {
+          "totalReviews": {
+            "type": "number"
+          },
+          "correctCount": {
+            "type": "number"
+          },
+          "incorrectCount": {
+            "type": "number"
+          },
+          "accuracy": {
+            "type": "number"
+          },
+          "avgTimeMs": {
+            "type": "number"
+          },
+          "hintedCount": {
+            "type": "number"
+          },
+          "easeFactor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "repetitions": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "new",
+                  "learning",
+                  "reviewing",
+                  "mastered"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastReviewDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nextReviewDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "totalReviews",
+          "correctCount",
+          "incorrectCount",
+          "accuracy",
+          "avgTimeMs",
+          "hintedCount",
+          "easeFactor",
+          "interval",
+          "repetitions",
+          "status",
+          "lastReviewDate",
+          "nextReviewDate"
+        ]
+      },
       "UpdateCardDto": {
         "type": "object",
         "properties": {
@@ -2814,6 +2963,119 @@
           "wasHintUsed"
         ]
       },
+      "SubmitReviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "progress": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "userId": {
+                "type": "string"
+              },
+              "cardId": {
+                "type": "string"
+              },
+              "interval": {
+                "type": "number"
+              },
+              "easeFactor": {
+                "type": "number"
+              },
+              "repetitions": {
+                "type": "number"
+              },
+              "nextReviewDate": {
+                "type": "string"
+              },
+              "lastReviewDate": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "new",
+                  "learning",
+                  "reviewing",
+                  "mastered"
+                ]
+              },
+              "createdAt": {
+                "type": "string"
+              },
+              "updatedAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "cardId",
+              "interval",
+              "easeFactor",
+              "repetitions",
+              "nextReviewDate",
+              "lastReviewDate",
+              "status",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "grade": {
+            "type": "object",
+            "properties": {
+              "correct": {
+                "type": "boolean"
+              },
+              "explanation": {
+                "type": "string"
+              },
+              "correctChoiceId": {
+                "type": "string"
+              },
+              "correctText": {
+                "type": "string"
+              },
+              "correctPairs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "left": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "right": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "left",
+                    "right"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "correct",
+              "explanation"
+            ]
+          }
+        },
+        "required": [
+          "progress"
+        ]
+      },
       "CheckReviewDto": {
         "type": "object",
         "properties": {
@@ -2935,119 +3197,6 @@
         "required": [
           "correct",
           "explanation"
-        ]
-      },
-      "SubmitReviewResponseDto": {
-        "type": "object",
-        "properties": {
-          "progress": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "userId": {
-                "type": "string"
-              },
-              "cardId": {
-                "type": "string"
-              },
-              "interval": {
-                "type": "number"
-              },
-              "easeFactor": {
-                "type": "number"
-              },
-              "repetitions": {
-                "type": "number"
-              },
-              "nextReviewDate": {
-                "type": "string"
-              },
-              "lastReviewDate": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "status": {
-                "type": "string",
-                "enum": [
-                  "new",
-                  "learning",
-                  "reviewing",
-                  "mastered"
-                ]
-              },
-              "createdAt": {
-                "type": "string"
-              },
-              "updatedAt": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "userId",
-              "cardId",
-              "interval",
-              "easeFactor",
-              "repetitions",
-              "nextReviewDate",
-              "lastReviewDate",
-              "status",
-              "createdAt",
-              "updatedAt"
-            ]
-          },
-          "grade": {
-            "type": "object",
-            "properties": {
-              "correct": {
-                "type": "boolean"
-              },
-              "explanation": {
-                "type": "string"
-              },
-              "correctChoiceId": {
-                "type": "string"
-              },
-              "correctText": {
-                "type": "string"
-              },
-              "correctPairs": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "left": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "right": {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  },
-                  "required": [
-                    "left",
-                    "right"
-                  ]
-                }
-              }
-            },
-            "required": [
-              "correct",
-              "explanation"
-            ]
-          }
-        },
-        "required": [
-          "progress"
         ]
       },
       "EliminateChoiceDto": {

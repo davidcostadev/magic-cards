@@ -10,6 +10,8 @@ import {
   CardListQueryDto,
   type CardResponse,
   CardResponseDto,
+  type CardStats,
+  CardStatsDto,
   CreateCardDto,
   UpdateCardDto,
 } from './dto/card.dto';
@@ -41,6 +43,12 @@ export class CardsController {
   @ApiOkResponse({ type: CardResponseDto })
   get(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<CardResponse> {
     return this.cards.get(user.id, id);
+  }
+
+  @Get(':id/stats')
+  @ApiOkResponse({ type: CardStatsDto })
+  stats(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<CardStats> {
+    return this.cards.getStats(user.id, id);
   }
 
   @Patch(':id')

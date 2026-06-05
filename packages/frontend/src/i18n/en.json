@@ -225,9 +225,28 @@
     "lightMode": "Light",
     "dailyGoal": "Daily Goal",
     "dailyGoalDescription": "Number of cards to review per day",
+    "nerdStats": "Nerd stats",
+    "nerdStatsDescription": "Show your per-card performance while learning and previewing cards",
+    "on": "On",
+    "off": "Off",
     "english": "English",
     "portuguese": "Portuguese",
     "saved": "Settings saved!"
+  },
+  "cardStats": {
+    "title": "Your stats",
+    "correct": "right",
+    "incorrect": "wrong",
+    "accuracy": "accuracy",
+    "avgTime": "avg time",
+    "hinted": "with hint",
+    "ease": "ease",
+    "interval": "interval",
+    "repetitions": "reps",
+    "status": "status",
+    "nextReview": "next review",
+    "noData": "No reviews yet",
+    "inlineSummary": "{{accuracy}}% accuracy · {{count}} reviews"
   },
   "onboarding": {
     "welcome": "Welcome to Magic Cards",

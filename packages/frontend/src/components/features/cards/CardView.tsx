@@ -2,6 +2,7 @@ import { Check, Pencil, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card } from '@/api/queries/cards';
+import { CardStatsPanel } from '@/components/features/learning/CardStatsPanel';
 import { MarkdownContent } from '@/components/features/learning/MarkdownContent';
 import { LanguageBadge } from '@/components/features/subjects/LanguageBadge';
 import { Badge } from '@/components/ui/badge';
@@ -201,6 +202,9 @@ export function CardView({ open, onOpenChange, card, canEdit, onEdit }: CardView
                 </div>
               </Section>
             )}
+
+            {/* Opt-in "nerd stats": self-hides unless the preference is on. */}
+            <CardStatsPanel cardId={card.id} />
           </div>
         </div>
 
