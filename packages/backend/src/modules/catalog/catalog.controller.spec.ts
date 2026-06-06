@@ -1,7 +1,7 @@
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { users } from '../../db/schema';
+import { cardReports, reviewHistory, users } from '../../db/schema';
 import { createTestApp, signupAndToken } from '../../test-support/create-test-app';
 
 const API_KEY = 'test-content-api-key-1234567890';
@@ -32,6 +32,57 @@ async function publishSubject(title = 'Public TS') {
     request(app.getHttpServer()).post('/v1/catalog/subjects').send({ title })
   );
   return res.body;
+}
+
+async function publishCard(subjectId: string, body: Record<string, unknown> = {}) {
+  const res = await withKey(
+    request(app.getHttpServer())
+      .post('/v1/catalog/cards')
+      .send({ subjectId, type: 'open', question: 'Q', answer: 'A', ...body })
+  );
+  return res.body as { id: string; [k: string]: unknown };
+}
+
+// Reviews/reports need a real user (FK). There's no public endpoint to author them as arbitrary
+// users, so we insert directly. Each call makes a fresh user (reports are unique per user+card).
+let seedSeq = 0;
+async function makeUser(): Promise<string> {
+  seedSeq += 1;
+  const [u] = await db
+    .insert(users)
+    .values({ email: `seed-${seedSeq}@test.com`, passwordHash: '!', username: `seed${seedSeq}` })
+    .returning();
+  return u.id;
+}
+
+async function seedReview(cardId: string, subjectId: string, quality: number) {
+  const userId = await makeUser();
+  await db.insert(reviewHistory).values({ userId, cardId, subjectId, quality, timeSpent: 1000 });
+}
+
+async function seedReport(
+  cardId: string,
+  subjectId: string,
+  reason: 'incorrect' | 'improvement',
+  message?: string
+) {
+  const userId = await makeUser();
+  await db
+    .insert(cardReports)
+    .values({ userId, cardId, subjectId, reason, message: message ?? null });
+}
+
+async function privateCard(email = 'owner@test.com') {
+  const token = await signupAndToken(app, email, email.split('@')[0]);
+  const subject = await request(app.getHttpServer())
+    .post('/v1/subjects')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ title: 'Private' });
+  const card = await request(app.getHttpServer())
+    .post('/v1/cards')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ subjectId: subject.body.id, question: 'Private Q', answer: 'Private A' });
+  return { token, id: card.body.id as string };
 }
 
 describe('POST /v1/catalog/* (API key)', () => {
@@ -78,6 +129,349 @@ describe('POST /v1/catalog/* (API key)', () => {
         .send({ subjectId: priv.body.id, question: 'Q', answer: 'A' })
     );
     expect(res.status).toBe(404);
+  });
+
+  it('persists language and translations on a single created card', async () => {
+    const subject = await publishSubject();
+    const created = await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/cards')
+        .send({
+          subjectId: subject.id,
+          question: 'Q',
+          answer: 'A',
+          language: 'pt',
+          translations: { en: { question: 'Q-en', answer: 'A-en' } },
+        })
+    );
+    expect(created.status).toBe(201);
+
+    const detail = await withKey(
+      request(app.getHttpServer()).get(`/v1/catalog/cards/${created.body.id}`)
+    );
+    expect(detail.body.language).toBe('pt');
+    expect(detail.body.translations.en.question).toBe('Q-en');
+  });
+});
+
+describe('GET /v1/catalog/cards (search / filter / rank)', () => {
+  it('requires the API key (401)', async () => {
+    const res = await request(app.getHttpServer()).get('/v1/catalog/cards');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns only public/system cards, never a user’s private card', async () => {
+    const subject = await publishSubject('Public deck');
+    const pub = await publishCard(subject.id, { question: 'Public Q' });
+    await privateCard();
+
+    const res = await withKey(request(app.getHttpServer()).get('/v1/catalog/cards'));
+    expect(res.status).toBe(200);
+    expect(res.body.object).toBe('list');
+    const ids = res.body.data.map((c: { id: string }) => c.id);
+    expect(ids).toContain(pub.id);
+    expect(res.body.data.every((c: { question: string }) => c.question !== 'Private Q')).toBe(true);
+  });
+
+  it('searches question and answer with q (case-insensitive)', async () => {
+    const subject = await publishSubject();
+    await publishCard(subject.id, { question: 'About CLOSURES', answer: 'x' });
+    await publishCard(subject.id, { question: 'Other', answer: 'mentions hoisting' });
+    await publishCard(subject.id, { question: 'Unrelated', answer: 'nope' });
+
+    const byQuestion = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?q=closure')
+    );
+    expect(byQuestion.body.data).toHaveLength(1);
+    const byAnswer = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?q=HOISTING')
+    );
+    expect(byAnswer.body.data).toHaveLength(1);
+  });
+
+  it('filters by type and language', async () => {
+    const subject = await publishSubject();
+    await publishCard(subject.id, { type: 'open', question: 'O', answer: 'A' });
+    await publishCard(subject.id, {
+      type: 'quiz',
+      question: 'Quiz',
+      answer: 'expl',
+      choices: [
+        { id: 'a', text: 'A', isCorrect: true },
+        { id: 'b', text: 'B', isCorrect: false },
+      ],
+    });
+    await publishCard(subject.id, { question: 'PT card', answer: 'A', language: 'pt' });
+
+    const quiz = await withKey(request(app.getHttpServer()).get('/v1/catalog/cards?type=quiz'));
+    expect(quiz.body.data).toHaveLength(1);
+    expect(quiz.body.data[0].type).toBe('quiz');
+
+    const pt = await withKey(request(app.getHttpServer()).get('/v1/catalog/cards?language=pt'));
+    expect(pt.body.data).toHaveLength(1);
+    expect(pt.body.data[0].language).toBe('pt');
+  });
+
+  it('filters cards missing a complete translation (missing_translation=pt)', async () => {
+    const subject = await publishSubject();
+    const none = await publishCard(subject.id, { question: 'No tr', answer: 'A' });
+    const complete = await publishCard(subject.id, {
+      question: 'Has pt',
+      answer: 'A',
+      translations: { pt: { question: 'Tem pt', answer: 'R' } },
+    });
+    const partial = await publishCard(subject.id, {
+      question: 'Empty pt answer',
+      answer: 'A',
+      translations: { pt: { question: 'P', answer: '' } },
+    });
+
+    const res = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?missing_translation=pt')
+    );
+    const ids = res.body.data.map((c: { id: string }) => c.id);
+    expect(ids).toContain(none.id);
+    expect(ids).toContain(partial.id);
+    expect(ids).not.toContain(complete.id);
+  });
+
+  it('computes review accuracy and report signals without join fan-out', async () => {
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, { question: 'Stats card', answer: 'A' });
+    // 4 reviews, 3 with quality >= 3 → accuracy 75, avg 3.5
+    await seedReview(card.id, subject.id, 5);
+    await seedReview(card.id, subject.id, 4);
+    await seedReview(card.id, subject.id, 3);
+    await seedReview(card.id, subject.id, 2);
+    // 2 reports (1 of each reason)
+    await seedReport(card.id, subject.id, 'incorrect');
+    await seedReport(card.id, subject.id, 'improvement');
+
+    const res = await withKey(request(app.getHttpServer()).get('/v1/catalog/cards'));
+    const found = res.body.data.find((c: { id: string }) => c.id === card.id);
+    expect(found.signals.reviewCount).toBe(4);
+    expect(found.signals.accuracy).toBe(75);
+    // 4 reviews × 2 reports would be 8 each if the joins fanned out — assert they don't.
+    expect(found.signals.reportCount).toBe(2);
+    expect(found.signals.reportsByReason).toEqual({ incorrect: 1, improvement: 1 });
+    expect(found.signals.avgQuality).toBeCloseTo(3.5, 2);
+    expect(found.signals.translations).toEqual({ en: false, pt: false });
+  });
+
+  it('filters by reported true/false and a per-reason min_reports threshold', async () => {
+    const subject = await publishSubject();
+    const reported = await publishCard(subject.id, { question: 'Reported', answer: 'A' });
+    const clean = await publishCard(subject.id, { question: 'Clean', answer: 'A' });
+    await seedReport(reported.id, subject.id, 'incorrect');
+    await seedReport(reported.id, subject.id, 'incorrect');
+    await seedReport(reported.id, subject.id, 'improvement');
+
+    const onlyReported = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?reported=true')
+    );
+    expect(onlyReported.body.data.map((c: { id: string }) => c.id)).toEqual([reported.id]);
+
+    const onlyClean = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?reported=false')
+    );
+    expect(onlyClean.body.data.map((c: { id: string }) => c.id)).toEqual([clean.id]);
+
+    const incorrect2 = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?report_reason=incorrect&min_reports=2')
+    );
+    expect(incorrect2.body.data.map((c: { id: string }) => c.id)).toEqual([reported.id]);
+
+    const improvement2 = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?report_reason=improvement&min_reports=2')
+    );
+    expect(improvement2.body.data).toHaveLength(0);
+  });
+
+  it('ranks by most_reported and most_reviewed', async () => {
+    const subject = await publishSubject();
+    const a = await publishCard(subject.id, { question: 'A', answer: 'A' });
+    const b = await publishCard(subject.id, { question: 'B', answer: 'A' });
+    await seedReport(b.id, subject.id, 'incorrect');
+    await seedReport(b.id, subject.id, 'improvement');
+    await seedReport(a.id, subject.id, 'incorrect');
+    await seedReview(a.id, subject.id, 4);
+    await seedReview(a.id, subject.id, 4);
+
+    const reported = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?sort=most_reported')
+    );
+    expect(reported.body.data[0].id).toBe(b.id);
+
+    const reviewed = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?sort=most_reviewed')
+    );
+    expect(reviewed.body.data[0].id).toBe(a.id);
+  });
+
+  it('most_wrong / most_right rank by accuracy and exclude never-reviewed cards', async () => {
+    const subject = await publishSubject();
+    const wrong = await publishCard(subject.id, { question: 'Wrong', answer: 'A' });
+    const right = await publishCard(subject.id, { question: 'Right', answer: 'A' });
+    const untouched = await publishCard(subject.id, { question: 'Untouched', answer: 'A' });
+    // wrong: 1/4 correct = 25
+    await seedReview(wrong.id, subject.id, 4);
+    await seedReview(wrong.id, subject.id, 2);
+    await seedReview(wrong.id, subject.id, 2);
+    await seedReview(wrong.id, subject.id, 1);
+    // right: 2/2 correct = 100
+    await seedReview(right.id, subject.id, 5);
+    await seedReview(right.id, subject.id, 4);
+
+    const mw = await withKey(request(app.getHttpServer()).get('/v1/catalog/cards?sort=most_wrong'));
+    const mwIds = mw.body.data.map((c: { id: string }) => c.id);
+    expect(mwIds).toEqual([wrong.id, right.id]);
+    expect(mwIds).not.toContain(untouched.id);
+
+    const mr = await withKey(request(app.getHttpServer()).get('/v1/catalog/cards?sort=most_right'));
+    expect(mr.body.data.map((c: { id: string }) => c.id)).toEqual([right.id, wrong.id]);
+  });
+
+  it('paginates with limit + offset (has_more)', async () => {
+    const subject = await publishSubject();
+    const c1 = await publishCard(subject.id, { question: 'one', answer: 'A' });
+    const c2 = await publishCard(subject.id, { question: 'two', answer: 'A' });
+
+    const page1 = await withKey(request(app.getHttpServer()).get('/v1/catalog/cards?limit=1'));
+    expect(page1.body.data).toHaveLength(1);
+    expect(page1.body.has_more).toBe(true);
+    const first = page1.body.data[0].id;
+
+    const page2 = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?limit=1&offset=1')
+    );
+    expect(page2.body.data).toHaveLength(1);
+    expect(page2.body.has_more).toBe(false);
+    const second = page2.body.data[0].id;
+
+    expect(first).not.toBe(second);
+    expect([first, second].sort()).toEqual([c1.id, c2.id].sort());
+  });
+});
+
+describe('GET /v1/catalog/cards/:id (detail + reports)', () => {
+  it('returns the card, signals, and anonymized report messages', async () => {
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, { question: 'Detail Q', answer: 'A' });
+    await seedReview(card.id, subject.id, 5);
+    await seedReport(card.id, subject.id, 'incorrect', 'The answer is outdated');
+    await seedReport(card.id, subject.id, 'improvement', 'Add an example');
+
+    const res = await withKey(request(app.getHttpServer()).get(`/v1/catalog/cards/${card.id}`));
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(card.id);
+    expect(res.body.signals.reviewCount).toBe(1);
+    expect(res.body.signals.reportCount).toBe(2);
+    expect(res.body.reports).toHaveLength(2);
+    const messages = res.body.reports.map((r: { message: string }) => r.message);
+    expect(messages).toContain('The answer is outdated');
+    // Anonymized: the reporter's identity is never exposed.
+    expect(res.body.reports.every((r: Record<string, unknown>) => !('userId' in r))).toBe(true);
+  });
+
+  it('404 for a non-public card', async () => {
+    const priv = await privateCard();
+    const res = await withKey(request(app.getHttpServer()).get(`/v1/catalog/cards/${priv.id}`));
+    expect(res.status).toBe(404);
+  });
+
+  it('404 for a missing id; 401 without the key', async () => {
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, { question: 'Q', answer: 'A' });
+    const missing = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards/01900000-0000-7000-8000-000000000000')
+    );
+    expect(missing.status).toBe(404);
+    const noKey = await request(app.getHttpServer()).get(`/v1/catalog/cards/${card.id}`);
+    expect(noKey.status).toBe(401);
+  });
+});
+
+describe('PATCH /v1/catalog/cards/:id (improve a card)', () => {
+  it('adds a translation to a public card and clears the missing-translation filter', async () => {
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, {
+      question: 'What is a closure?',
+      answer: 'fn + scope',
+    });
+
+    const res = await withKey(
+      request(app.getHttpServer())
+        .patch(`/v1/catalog/cards/${card.id}`)
+        .send({
+          translations: { pt: { question: 'O que é uma closure?', answer: 'função + escopo' } },
+        })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.translations.pt.question).toBe('O que é uma closure?');
+    expect(res.body.signals.translations.pt).toBe(true);
+
+    const missing = await withKey(
+      request(app.getHttpServer()).get('/v1/catalog/cards?missing_translation=pt')
+    );
+    expect(missing.body.data.map((c: { id: string }) => c.id)).not.toContain(card.id);
+  });
+
+  it('updates question/answer partially', async () => {
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, { question: 'Old', answer: 'Old A' });
+    const res = await withKey(
+      request(app.getHttpServer()).patch(`/v1/catalog/cards/${card.id}`).send({ answer: 'New A' })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.answer).toBe('New A');
+    expect(res.body.question).toBe('Old');
+  });
+
+  it('re-validates against the (immutable) type — a quiz must keep exactly one correct choice', async () => {
+    const subject = await publishSubject();
+    const quiz = await publishCard(subject.id, {
+      type: 'quiz',
+      question: 'Q',
+      answer: 'expl',
+      choices: [
+        { id: 'a', text: 'A', isCorrect: true },
+        { id: 'b', text: 'B', isCorrect: false },
+      ],
+    });
+    const res = await withKey(
+      request(app.getHttpServer())
+        .patch(`/v1/catalog/cards/${quiz.id}`)
+        .send({
+          choices: [
+            { id: 'a', text: 'A', isCorrect: false },
+            { id: 'b', text: 'B', isCorrect: false },
+          ],
+        })
+    );
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('errors.validation');
+  });
+
+  it("refuses to patch a user's private card (404) and leaves it untouched", async () => {
+    const priv = await privateCard();
+    const res = await withKey(
+      request(app.getHttpServer()).patch(`/v1/catalog/cards/${priv.id}`).send({ answer: 'Hacked' })
+    );
+    expect(res.status).toBe(404);
+
+    const still = await request(app.getHttpServer())
+      .get(`/v1/cards/${priv.id}`)
+      .set('Authorization', `Bearer ${priv.token}`);
+    expect(still.body.answer).toBe('Private A');
+  });
+
+  it('requires the API key (401)', async () => {
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, { question: 'Q', answer: 'A' });
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/catalog/cards/${card.id}`)
+      .send({ answer: 'X' });
+    expect(res.status).toBe(401);
   });
 });
 

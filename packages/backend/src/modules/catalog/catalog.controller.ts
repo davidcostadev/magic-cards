@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -12,13 +13,27 @@ import {
 import { ApiNoContentResponse, ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
-import { type CardResponse, CardResponseDto, CreateCardDto } from '../cards/dto/card.dto';
+import { ListResponse } from '../../common/interceptors/list.interceptor';
+import { toListResponse } from '../../common/pagination';
+import {
+  type CardResponse,
+  CardResponseDto,
+  CreateCardDto,
+  UpdateCardDto,
+} from '../cards/dto/card.dto';
 import {
   CreateSubjectDto,
   type SubjectResponse,
   SubjectResponseDto,
 } from '../subjects/dto/subject.dto';
 import { CatalogService } from './catalog.service';
+import {
+  type CatalogCardDetail,
+  CatalogCardDetailDto,
+  CatalogCardListDto,
+  CatalogCardQueryDto,
+  type CatalogCardResponse,
+} from './dto/catalog-cards.dto';
 import {
   type CatalogExport,
   CatalogExportDto,
@@ -49,6 +64,25 @@ export class CatalogController {
   @ApiOkResponse({ type: CardResponseDto })
   createCard(@Body() body: CreateCardDto): Promise<CardResponse> {
     return this.catalog.createCard(body);
+  }
+
+  @Get('cards')
+  @ApiOkResponse({ type: CatalogCardListDto })
+  async listCards(@Query() query: CatalogCardQueryDto): Promise<ListResponse<CatalogCardResponse>> {
+    const { rows, limit } = await this.catalog.listCards(query);
+    return toListResponse(rows, limit);
+  }
+
+  @Get('cards/:id')
+  @ApiOkResponse({ type: CatalogCardDetailDto })
+  getCard(@Param('id') id: string): Promise<CatalogCardDetail> {
+    return this.catalog.getCardDetail(id);
+  }
+
+  @Patch('cards/:id')
+  @ApiOkResponse({ type: CatalogCardDetailDto })
+  updateCard(@Param('id') id: string, @Body() body: UpdateCardDto): Promise<CatalogCardDetail> {
+    return this.catalog.updateCard(id, body);
   }
 
   @Post('import')

@@ -60,11 +60,16 @@ Catalog disabled (no key configured) → `401 { "error": { "code": "catalog.disa
 | Method & Path | Auth | Body | Response |
 |---|---|---|---|
 | `POST /v1/catalog/subjects` | `x-api-key` | `{ title, description?, color?, icon? }` | `201` public `Subject` (`isPublic: true`) |
-| `POST /v1/catalog/cards` | `x-api-key` | `{ subjectId, question, answer, hints?, tags? }` | `201` `Card` (must target a public subject) |
+| `POST /v1/catalog/cards` | `x-api-key` | `{ subjectId, type?, question, answer?, language?, translations?, choices?/shortAnswer?/matchPairs?, hints?, tags? }` | `201` `Card` (must target a public subject) |
+| `GET /v1/catalog/cards` | `x-api-key` | — (query params) | `200` list of `Card` + `signals` — search / filter / rank (see §4c) |
+| `GET /v1/catalog/cards/:id` | `x-api-key` | — | `200` `Card` + `signals` + `reports[]` (learner feedback); `404` if not public |
+| `PATCH /v1/catalog/cards/:id` | `x-api-key` | partial card (`question?`, `answer?`, `translations?`, `choices?`, …) | `200` updated `Card` + `signals`; `404` if not public |
 | `DELETE /v1/catalog/subjects/:id` | `x-api-key` | — | `204` (removes a public subject **and its cards**); `404` if it isn't a public catalog subject |
 
 Cards can only be added to a **public** subject id (one returned by `POST /catalog/subjects`).
-Targeting a private/non-existent subject → `404`.
+Targeting a private/non-existent subject → `404`. `type` defaults to `open`; `POST` persists
+`language` and `translations` too. `GET`/`PATCH` on `cards/:id` are scoped to public/system content,
+so the key can never read aggregate data for, or edit, a user's private card (`404`).
 
 `DELETE` is scoped to public, system-owned content: deleting a regular user's subject (or a
 missing id) returns `404` — the key can never remove a user's own deck. The delete cascades to
@@ -173,6 +178,73 @@ curl -sS http://localhost:3001/v1/catalog/export -H "x-api-key: $CONTENT_API_KEY
 
 ---
 
+## 4c. Querying & improving cards (search / filter / patch)
+
+Bulk import/export round-trips the *whole* catalog. When an AI (or operator) wants to **find a
+specific slice to fix** — untranslated cards, the ones learners get wrong, the ones they reported —
+and **edit them in place**, use the query + patch endpoints instead of re-importing everything.
+
+**`GET /v1/catalog/cards`** — search, filter, and rank public cards. All params optional:
+
+| Param | Meaning |
+|---|---|
+| `subject` | scope to one public subject id |
+| `type` | `open` \| `quiz` \| `type-answer` \| `match` |
+| `language` | primary content language (`en` \| `pt`) |
+| `q` | free-text search over question + answer (case-insensitive) |
+| `missing_translation` | `en` \| `pt` — cards with **no complete** (question **and** answer) translation in that language |
+| `reported` | `true` (≥1 learner report) \| `false` (none) |
+| `report_reason` | `incorrect` \| `improvement` — restrict the report filter/count to one reason |
+| `min_reports` | minimum report count (of `report_reason` when set, else across all reasons) |
+| `sort` | `newest` (default) \| `most_reported` \| `most_wrong` \| `most_right` \| `most_reviewed` |
+| `limit` (≤100, default 20), `offset` | **offset** pagination — ranked sorts can't page by id |
+
+Each item is the full card plus a **`signals`** object aggregated **across all learners**:
+
+```jsonc
+"signals": {
+  "reviewCount": 42, "accuracy": 73, "avgQuality": 3.6,   // accuracy = % graded quality ≥ 3
+  "reportCount": 2, "reportsByReason": { "incorrect": 1, "improvement": 1 },
+  "translations": { "en": true, "pt": false }              // is a complete translation present?
+}
+```
+
+`most_wrong`/`most_right` only consider cards that have **been reviewed** (a card nobody tried isn't
+"most wrong"). `missing_translation` checks the `translations` jsonb only — the primary language lives
+in the top-level `question`/`answer`. (A `match` card with a legitimately empty translated answer is
+still flagged as missing; fine for the open/quiz/type-answer use case.)
+
+**`GET /v1/catalog/cards/:id`** — one card + its `signals` + the actual learner **`reports[]`**
+(`{ id, reason, message, createdAt }`, anonymized — no user id) so the AI can read *why* a card was
+flagged before fixing it.
+
+**`PATCH /v1/catalog/cards/:id`** — surgically improve one card. Send only the fields to change; the
+edit is merged onto the stored card and **re-validated against its (immutable) type** (e.g. a quiz
+must keep exactly one correct choice → `400 errors.validation` otherwise). The card's `type` and
+`subjectId` can't change.
+
+```bash
+# Find JavaScript cards still missing a Portuguese translation
+curl -sS "http://localhost:3001/v1/catalog/cards?subject=sub-5&missing_translation=pt&limit=50" \
+  -H "x-api-key: $CONTENT_API_KEY"
+
+# Add the PT translation to one of them (keep code/identifiers in English)
+curl -sS -X PATCH "http://localhost:3001/v1/catalog/cards/js-open-036" \
+  -H "x-api-key: $CONTENT_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"translations":{"pt":{"question":"O que é a Temporal Dead Zone?","answer":"A janela..."}}}'
+
+# Read what learners reported on a flagged card before rewriting it
+curl -sS "http://localhost:3001/v1/catalog/cards?sort=most_reported&limit=10" -H "x-api-key: $CONTENT_API_KEY"
+curl -sS "http://localhost:3001/v1/catalog/cards/<id>" -H "x-api-key: $CONTENT_API_KEY"   # → reports[]
+```
+
+> **AI improvement loop:** `GET /catalog/cards` with a filter (missing translation / most-wrong /
+> reported) → read the per-card `signals` and `reports[]` → `PATCH` the fix → re-query to confirm
+> the filter no longer matches. When done, `GET /catalog/export` for the updated seed JSON. No seed
+> file is edited by hand and the live DB is the source of truth throughout.
+
+---
+
 ## 5. What learners see
 
 - The shared subject appears in **every** learner's `GET /v1/subjects` list, marked **Shared**
@@ -187,8 +259,11 @@ curl -sS http://localhost:3001/v1/catalog/export -H "x-api-key: $CONTENT_API_KEY
 ## 6. Security notes
 
 - The key is checked in **constant time**; rotate it by changing the env var and restarting.
-- Scope is **catalog-only** — publish and delete **public** content (system-owned). The key
-  grants no access to user data and cannot touch a user's own subjects/cards.
+- Scope is **catalog-only** — read, publish, edit, and delete **public** content (system-owned).
+  The key grants no access to user data and cannot read or touch a user's own subjects/cards.
+- `signals` and `reports[]` aggregate learner activity on **public** cards only, and report
+  messages are **anonymized** (no user id). They are surfaced exclusively to the key holder (the
+  admin/AI surface) — never on any learner JWT route.
 - This is a **curated** model (one trusted key publishes). It is **not** user-generated
   content: there is no per-user public publishing and no moderation. Adding that later would
   build on the `isPublic` flag but needs its own authorization + review (ADR 0007).

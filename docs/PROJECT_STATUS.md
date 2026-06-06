@@ -57,7 +57,8 @@ server secret **`CONTENT_API_KEY`** via the `x-api-key` header — **not** a use
 
 - `POST /v1/catalog/subjects` · `POST /v1/catalog/cards` · `DELETE /v1/catalog/subjects/:id`
 - Bulk **`POST /v1/catalog/import`** / **`GET /v1/catalog/export`** — `{ subjects, cards }` JSON (round-trips; per-item validation errors). For loading many cards at once or an AI authoring content. See [`content-catalog.md` §4b](./content-catalog.md).
-- The key is **catalog-only** (public, system-owned content); it can never touch a user's deck.
+- **Search / improve (2026-06-06):** **`GET /v1/catalog/cards`** (filters: `q`, `type`, `language`, `missing_translation`, `reported`/`report_reason`/`min_reports`, `sort=most_wrong|most_right|most_reported|most_reviewed`; offset paging) returns each card with aggregate **`signals`** (global accuracy/review counts, report counts, per-language translation completeness). **`GET /v1/catalog/cards/:id`** adds anonymized learner **`reports[]`**; **`PATCH /v1/catalog/cards/:id`** surgically edits one card (re-validated per type). Lets an AI find untranslated/weak/reported cards and fix them in place, then `export` the seed — no hand-edited seed file. See [`content-catalog.md` §4c](./content-catalog.md).
+- The key is **catalog-only** (public, system-owned content); it can never read or touch a user's deck.
 
 ## 6. Database
 

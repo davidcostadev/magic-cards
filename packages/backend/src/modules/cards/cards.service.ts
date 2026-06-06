@@ -5,7 +5,7 @@ import { cursorWhere } from '../../common/pagination';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
 import { type Card, cardProgress, cards, reviewHistory, subjects } from '../../db/schema';
-import { buildPayload, toCardResponse } from './card-mapper';
+import { buildPayload, mergeCardForValidation, toCardResponse } from './card-mapper';
 import {
   type CardListQuery,
   type CardResponse,
@@ -119,7 +119,7 @@ export class CardsService {
 
     // Re-validate the merged card against its (immutable) type so a partial edit can't
     // leave it in an invalid shape (e.g. a quiz with no correct choice).
-    const merged = this.mergeForValidation(existing, dto);
+    const merged = mergeCardForValidation(existing, dto);
     const parsed = createCardSchema.safeParse(merged);
     if (!parsed.success) {
       throw ApiError.badRequest('errors.validation', parsed.error.issues[0]?.path.join('.'));
@@ -146,26 +146,6 @@ export class CardsService {
     const owned = await this.findOwnedCard(userId, id);
     if (!owned) throw ApiError.notFound('cards.notFound');
     await this.db.delete(cards).where(eq(cards.id, id));
-  }
-
-  /** Reconstructs a full create-shaped input from the stored card plus the partial edit. */
-  private mergeForValidation(card: Card, dto: UpdateCardDto) {
-    const payload = card.payload;
-    return {
-      subjectId: card.subjectId,
-      type: card.type,
-      language: dto.language ?? card.language,
-      translations: dto.translations ?? card.translations ?? undefined,
-      question: dto.question ?? card.question,
-      answer: dto.answer ?? card.answer,
-      choices: dto.choices ?? (payload && 'choices' in payload ? payload.choices : undefined),
-      shortAnswer:
-        dto.shortAnswer ?? (payload && 'shortAnswer' in payload ? payload.shortAnswer : undefined),
-      matchPairs:
-        dto.matchPairs ?? (payload && 'matchPairs' in payload ? payload.matchPairs : undefined),
-      hints: dto.hints ?? card.hints,
-      tags: dto.tags ?? card.tags,
-    };
   }
 
   /** Card create targets an owned subject (users can't add cards to public content). */

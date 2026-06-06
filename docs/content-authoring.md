@@ -44,6 +44,10 @@ A subject's **card count is computed on demand**, never stored. Create a catalog
 
 Every card has: `id?`, `subjectId`, `type` (default `open`), `question` (Markdown), optional
 `hints: string[]` (max 10), optional `tags: string[]` (max 20). The rest is type-specific.
+Optional too: `language` (`en`|`pt`, default `en`) — the primary content language — and
+`translations` (`{ en?: { question, answer }, pt?: { question, answer } }`) — alternate-language
+renderings of the question/answer, viewed via the bilingual toggle. Only `question`/`answer`
+translate; `choices`/`shortAnswer`/`matchPairs` stay in the primary language (they're usually code).
 
 `open` is **self-assessed**; `quiz` / `type-answer` / `match` are **graded server-side** — the answer is
 never sent to the learner before they answer (see §7).
@@ -195,13 +199,18 @@ answer data (operator view) — ready to edit and re-import.
 | List subjects (own + public) | `GET /v1/subjects` | JWT | cursor pagination |
 | List a subject's cards | `GET /v1/cards?subject=<id>` | JWT | owner sees full data; non-owner is sanitized (§7) |
 | Get one card | `GET /v1/cards/:id` | JWT | own or public |
+| **Search/filter/rank catalog cards** | `GET /v1/catalog/cards` | x-api-key | `q`, `type`, `language`, `missing_translation`, `reported`, `sort` + per-card `signals` (see below) |
+| **One catalog card + feedback** | `GET /v1/catalog/cards/:id` | x-api-key | adds `signals` + learner `reports[]` |
+| **Improve one catalog card** | `PATCH /v1/catalog/cards/:id` | x-api-key | partial edit, re-validated per type |
 | Export catalog content | `GET /v1/catalog/export` | x-api-key | full `{subjects,cards}`, with answers |
 | Study batch (sanitized) | `GET /v1/review_queue[?subject=]` | JWT | due + new cards, **no answers** |
 | Next card to study | `GET /v1/review_queue/next` | JWT | sanitized, or `204` if empty |
 
-> **No full-text search endpoint yet.** To find/deduplicate cards programmatically, `export` the catalog
-> (or list a subject) and filter the JSON client-side. A `GET /v1/catalog/cards?q=&tag=` search is a
-> natural future addition.
+> **Finding cards to fix:** `GET /v1/catalog/cards` searches and ranks public cards and decorates
+> each with `signals` (global review `accuracy`/`reviewCount`, `reportCount`/`reportsByReason`,
+> per-language `translations` completeness). Filter by `missing_translation=pt` to find untranslated
+> cards, `sort=most_wrong`/`reported=true` to find weak/flagged ones, then `PATCH` the fix in place.
+> Full reference + the AI improvement loop: [`content-catalog.md` §4c](./content-catalog.md).
 
 ---
 
@@ -258,6 +267,20 @@ the auto-graded cards can't be cheated by reading the payload.
 **Worked example (done on 2026-06-01):** a 12-card *Linux & Bash* deck (3 of each type) was authored as JSON
 and imported via this flow → `{"subjects":{"created":1},"cards":{"created":12},"errors":[]}`, then verified
 with `export`. The cards live in the catalog and are studyable in the app.
+
+### Improving existing cards (no seed file needed)
+
+To **edit** the live catalog rather than add to it — translate untranslated cards, fix the ones learners
+get wrong, act on reports — work directly against the API:
+
+1. **Find** the slice: `GET /v1/catalog/cards?missing_translation=pt` (or `sort=most_wrong`,
+   `reported=true`, `q=…`). Each card carries `signals` (accuracy, report counts, translation status).
+2. **Read feedback** when fixing reported/wrong cards: `GET /v1/catalog/cards/:id` returns the learner
+   `reports[]` (anonymized) so you know *what* to fix.
+3. **Patch** each card: `PATCH /v1/catalog/cards/:id` with only the changed fields (e.g.
+   `{ "translations": { "pt": { "question": "…", "answer": "…" } } }`). Re-validated against the card's type.
+4. **Confirm & dump:** re-query the filter (it should no longer match), then `GET /v1/catalog/export` for the
+   updated seed JSON. The DB stays the source of truth; the seed is a snapshot, not the thing you edit.
 
 > A future **MCP server** could wrap §4–§6 as agent tools (`add_cards`, `import_json`, `export_json`,
 > `search_cards`) so an MCP-capable AI manages content as native tools instead of raw HTTP.

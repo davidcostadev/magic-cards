@@ -1,5 +1,5 @@
 import type { Card, CardChoice, CardPayload, MatchPair } from '../../db/schema';
-import type { CardResponse } from './dto/card.dto';
+import type { CardResponse, UpdateCardInput } from './dto/card.dto';
 
 /**
  * Maps a stored card row to its API response, un-nesting the `payload` jsonb into the
@@ -58,6 +58,31 @@ function revealedPayload(payload: CardPayload): Partial<CardResponse> {
   if (payload && 'shortAnswer' in payload) return { shortAnswer: payload.shortAnswer };
   if (payload && 'matchPairs' in payload) return { matchPairs: payload.matchPairs };
   return {};
+}
+
+/**
+ * Reconstructs a full create-shaped card input from a stored card plus a partial edit, so a
+ * PATCH can be re-validated against the card's (immutable) type — e.g. a quiz edit can't leave
+ * it without a correct choice. Shared by `CardsService.update` (owner edits) and the catalog's
+ * `updateCard` (AI/operator edits to public content).
+ */
+export function mergeCardForValidation(card: Card, dto: UpdateCardInput) {
+  const payload = card.payload;
+  return {
+    subjectId: card.subjectId,
+    type: card.type,
+    language: dto.language ?? card.language,
+    translations: dto.translations ?? card.translations ?? undefined,
+    question: dto.question ?? card.question,
+    answer: dto.answer ?? card.answer,
+    choices: dto.choices ?? (payload && 'choices' in payload ? payload.choices : undefined),
+    shortAnswer:
+      dto.shortAnswer ?? (payload && 'shortAnswer' in payload ? payload.shortAnswer : undefined),
+    matchPairs:
+      dto.matchPairs ?? (payload && 'matchPairs' in payload ? payload.matchPairs : undefined),
+    hints: dto.hints ?? card.hints,
+    tags: dto.tags ?? card.tags,
+  };
 }
 
 /** Builds the `payload` jsonb to store for a card of the given type from its input fields. */
