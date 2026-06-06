@@ -228,7 +228,7 @@ describe('QuizReview', () => {
     expect(screen.queryByText(/`/)).not.toBeInTheDocument();
   });
 
-  it('marks an incorrect pick and advances with correct=false', async () => {
+  it('marks an incorrect pick, highlights the correct choice, and advances with correct=false', async () => {
     const onSubmit = vi.fn().mockResolvedValue({
       correct: false,
       correctChoiceId: 'b',
@@ -239,8 +239,37 @@ describe('QuizReview', () => {
 
     await userEvent.click(screen.getByText('Alpha'));
     expect(await screen.findByText('learn.incorrect')).toBeInTheDocument();
+    // The correct choice (server-reported) must be revealed as correct — a Check icon, not the
+    // shortcut number — so the learner sees the right answer after a wrong pick.
+    const correct = screen.getByText('Beta').closest('button');
+    expect(correct?.querySelector('svg.lucide-check')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /learn\.nextCard/ }));
     expect(onAdvance).toHaveBeenCalledWith(false);
+  });
+
+  it('surfaces a retry error instead of a fake "incorrect" when grading fails', async () => {
+    // When the grade request fails (network / expired token / server error) handleSubmit
+    // resolves to undefined. The component must NOT fabricate an "Incorrect" verdict: the answer
+    // lives server-side, so without a grade there is nothing to reveal — pretending the learner
+    // was wrong both lies and hides the correct option. Surface an error and allow a retry.
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const onAdvance = vi.fn();
+    renderQuiz(onSubmit, onAdvance);
+
+    await userEvent.click(screen.getByText('Alpha'));
+
+    expect(await screen.findByText('learn.submitError')).toBeInTheDocument();
+    expect(screen.queryByText('learn.incorrect')).not.toBeInTheDocument();
+    expect(screen.queryByText('learn.correct')).not.toBeInTheDocument();
+    // The card stays answerable so the learner can retry their pick.
+    expect(screen.getByText('Beta').closest('button')).toBeEnabled();
+    expect(onAdvance).not.toHaveBeenCalled();
+
+    // Retrying clears the error and grades normally.
+    onSubmit.mockResolvedValueOnce({ correct: false, correctChoiceId: 'b', explanation: '' });
+    await userEvent.click(screen.getByText('Beta'));
+    expect(await screen.findByText('learn.incorrect')).toBeInTheDocument();
+    expect(screen.queryByText('learn.submitError')).not.toBeInTheDocument();
   });
 });

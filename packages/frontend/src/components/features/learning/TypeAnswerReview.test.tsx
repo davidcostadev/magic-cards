@@ -60,4 +60,37 @@ describe('TypeAnswerReview', () => {
     await userEvent.click(screen.getByRole('button', { name: /learn\.nextCard/ }));
     expect(onAdvance).toHaveBeenCalledWith(false);
   });
+
+  it('surfaces a retry error instead of a fake "wrong answer" when grading fails', async () => {
+    // The grade request failed → onSubmit resolves to undefined. The component must not pretend
+    // the answer was wrong (hiding the real answer the server never sent); it surfaces an error
+    // and keeps the input answerable for a retry.
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const onAdvance = vi.fn();
+    render(
+      <TypeAnswerReview
+        card={card}
+        currentIndex={0}
+        totalCards={1}
+        dailyGoalProgress={0}
+        dailyGoal={20}
+        onSubmit={onSubmit}
+        onAdvance={onAdvance}
+      />
+    );
+
+    await userEvent.type(screen.getByLabelText('learn.typeYourAnswer'), 'Pick');
+    await userEvent.click(screen.getByRole('button', { name: /learn\.checkAnswer/ }));
+
+    expect(await screen.findByText('learn.submitError')).toBeInTheDocument();
+    expect(screen.queryByText('learn.correct')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('learn.typeYourAnswer')).toBeEnabled();
+    expect(onAdvance).not.toHaveBeenCalled();
+
+    // Retrying clears the error and grades normally.
+    onSubmit.mockResolvedValueOnce({ correct: false, correctText: 'Partial', explanation: '' });
+    await userEvent.click(screen.getByRole('button', { name: /learn\.checkAnswer/ }));
+    expect(await screen.findByText('Partial')).toBeInTheDocument();
+    expect(screen.queryByText('learn.submitError')).not.toBeInTheDocument();
+  });
 });

@@ -100,4 +100,48 @@ describe('MatchReview', () => {
     expect(screen.getByRole('button', { name: 'TS' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Python' })).toBeInTheDocument();
   });
+
+  it('surfaces a retry instead of a fake verdict when the submit fails', async () => {
+    // Matching every pair finalizes the card. If that submit fails (onSubmit → undefined) the
+    // component must not fabricate a verdict (hiding the real pairing the server never sent): it
+    // shows an error and a retry that re-submits and grades normally.
+    const onSubmit = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ correct: true, explanation: '' });
+    const onAdvance = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <MatchReview
+        card={card}
+        currentIndex={0}
+        totalCards={1}
+        dailyGoalProgress={0}
+        dailyGoal={20}
+        onSubmit={onSubmit}
+        onAdvance={onAdvance}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'TS' }));
+    await user.click(screen.getByRole('button', { name: 'TypeScript' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'TS' })).not.toBeInTheDocument()
+    );
+    await user.click(screen.getByRole('button', { name: 'PY' }));
+    await user.click(screen.getByRole('button', { name: 'Python' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+
+    // First finalize failed → error + retry shown, no verdict, no advance possible yet.
+    expect(await screen.findByText('learn.submitError')).toBeInTheDocument();
+    expect(screen.queryByText('learn.incorrect')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /learn\.nextCard/ })).not.toBeInTheDocument();
+
+    // Retrying re-submits the same matched pairs and grades.
+    await user.click(screen.getByRole('button', { name: /learn\.retry/ }));
+    const next = await screen.findByRole('button', { name: /learn\.nextCard/ });
+    expect(onSubmit).toHaveBeenCalledTimes(2);
+    await user.click(next);
+    expect(onAdvance).toHaveBeenCalledWith(true);
+  });
 });

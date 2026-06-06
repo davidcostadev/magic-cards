@@ -69,6 +69,9 @@ export function MatchReview({
   const [flash, setFlash] = useState<{ left: string; right: string; ok: boolean } | null>(null);
   const [mistakes, setMistakes] = useState(0);
   const [grade, setGrade] = useState<Grade | null>(null);
+  // Set when the submit fails (network / expired token / server error). The grade lives on the
+  // server, so on failure there is nothing to reveal — never fabricate one; offer a retry instead.
+  const [submitError, setSubmitError] = useState(false);
 
   const answered = grade !== null;
   const locked = flash !== null || answered;
@@ -94,6 +97,7 @@ export function MatchReview({
   async function finalize() {
     if (finalizedRef.current) return;
     finalizedRef.current = true;
+    setSubmitError(false);
     const b = boardRef.current;
     const remaining = new Set([...b.lefts, ...b.queue.map((p) => p.left)]);
     const matched = pairs.filter((p) => !remaining.has(p.left));
@@ -102,7 +106,14 @@ export function MatchReview({
       wasHintUsed: mistakesRef.current > 0,
       timeSpentMs: Math.round(elapsedMs()),
     });
-    setGrade(result ?? { correct: false, explanation: '' });
+    // No grade means the submission failed. Don't fabricate a verdict (which would hide the real
+    // pairing the server never sent) — reopen finalize so the learner can retry the submit.
+    if (!result) {
+      finalizedRef.current = false;
+      setSubmitError(true);
+      return;
+    }
+    setGrade(result);
   }
 
   // When every pair is matched, finalize the card.
@@ -293,6 +304,17 @@ export function MatchReview({
           ))}
         </div>
       </div>
+
+      {submitError && (
+        <div className="space-y-3">
+          <p role="alert" className="text-center text-sm font-medium text-destructive">
+            {t('learn.submitError')}
+          </p>
+          <Button onClick={() => void finalize()} className="w-full" size="lg">
+            {t('learn.retry')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

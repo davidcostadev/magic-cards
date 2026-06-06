@@ -30,6 +30,9 @@ export function TypeAnswerReview({
   const [revealedHints, setRevealedHints] = useState(0);
   const [grade, setGrade] = useState<Grade | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set when a submit fails (network / expired token / server error). The correct answer is known
+  // only to the server, so on failure there is nothing to reveal — never fabricate a grade.
+  const [submitError, setSubmitError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const usedHint = revealedHints > 0;
   const answered = grade !== null;
@@ -51,13 +54,20 @@ export function TypeAnswerReview({
   async function submitAnswer() {
     if (answered || submitting) return;
     setSubmitting(true);
+    setSubmitError(false);
     const result = await onSubmit({
       response: { type: 'type-answer', text: userAnswer },
       wasHintUsed: usedHint,
       timeSpentMs: Math.round(elapsedMs()),
     });
-    setGrade(result ?? { correct: false, explanation: '' });
     setSubmitting(false);
+    // No grade means the submission failed. Don't pretend the answer was wrong (which would hide
+    // the real answer the server never sent) — flag the error and keep the input for a retry.
+    if (!result) {
+      setSubmitError(true);
+      return;
+    }
+    setGrade(result);
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -126,6 +136,11 @@ export function TypeAnswerReview({
             {t('learn.checkAnswer')}
             <Kbd className="ml-2">{t('learn.keyEnter')}</Kbd>
           </Button>
+          {submitError && (
+            <p role="alert" className="text-center text-sm font-medium text-destructive">
+              {t('learn.submitError')}
+            </p>
+          )}
         </form>
       ) : (
         <div className="space-y-3 animate-[fadeIn_200ms_ease-in]">

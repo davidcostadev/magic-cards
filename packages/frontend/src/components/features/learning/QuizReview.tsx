@@ -44,6 +44,9 @@ export function QuizReview({
   const [eliminating, setEliminating] = useState(false);
   const [grade, setGrade] = useState<Grade | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set when a submit fails (network / expired token / server error). We never fabricate a grade
+  // in that case — the correct choice is known only to the server, so there is nothing to reveal.
+  const [submitError, setSubmitError] = useState(false);
   const usedHint = eliminatedIds.length > 0;
   const answered = grade !== null;
   // Always leave two choices standing, so the most you can remove is everything-but-two.
@@ -64,14 +67,22 @@ export function QuizReview({
   async function submitChoice(choiceId: string) {
     if (answered || submitting) return;
     setSubmitting(true);
+    setSubmitError(false);
     setSelectedId(choiceId || null);
     const result = await onSubmit({
       response: { type: 'quiz', choiceId },
       wasHintUsed: usedHint,
       timeSpentMs: Math.round(elapsedMs()),
     });
-    setGrade(result ?? { correct: false, explanation: '' });
     setSubmitting(false);
+    // No grade means the submission failed. Don't pretend the learner was wrong (which would hide
+    // the answer the server never sent) — flag the error and leave the card answerable to retry.
+    if (!result) {
+      setSelectedId(null);
+      setSubmitError(true);
+      return;
+    }
+    setGrade(result);
   }
 
   // Hint: have the server grey out one more wrong choice (it knows which are wrong; the payload
@@ -198,6 +209,12 @@ export function QuizReview({
           );
         })}
       </div>
+
+      {submitError && !answered && (
+        <p role="alert" className="text-center text-sm font-medium text-destructive">
+          {t('learn.submitError')}
+        </p>
+      )}
 
       {!answered && (
         <Button
