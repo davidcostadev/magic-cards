@@ -15,6 +15,12 @@ export interface ReviewSubmission {
 
 export interface CardReviewProps {
   card: Card;
+  /**
+   * The learner's preferred card language ('all' = the card's primary content). When a card has a
+   * translation in this language, its question/answer are shown localized; otherwise it falls back
+   * to the primary. Defaults to 'all' so tests and callers that omit it get the primary content.
+   */
+  cardLanguage?: string;
   currentIndex: number;
   totalCards: number;
   dailyGoalProgress: number;

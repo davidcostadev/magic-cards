@@ -11,6 +11,38 @@ export type CardStats = components['schemas']['CardStatsDto'];
 /** Supported content languages for a card (e.g. 'en' | 'pt'), derived from the API contract. */
 export type CardLanguage = Card['language'];
 
+type CardTranslationEntry = { question: string; answer: string };
+
+/**
+ * The translation entry for `lang`, or `undefined` when `lang` is `'all'`, the card's primary
+ * language, or simply missing. Accepts both a card's and a grade's `translations` (same shape),
+ * so callers can localize a question/answer or a grade explanation with one helper.
+ */
+export function pickTranslation(
+  translations: { en?: CardTranslationEntry; pt?: CardTranslationEntry } | null | undefined,
+  lang: string | null | undefined,
+  primary?: string
+): CardTranslationEntry | undefined {
+  if (!lang || lang === 'all' || lang === primary) return undefined;
+  return (translations ?? undefined)?.[lang as 'en' | 'pt'];
+}
+
+/**
+ * Resolves a card's `{ question, answer }` in the learner's chosen card language, falling back to
+ * the primary content whenever there is no complete translation. Drives the study + preview views
+ * off the `cardLanguage` preference.
+ */
+export function localizeCard(
+  card: Card,
+  lang: string | null | undefined
+): { question: string; answer: string } {
+  const tr = pickTranslation(card.translations, lang, card.language);
+  return {
+    question: tr?.question?.trim() ? tr.question : card.question,
+    answer: tr?.answer?.trim() ? tr.answer : card.answer,
+  };
+}
+
 export const cardKeys = {
   all: ['cards'] as const,
   list: (subjectId: string) => [...cardKeys.all, 'list', subjectId] as const,

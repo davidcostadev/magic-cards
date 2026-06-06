@@ -8,6 +8,7 @@ import { LanguageBadge } from '@/components/features/subjects/LanguageBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/utils/cn';
 
 const TYPE_LABEL_KEY: Record<Card['type'], string> = {
@@ -45,11 +46,22 @@ function Section({ label, children }: { label: string; children: React.ReactNode
  */
 export function CardView({ open, onOpenChange, card, canEdit, onEdit }: CardViewProps) {
   const { t } = useTranslation();
-  // Selected display language; reset to the card's primary whenever a different card opens.
+  // The learner's preferred card language ('all' = the card's primary).
+  const cardLanguage = useAuth().user?.cardLanguage ?? 'all';
+  // Selected display language. When a different card opens, default to the learner's preferred
+  // language if the card has that translation; otherwise fall back to the card's primary.
   const [activeLang, setActiveLang] = useState<string | null>(null);
   useEffect(() => {
-    setActiveLang(card ? card.language : null);
-  }, [card]);
+    if (!card) {
+      setActiveLang(null);
+      return;
+    }
+    const prefersTranslation =
+      cardLanguage !== 'all' &&
+      cardLanguage !== card.language &&
+      !!card.translations?.[cardLanguage as keyof NonNullable<typeof card.translations>];
+    setActiveLang(prefersTranslation ? cardLanguage : card.language);
+  }, [card, cardLanguage]);
 
   if (!card) return null;
 

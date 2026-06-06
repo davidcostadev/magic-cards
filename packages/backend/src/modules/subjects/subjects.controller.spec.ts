@@ -1,7 +1,8 @@
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { users } from '../../db/schema';
+import { SYSTEM_USER_ID } from '../../common/visibility';
+import { subjects, users } from '../../db/schema';
 import { createTestApp, signupAndToken } from '../../test-support/create-test-app';
 
 let app: NestFastifyApplication;
@@ -34,7 +35,13 @@ describe('Subjects CRUD', () => {
     );
 
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ title: 'TypeScript', color: '#3178c6', cardCount: 0 });
+    // Creating a subject auto-adds it to the creator's list, so it comes back selected.
+    expect(res.body).toMatchObject({
+      title: 'TypeScript',
+      color: '#3178c6',
+      cardCount: 0,
+      selected: true,
+    });
     expect(res.body.id).toEqual(expect.any(String));
   });
 
@@ -54,12 +61,15 @@ describe('Subjects CRUD', () => {
         .send({ subjectId: id, question: 'q2', answer: 'a2' })
     );
 
+    // Regression: the `selected` flag must not fan out the cards join and inflate cardCount.
     const single = await auth(request(app.getHttpServer()).get(`/v1/subjects/${id}`));
     expect(single.body.cardCount).toBe(2);
+    expect(single.body.selected).toBe(true);
 
     const list = await auth(request(app.getHttpServer()).get('/v1/subjects'));
     const listed = list.body.data.find((s: { id: string }) => s.id === id);
     expect(listed.cardCount).toBe(2);
+    expect(listed.selected).toBe(true);
   });
 
   it('lists the user subjects in the Stripe list envelope', async () => {
@@ -174,5 +184,85 @@ describe('Subjects CRUD', () => {
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('subjects.notFound');
+  });
+});
+
+describe('Subject selection (My Subjects list)', () => {
+  it('toggles a subject in/out of the list, idempotently', async () => {
+    const created = await auth(
+      request(app.getHttpServer()).post('/v1/subjects').send({ title: 'Toggle' })
+    );
+    const id = created.body.id;
+    expect(created.body.selected).toBe(true); // auto-selected on create
+
+    // Remove it from the list.
+    const off = await auth(request(app.getHttpServer()).delete(`/v1/subjects/${id}/selection`));
+    expect(off.status).toBe(204);
+    let single = await auth(request(app.getHttpServer()).get(`/v1/subjects/${id}`));
+    expect(single.body.selected).toBe(false);
+
+    // Removing again is a no-op (still 204).
+    const offAgain = await auth(
+      request(app.getHttpServer()).delete(`/v1/subjects/${id}/selection`)
+    );
+    expect(offAgain.status).toBe(204);
+
+    // Add it back.
+    const on = await auth(request(app.getHttpServer()).post(`/v1/subjects/${id}/selection`));
+    expect(on.status).toBe(204);
+    single = await auth(request(app.getHttpServer()).get(`/v1/subjects/${id}`));
+    expect(single.body.selected).toBe(true);
+
+    // Adding again is idempotent (still 204, still selected once).
+    const onAgain = await auth(request(app.getHttpServer()).post(`/v1/subjects/${id}/selection`));
+    expect(onAgain.status).toBe(204);
+    single = await auth(request(app.getHttpServer()).get(`/v1/subjects/${id}`));
+    expect(single.body.selected).toBe(true);
+  });
+
+  it("returns 404 when selecting another user's subject", async () => {
+    const created = await auth(
+      request(app.getHttpServer()).post('/v1/subjects').send({ title: 'Mine' })
+    );
+    const otherToken = await signupAndToken(app, 'other2@test.com', 'other2');
+
+    const res = await request(app.getHttpServer())
+      .post(`/v1/subjects/${created.body.id}/selection`)
+      .set('Authorization', `Bearer ${otherToken}`);
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('subjects.notFound');
+  });
+
+  it('lets a user select/unselect a public catalog subject', async () => {
+    // Seed a public (catalog) subject owned by the system user.
+    await db.insert(users).values({
+      id: SYSTEM_USER_ID,
+      email: 'system@magic.cards',
+      passwordHash: 'x',
+      username: 'system',
+    });
+    const [pub] = await db
+      .insert(subjects)
+      .values({ userId: SYSTEM_USER_ID, isPublic: true, title: 'Public Catalog' })
+      .returning();
+
+    // Visible to the user, but not in their list yet.
+    const list = await auth(request(app.getHttpServer()).get('/v1/subjects'));
+    const seen = list.body.data.find((s: { id: string }) => s.id === pub.id);
+    expect(seen).toBeDefined();
+    expect(seen.selected).toBe(false);
+
+    expect(
+      (await auth(request(app.getHttpServer()).post(`/v1/subjects/${pub.id}/selection`))).status
+    ).toBe(204);
+    let single = await auth(request(app.getHttpServer()).get(`/v1/subjects/${pub.id}`));
+    expect(single.body.selected).toBe(true);
+
+    expect(
+      (await auth(request(app.getHttpServer()).delete(`/v1/subjects/${pub.id}/selection`))).status
+    ).toBe(204);
+    single = await auth(request(app.getHttpServer()).get(`/v1/subjects/${pub.id}`));
+    expect(single.body.selected).toBe(false);
   });
 });

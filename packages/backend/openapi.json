@@ -376,6 +376,60 @@
         ]
       }
     },
+    "/v1/subjects/{id}/selection": {
+      "post": {
+        "operationId": "SubjectsController_select",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "subjects"
+        ]
+      },
+      "delete": {
+        "operationId": "SubjectsController_unselect",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "subjects"
+        ]
+      }
+    },
     "/v1/cards": {
       "get": {
         "operationId": "CardsController_list",
@@ -1054,6 +1108,237 @@
         "tags": [
           "catalog"
         ]
+      },
+      "get": {
+        "operationId": "CatalogController_listCards",
+        "parameters": [
+          {
+            "name": "subject",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "quiz",
+                "type-answer",
+                "match"
+              ]
+            }
+          },
+          {
+            "name": "language",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "pt"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "missing_translation",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "pt"
+              ]
+            }
+          },
+          {
+            "name": "reported",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "report_reason",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "incorrect",
+                "improvement"
+              ]
+            }
+          },
+          {
+            "name": "min_reports",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 9007199254740991,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "newest",
+              "type": "string",
+              "enum": [
+                "newest",
+                "most_reported",
+                "most_wrong",
+                "most_right",
+                "most_reviewed"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogCardListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/v1/catalog/cards/{id}": {
+      "get": {
+        "operationId": "CatalogController_getCard",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogCardDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
+        "tags": [
+          "catalog"
+        ]
+      },
+      "patch": {
+        "operationId": "CatalogController_updateCard",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogCardDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
+        "tags": [
+          "catalog"
+        ]
       }
     },
     "/v1/catalog/import": {
@@ -1533,6 +1818,9 @@
                 "cardCount": {
                   "type": "number"
                 },
+                "selected": {
+                  "type": "boolean"
+                },
                 "createdAt": {
                   "type": "string"
                 },
@@ -1549,6 +1837,7 @@
                 "icon",
                 "isPublic",
                 "cardCount",
+                "selected",
                 "createdAt",
                 "updatedAt"
               ]
@@ -1635,6 +1924,9 @@
           "cardCount": {
             "type": "number"
           },
+          "selected": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string"
           },
@@ -1651,6 +1943,7 @@
           "icon",
           "isPublic",
           "cardCount",
+          "selected",
           "createdAt",
           "updatedAt"
         ]
@@ -3039,6 +3332,43 @@
               "explanation": {
                 "type": "string"
               },
+              "translations": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "object",
+                    "properties": {
+                      "question": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "answer": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "question",
+                      "answer"
+                    ]
+                  },
+                  "pt": {
+                    "type": "object",
+                    "properties": {
+                      "question": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "answer": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "question",
+                      "answer"
+                    ]
+                  }
+                }
+              },
               "correctChoiceId": {
                 "type": "string"
               },
@@ -3166,6 +3496,43 @@
           },
           "explanation": {
             "type": "string"
+          },
+          "translations": {
+            "type": "object",
+            "properties": {
+              "en": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              },
+              "pt": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              }
+            }
           },
           "correctChoiceId": {
             "type": "string"
@@ -3355,6 +3722,510 @@
           "today",
           "tomorrow",
           "thisWeek"
+        ]
+      },
+      "CatalogCardListDto": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "list"
+          },
+          "url": {
+            "type": "string"
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "subjectId": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "quiz",
+                    "type-answer",
+                    "match"
+                  ]
+                },
+                "language": {
+                  "type": "string",
+                  "enum": [
+                    "en",
+                    "pt"
+                  ]
+                },
+                "question": {
+                  "type": "string"
+                },
+                "answer": {
+                  "type": "string"
+                },
+                "translations": {
+                  "type": "object",
+                  "properties": {
+                    "en": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    },
+                    "pt": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "question",
+                        "answer"
+                      ]
+                    }
+                  }
+                },
+                "hints": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "choices": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "text": {
+                        "type": "string"
+                      },
+                      "isCorrect": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "text"
+                    ]
+                  }
+                },
+                "shortAnswer": {
+                  "type": "string"
+                },
+                "matchPairs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "left": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "right": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "left",
+                      "right"
+                    ]
+                  }
+                },
+                "matchItems": {
+                  "type": "object",
+                  "properties": {
+                    "lefts": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "rights": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "lefts",
+                    "rights"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                },
+                "signals": {
+                  "type": "object",
+                  "properties": {
+                    "reviewCount": {
+                      "type": "number"
+                    },
+                    "accuracy": {
+                      "type": "number"
+                    },
+                    "avgQuality": {
+                      "type": "number"
+                    },
+                    "reportCount": {
+                      "type": "number"
+                    },
+                    "reportsByReason": {
+                      "type": "object",
+                      "properties": {
+                        "incorrect": {
+                          "type": "number"
+                        },
+                        "improvement": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "incorrect",
+                        "improvement"
+                      ]
+                    },
+                    "translations": {
+                      "type": "object",
+                      "properties": {
+                        "en": {
+                          "type": "boolean"
+                        },
+                        "pt": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "en",
+                        "pt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "reviewCount",
+                    "accuracy",
+                    "avgQuality",
+                    "reportCount",
+                    "reportsByReason",
+                    "translations"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "subjectId",
+                "type",
+                "language",
+                "question",
+                "answer",
+                "hints",
+                "tags",
+                "createdAt",
+                "updatedAt",
+                "signals"
+              ]
+            }
+          }
+        },
+        "required": [
+          "object",
+          "url",
+          "has_more",
+          "data"
+        ]
+      },
+      "CatalogCardDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "open",
+              "quiz",
+              "type-answer",
+              "match"
+            ]
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "pt"
+            ]
+          },
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "translations": {
+            "type": "object",
+            "properties": {
+              "en": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              },
+              "pt": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "answer"
+                ]
+              }
+            }
+          },
+          "hints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "isCorrect": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "text"
+              ]
+            }
+          },
+          "shortAnswer": {
+            "type": "string"
+          },
+          "matchPairs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "left": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "right": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "left",
+                "right"
+              ]
+            }
+          },
+          "matchItems": {
+            "type": "object",
+            "properties": {
+              "lefts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "rights": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "lefts",
+              "rights"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "signals": {
+            "type": "object",
+            "properties": {
+              "reviewCount": {
+                "type": "number"
+              },
+              "accuracy": {
+                "type": "number"
+              },
+              "avgQuality": {
+                "type": "number"
+              },
+              "reportCount": {
+                "type": "number"
+              },
+              "reportsByReason": {
+                "type": "object",
+                "properties": {
+                  "incorrect": {
+                    "type": "number"
+                  },
+                  "improvement": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "incorrect",
+                  "improvement"
+                ]
+              },
+              "translations": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "boolean"
+                  },
+                  "pt": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "en",
+                  "pt"
+                ]
+              }
+            },
+            "required": [
+              "reviewCount",
+              "accuracy",
+              "avgQuality",
+              "reportCount",
+              "reportsByReason",
+              "translations"
+            ]
+          },
+          "reports": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string",
+                  "enum": [
+                    "incorrect",
+                    "improvement"
+                  ]
+                },
+                "message": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "reason",
+                "message",
+                "createdAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "subjectId",
+          "type",
+          "language",
+          "question",
+          "answer",
+          "hints",
+          "tags",
+          "createdAt",
+          "updatedAt",
+          "signals",
+          "reports"
         ]
       },
       "CatalogImportDto": {

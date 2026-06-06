@@ -5,6 +5,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   real,
   text,
   uniqueIndex,
@@ -200,6 +201,26 @@ export const reviewHistory = pgTable(
   (table) => [index('review_history_user_reviewed_idx').on(table.userId, table.reviewedAt)]
 );
 
+/**
+ * The subjects a user has added to their list ("My Subjects"). A row means the subject is active
+ * for that user; absence means it's hidden from their grid (the public catalog stays fully visible
+ * via `canSeeSubject`, so a hidden subject can be re-added from "Manage"). Composite natural key
+ * `(userId, subjectId)` — no surrogate id, which keeps the backfill migration generator-free.
+ */
+export const userSubjects = pgTable(
+  'user_subjects',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    subjectId: text('subject_id')
+      .notNull()
+      .references(() => subjects.id, { onDelete: 'cascade' }),
+    createdAt: text('created_at').notNull().$defaultFn(isoNow),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.subjectId] })]
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Subject = typeof subjects.$inferSelect;
@@ -212,3 +233,5 @@ export type ReviewHistory = typeof reviewHistory.$inferSelect;
 export type NewReviewHistory = typeof reviewHistory.$inferInsert;
 export type CardReport = typeof cardReports.$inferSelect;
 export type NewCardReport = typeof cardReports.$inferInsert;
+export type UserSubject = typeof userSubjects.$inferSelect;
+export type NewUserSubject = typeof userSubjects.$inferInsert;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { localizeCard } from '@/api/queries/cards';
 import { Kbd } from '@/components/common/Kbd';
 import { Button } from '@/components/ui/button';
 import { useLearningSessions } from '@/context/LearningContext';
@@ -16,6 +17,7 @@ const TIMER_SECONDS = 30;
 /** The original open Q&A flow: reveal → self-assess Wrong/Right (architecture §7, FRD-003). */
 export function OpenReview({
   card,
+  cardLanguage = 'all',
   currentIndex,
   totalCards,
   dailyGoalProgress,
@@ -24,6 +26,7 @@ export function OpenReview({
   onAdvance,
 }: CardReviewProps) {
   const { t } = useTranslation();
+  const { question, answer } = localizeCard(card, cardLanguage);
   const { exitRequested, overlayOpen } = useLearningSessions();
   const [revealedHints, setRevealedHints] = useState(0);
   const [answerRevealed, setAnswerRevealed] = useState(false);
@@ -102,7 +105,7 @@ export function OpenReview({
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <MarkdownContent text={card.question} />
+      <MarkdownContent text={question} />
 
       <HintReveal
         hints={card.hints}
@@ -112,7 +115,7 @@ export function OpenReview({
       />
 
       <AnswerReveal
-        answer={card.answer}
+        answer={answer}
         revealed={answerRevealed}
         onReveal={() => setAnswerRevealed(true)}
       />

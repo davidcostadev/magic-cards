@@ -200,6 +200,7 @@ export class LearningService {
         type: cards.type,
         answer: cards.answer,
         payload: cards.payload,
+        translations: cards.translations,
       })
       .from(cards)
       .innerJoin(subjects, eq(cards.subjectId, subjects.id))
@@ -274,7 +275,12 @@ export class LearningService {
    */
   async checkReview(userId: string, input: CheckReviewInput): Promise<GradeResult> {
     const [card] = await this.db
-      .select({ type: cards.type, answer: cards.answer, payload: cards.payload })
+      .select({
+        type: cards.type,
+        answer: cards.answer,
+        payload: cards.payload,
+        translations: cards.translations,
+      })
       .from(cards)
       .innerJoin(subjects, eq(cards.subjectId, subjects.id))
       .where(and(eq(cards.id, input.cardId), canSeeSubject(userId)))
@@ -316,7 +322,12 @@ export class LearningService {
    * so the answer never has to be shipped to the client.
    */
   private resolveQuality(
-    card: { type: Card['type']; answer: string; payload: Card['payload'] },
+    card: {
+      type: Card['type'];
+      answer: string;
+      payload: Card['payload'];
+      translations: Card['translations'];
+    },
     input: CreateReviewInput
   ): { quality: number; grade?: GradeResult } {
     if (card.type === 'open') {
@@ -339,7 +350,7 @@ export class LearningService {
    * and {@link checkReview} (which only grades). The grading data lives only here on the server.
    */
   private gradeAutoResponse(
-    card: { answer: string; payload: Card['payload'] },
+    card: { answer: string; payload: Card['payload']; translations: Card['translations'] },
     response: NonNullable<CreateReviewInput['response']>
   ): GradeResult {
     const detail: Partial<GradeResult> = {};
@@ -361,7 +372,12 @@ export class LearningService {
       detail.correctPairs = result.correctPairs;
     }
 
-    return { correct, explanation: card.answer, ...detail };
+    return {
+      correct,
+      explanation: card.answer,
+      translations: card.translations ?? undefined,
+      ...detail,
+    };
   }
 
   private async assertSubjectVisible(userId: string, subjectId: string): Promise<void> {

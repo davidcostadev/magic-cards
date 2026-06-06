@@ -1,4 +1,11 @@
-import type { Card, CardChoice, CardPayload, MatchPair } from '../../db/schema';
+import type {
+  Card,
+  CardChoice,
+  CardLanguage,
+  CardPayload,
+  CardTranslations,
+  MatchPair,
+} from '../../db/schema';
 import type { CardResponse, UpdateCardInput } from './dto/card.dto';
 
 /**
@@ -39,18 +46,41 @@ export function toCardResponse(card: Card, reveal: boolean): CardResponse {
     return { ...base, answer: card.answer, ...revealedPayload(payload), translations };
   }
 
-  // Studied / browsed by a non-owner: hide the answer and all grading data.
+  // Studied / browsed by a non-owner: hide the answer and all grading data. The QUESTION
+  // translation is kept (shown before grading); the translated answer is blanked just like the
+  // primary `answer` above, so studying in another language still can't reveal the answer early.
+  const studyTr = studyTranslations(card.translations);
   if (card.type === 'quiz') {
     const choices = (payload as { choices: CardChoice[] } | null)?.choices ?? [];
-    return { ...base, answer: '', choices: choices.map((c) => ({ id: c.id, text: c.text })) };
+    return {
+      ...base,
+      answer: '',
+      choices: choices.map((c) => ({ id: c.id, text: c.text })),
+      translations: studyTr,
+    };
   }
   if (card.type === 'match') {
     const pairs = (payload as { matchPairs: MatchPair[] } | null)?.matchPairs ?? [];
     // Sent for client-side matching (see the doc comment); the client shuffles and windows them.
-    return { ...base, answer: '', matchPairs: pairs };
+    return { ...base, answer: '', matchPairs: pairs, translations: studyTr };
   }
   // type-answer: nothing extra to expose before grading.
-  return { ...base, answer: '' };
+  return { ...base, answer: '', translations: studyTr };
+}
+
+/**
+ * Translations safe to ship in a study payload: keep each language's question, blank its answer
+ * (the answer/explanation is a spoiler for auto-graded cards, like the primary `answer`).
+ * Returns undefined when there are no translations, so the field is simply omitted.
+ */
+function studyTranslations(translations: CardTranslations | null): CardTranslations | undefined {
+  if (!translations) return undefined;
+  const out: CardTranslations = {};
+  for (const lang of Object.keys(translations) as CardLanguage[]) {
+    const tr = translations[lang];
+    if (tr) out[lang] = { question: tr.question, answer: '' };
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 function revealedPayload(payload: CardPayload): Partial<CardResponse> {

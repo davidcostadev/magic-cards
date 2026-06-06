@@ -2,13 +2,14 @@ import { useNavigate } from '@tanstack/react-router';
 import { Check, Moon, Sparkles, Sun } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelectSubject, useSubjects } from '@/api/queries/subjects';
 import { getSubjectIcon } from '@/components/features/subjects/subjectIcons';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useTheme } from '@/context/ThemeContext';
-import { mockSubjects } from '@/mocks/data';
 import { cn } from '@/utils/cn';
 
 interface Option {
@@ -23,14 +24,15 @@ export function OnboardingPage() {
   const { updatePreferences } = useAuth();
   const { theme, setTheme } = useTheme();
   const { completeOnboarding } = usePreferences();
+  const { data: subjects = [], isLoading } = useSubjects();
+  const selectSubject = useSelectSubject();
 
   const initialLang = i18n.language === 'pt' ? 'pt' : 'en';
   const [step, setStep] = useState(1);
   const [language, setLanguage] = useState(initialLang);
   const [cardLanguage, setCardLanguage] = useState(initialLang);
-  const [selected, setSelected] = useState<string[]>(() =>
-    mockSubjects.slice(0, 4).map((s) => s.id)
-  );
+  const [selected, setSelected] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleLanguage = (lang: string) => {
     setLanguage(lang);
@@ -40,11 +42,22 @@ export function OnboardingPage() {
   const toggleSubject = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
-  const finish = () => {
-    if (selected.length === 0) return;
-    updatePreferences({ language, cardLanguage, theme });
-    completeOnboarding(selected);
-    navigate({ to: '/dashboard' });
+  // With no catalog to choose from, don't trap the user behind the "pick at least one" rule.
+  const emptyCatalog = !isLoading && subjects.length === 0;
+  const canFinish = (selected.length > 0 || emptyCatalog) && !submitting;
+
+  const finish = async () => {
+    if (!canFinish) return;
+    setSubmitting(true);
+    try {
+      updatePreferences({ language, cardLanguage, theme });
+      await Promise.all(selected.map((id) => selectSubject.mutateAsync(id)));
+      completeOnboarding();
+      navigate({ to: '/dashboard' });
+    } catch {
+      // Saving the selection failed — let the user retry rather than landing in a half-done state.
+      setSubmitting(false);
+    }
   };
 
   const twoCol = (options: Option[], current: string, onPick: (v: string) => void) => (
@@ -131,47 +144,62 @@ export function OnboardingPage() {
             <div className="space-y-2.5">
               <Label>{t('onboarding.chooseSubjects')}</Label>
               <p className="text-sm text-muted-foreground">{t('onboarding.chooseSubjectsHint')}</p>
-              {selected.length === 0 && (
-                <p className="text-sm text-destructive">{t('onboarding.selectAtLeastOne')}</p>
+              {isLoading ? (
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 rounded-xl" />
+                  ))}
+                </div>
+              ) : emptyCatalog ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  {t('onboarding.noSubjects')}
+                </p>
+              ) : (
+                <>
+                  {selected.length === 0 && (
+                    <p className="text-sm text-destructive">{t('onboarding.selectAtLeastOne')}</p>
+                  )}
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    {subjects.map((subject) => {
+                      const Icon = getSubjectIcon(subject.icon ?? 'code');
+                      const color = subject.color ?? '#6366f1';
+                      const active = selected.includes(subject.id);
+                      return (
+                        <button
+                          key={subject.id}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => toggleSubject(subject.id)}
+                          className={cn(
+                            'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                            active ? 'border-primary' : 'border-border hover:bg-accent'
+                          )}
+                        >
+                          <div
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                            style={{ backgroundColor: `${color}20`, color }}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <span className="min-w-0 flex-1 truncate text-base font-semibold">
+                            {subject.title}
+                          </span>
+                          <span
+                            className={cn(
+                              'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2',
+                              active
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-border'
+                            )}
+                          >
+                            {active && <Check className="h-4 w-4" />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
               )}
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                {mockSubjects.map((subject) => {
-                  const Icon = getSubjectIcon(subject.icon);
-                  const active = selected.includes(subject.id);
-                  return (
-                    <button
-                      key={subject.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => toggleSubject(subject.id)}
-                      className={cn(
-                        'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                        active ? 'border-primary' : 'border-border hover:bg-accent'
-                      )}
-                    >
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                        style={{ backgroundColor: `${subject.color}20`, color: subject.color }}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <span className="min-w-0 flex-1 truncate text-base font-semibold">
-                        {subject.title}
-                      </span>
-                      <span
-                        className={cn(
-                          'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2',
-                          active
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border'
-                        )}
-                      >
-                        {active && <Check className="h-4 w-4" />}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
             </div>
           )}
         </div>
@@ -187,7 +215,7 @@ export function OnboardingPage() {
               {t('onboarding.next')}
             </Button>
           ) : (
-            <Button size="lg" className="flex-1" onClick={finish} disabled={selected.length === 0}>
+            <Button size="lg" className="flex-1" onClick={finish} disabled={!canFinish}>
               {t('onboarding.getStarted')}
             </Button>
           )}

@@ -10,6 +10,7 @@ import {
   useUpdateSubject,
 } from '@/api/queries/subjects';
 import { CreateSubjectModal } from '@/components/features/subjects/CreateSubjectModal';
+import { filterSubjects } from '@/components/features/subjects/filterSubjects';
 import { ManageSubjectsModal } from '@/components/features/subjects/ManageSubjectsModal';
 import { SubjectCard } from '@/components/features/subjects/SubjectCard';
 import { Button } from '@/components/ui/button';
@@ -29,13 +30,12 @@ export function SubjectsPage() {
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [query, setQuery] = useState('');
 
-  const filteredSubjects = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return subjects;
-    return subjects.filter(
-      (s) => s.title.toLowerCase().includes(q) || (s.description ?? '').toLowerCase().includes(q)
-    );
-  }, [subjects, query]);
+  // The grid shows only the subjects the user has added to their list ("Manage" toggles this).
+  const activeSubjects = useMemo(() => subjects.filter((s) => s.selected), [subjects]);
+  const filteredSubjects = useMemo(
+    () => filterSubjects(activeSubjects, query),
+    [activeSubjects, query]
+  );
 
   const progressById = useMemo(
     () => new Map((progressList ?? []).map((p) => [p.subjectId, p])),
@@ -103,6 +103,15 @@ export function SubjectsPage() {
           <Button size="lg" onClick={() => setModalOpen(true)}>
             <Plus className="mr-2 h-5 w-5" />
             {t('subjects.createSubject')}
+          </Button>
+        </div>
+      ) : activeSubjects.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-5 py-20 text-center">
+          <BookOpen className="h-16 w-16 text-muted-foreground" />
+          <p className="text-lg text-muted-foreground">{t('subjects.noActive')}</p>
+          <Button size="lg" variant="outline" onClick={() => setManageOpen(true)}>
+            <SlidersHorizontal className="mr-2 h-5 w-5" />
+            {t('subjects.manage')}
           </Button>
         </div>
       ) : (

@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ListResponse } from '../../common/interceptors/list.interceptor';
 import { PaginationQueryDto, toListResponse } from '../../common/pagination';
@@ -73,5 +73,21 @@ export class SubjectsController {
   @ApiOkResponse({ type: SubjectStatsDto })
   stats(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<SubjectStats> {
     return this.subjects.stats(user.id, id);
+  }
+
+  // Add the subject to the user's list ("My Subjects"). Idempotent.
+  @Post(':id/selection')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  async select(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<void> {
+    await this.subjects.selectSubject(user.id, id);
+  }
+
+  // Remove the subject from the user's list. Idempotent.
+  @Delete(':id/selection')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  async unselect(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<void> {
+    await this.subjects.unselectSubject(user.id, id);
   }
 }

@@ -22,6 +22,10 @@ vi.mock('@/components/features/learning/MarkdownContent', () => ({
 vi.mock('@/components/features/learning/CardStatsPanel', () => ({
   CardStatsPanel: () => null,
 }));
+// CardView reads the learner's card-language preference; default to 'all' (primary) in tests.
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ user: { cardLanguage: 'all' } }),
+}));
 
 const base = {
   id: 'c1',

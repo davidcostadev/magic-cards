@@ -288,6 +288,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
         // Keyed by deck position (not card id) so a requeued card remounts and resets its state.
         key={session.index}
         card={currentCard}
+        cardLanguage={user?.cardLanguage ?? 'all'}
         // Header progress counts cards CLEARED (answered correctly), not deck position, so a
         // card requeued for re-practice keeps the counter climbing toward the goal instead of
         // freezing at "N of N" while mistakes are re-practised.

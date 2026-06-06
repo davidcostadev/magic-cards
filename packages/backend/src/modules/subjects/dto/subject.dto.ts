@@ -20,6 +20,8 @@ export const subjectResponseSchema = z.object({
   icon: z.string().nullable(),
   isPublic: z.boolean(),
   cardCount: z.number(),
+  // Whether the current user has this subject in their list ("My Subjects" grid filters on it).
+  selected: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

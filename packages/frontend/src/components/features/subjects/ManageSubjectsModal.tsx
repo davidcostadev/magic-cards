@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Subject } from '@/api/queries/subjects';
+import { type Subject, useSelectSubject, useUnselectSubject } from '@/api/queries/subjects';
 import { getSubjectIcon } from '@/components/features/subjects/subjectIcons';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { usePreferences } from '@/context/PreferencesContext';
 import { cn } from '@/utils/cn';
 
 interface ManageSubjectsModalProps {
@@ -21,7 +20,8 @@ interface ManageSubjectsModalProps {
 
 export function ManageSubjectsModal({ open, onOpenChange, subjects }: ManageSubjectsModalProps) {
   const { t } = useTranslation();
-  const { isSubjectActive, toggleSubject } = usePreferences();
+  const select = useSelectSubject();
+  const unselect = useUnselectSubject();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -34,13 +34,13 @@ export function ManageSubjectsModal({ open, onOpenChange, subjects }: ManageSubj
           {subjects.map((subject) => {
             const Icon = getSubjectIcon(subject.icon ?? 'code');
             const color = subject.color ?? '#6366f1';
-            const active = isSubjectActive(subject.id);
+            const active = subject.selected;
             return (
               <button
                 key={subject.id}
                 type="button"
                 aria-pressed={active}
-                onClick={() => toggleSubject(subject.id)}
+                onClick={() => (active ? unselect.mutate(subject.id) : select.mutate(subject.id))}
                 className={cn(
                   'flex w-full cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   active ? 'border-primary' : 'border-border hover:bg-accent'

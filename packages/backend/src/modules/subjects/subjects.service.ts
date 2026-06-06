@@ -4,7 +4,7 @@ import { ApiError } from '../../common/errors/api-error';
 import { cursorWhere, type PaginationQuery } from '../../common/pagination';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
-import { cardProgress, cards, subjects } from '../../db/schema';
+import { cardProgress, cards, subjects, userSubjects } from '../../db/schema';
 import { Sm2Service } from '../learning/sm2.service';
 import type {
   CreateSubjectDto,
@@ -21,6 +21,13 @@ import type {
 // count(*) is bigint (string in pg) — cast to int so it comes back as a number.
 const cardCountSql = sql<number>`count(${cards.id})::int`;
 
+// Whether the current user has the subject in their list. A correlated EXISTS (rather than a
+// second LEFT JOIN) so it can't fan out the `cards` join and inflate cardCount. The aliased
+// `us.*` columns and the qualified `${subjects.id}` interpolation keep every ref unambiguous,
+// sidestepping the unqualified-subquery-column pitfall noted above for `cardCount`.
+const selectedSql = (userId: string) =>
+  sql<boolean>`exists(select 1 from ${userSubjects} us where us.subject_id = ${subjects.id} and us.user_id = ${userId})`;
+
 @Injectable()
 export class SubjectsService {
   constructor(
@@ -34,7 +41,11 @@ export class SubjectsService {
     query: PaginationQuery
   ): Promise<{ rows: SubjectResponse[]; limit: number }> {
     const rows = await this.db
-      .select({ ...getTableColumns(subjects), cardCount: cardCountSql })
+      .select({
+        ...getTableColumns(subjects),
+        cardCount: cardCountSql,
+        selected: selectedSql(userId),
+      })
       .from(subjects)
       .leftJoin(cards, eq(cards.subjectId, subjects.id))
       .where(and(canSeeSubject(userId), cursorWhere(subjects.id, query)))
@@ -45,16 +56,25 @@ export class SubjectsService {
   }
 
   async create(userId: string, dto: CreateSubjectDto): Promise<SubjectResponse> {
-    const [subject] = await this.db
-      .insert(subjects)
-      .values({ userId, ...dto })
-      .returning();
-    return { ...subject, cardCount: 0 };
+    // Auto-add the new subject to the creator's list so it shows up in their grid immediately.
+    const subject = await this.db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(subjects)
+        .values({ userId, ...dto })
+        .returning();
+      await tx.insert(userSubjects).values({ userId, subjectId: created.id }).onConflictDoNothing();
+      return created;
+    });
+    return { ...subject, cardCount: 0, selected: true };
   }
 
   async get(userId: string, id: string): Promise<SubjectResponse> {
     const [subject] = await this.db
-      .select({ ...getTableColumns(subjects), cardCount: cardCountSql })
+      .select({
+        ...getTableColumns(subjects),
+        cardCount: cardCountSql,
+        selected: selectedSql(userId),
+      })
       .from(subjects)
       .leftJoin(cards, eq(cards.subjectId, subjects.id))
       .where(and(eq(subjects.id, id), canSeeSubject(userId)))
@@ -155,6 +175,20 @@ export class SubjectsService {
         due: dueSeen + (t.total - reviewed),
       };
     });
+  }
+
+  /** Adds a (visible) subject to the user's list. Idempotent. */
+  async selectSubject(userId: string, id: string): Promise<void> {
+    await this.assertVisible(userId, id);
+    await this.db.insert(userSubjects).values({ userId, subjectId: id }).onConflictDoNothing();
+  }
+
+  /** Removes a subject from the user's list. Idempotent (no-op if it wasn't selected). */
+  async unselectSubject(userId: string, id: string): Promise<void> {
+    await this.assertVisible(userId, id);
+    await this.db
+      .delete(userSubjects)
+      .where(and(eq(userSubjects.userId, userId), eq(userSubjects.subjectId, id)));
   }
 
   /** Owner-only (mutations) — public content is read-only to users. */

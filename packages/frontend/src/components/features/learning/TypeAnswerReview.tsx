@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { localizeCard, pickTranslation } from '@/api/queries/cards';
 import type { Grade } from '@/api/queries/reviews';
 import { Kbd } from '@/components/common/Kbd';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ const TIMER_SECONDS = 30;
 /** Short typed answer, graded server-side (normalized: case/accent/whitespace insensitive). */
 export function TypeAnswerReview({
   card,
+  cardLanguage = 'all',
   currentIndex,
   totalCards,
   dailyGoalProgress,
@@ -25,6 +27,7 @@ export function TypeAnswerReview({
   onAdvance,
 }: CardReviewProps) {
   const { t } = useTranslation();
+  const { question } = localizeCard(card, cardLanguage);
   const { exitRequested, overlayOpen } = useLearningSessions();
   const [userAnswer, setUserAnswer] = useState('');
   const [revealedHints, setRevealedHints] = useState(0);
@@ -36,6 +39,9 @@ export function TypeAnswerReview({
   const inputRef = useRef<HTMLInputElement>(null);
   const usedHint = revealedHints > 0;
   const answered = grade !== null;
+  // Explanation in the learner's card language (post-answer); falls back to the primary.
+  const gradeTr = grade ? pickTranslation(grade.translations, cardLanguage) : undefined;
+  const explanation = gradeTr?.answer?.trim() ? gradeTr.answer : (grade?.explanation ?? '');
 
   const { elapsedMs } = useReviewSession({
     currentIndex,
@@ -106,7 +112,7 @@ export function TypeAnswerReview({
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <MarkdownContent text={card.question} />
+      <MarkdownContent text={question} />
 
       <HintReveal
         hints={card.hints}
@@ -165,7 +171,7 @@ export function TypeAnswerReview({
             </div>
           )}
 
-          {grade.explanation && <MarkdownContent text={grade.explanation} />}
+          {explanation && <MarkdownContent text={explanation} />}
 
           <Button
             onClick={() => onAdvance(grade.correct)}

@@ -1,6 +1,7 @@
 import { Check, Lightbulb, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { localizeCard, pickTranslation } from '@/api/queries/cards';
 import type { Grade } from '@/api/queries/reviews';
 import { Kbd } from '@/components/common/Kbd';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ function shuffle<T>(arr: readonly T[]): T[] {
 /** Multiple-choice: picking a choice submits it; the server returns which choice was correct. */
 export function QuizReview({
   card,
+  cardLanguage = 'all',
   currentIndex,
   totalCards,
   dailyGoalProgress,
@@ -35,6 +37,7 @@ export function QuizReview({
   onEliminate,
 }: CardReviewProps) {
   const { t } = useTranslation();
+  const { question } = localizeCard(card, cardLanguage);
   const { exitRequested, overlayOpen } = useLearningSessions();
   const choices = useMemo(() => shuffle(card.choices ?? []), [card.choices]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -49,6 +52,9 @@ export function QuizReview({
   const [submitError, setSubmitError] = useState(false);
   const usedHint = eliminatedIds.length > 0;
   const answered = grade !== null;
+  // Explanation in the learner's card language (post-answer); falls back to the primary.
+  const gradeTr = grade ? pickTranslation(grade.translations, cardLanguage) : undefined;
+  const explanation = gradeTr?.answer?.trim() ? gradeTr.answer : (grade?.explanation ?? '');
   // Always leave two choices standing, so the most you can remove is everything-but-two.
   const maxEliminations = Math.max(0, choices.length - 2);
   const canEliminate =
@@ -156,7 +162,7 @@ export function QuizReview({
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <MarkdownContent text={card.question} />
+      <MarkdownContent text={question} />
 
       {/* Keep the hint button mounted for the whole unanswered phase and toggle `disabled`
           instead of unmounting it: unmounting while the request is in flight (or once every
@@ -240,7 +246,7 @@ export function QuizReview({
           >
             {grade.correct ? t('learn.correct') : t('learn.incorrect')}
           </p>
-          {grade.explanation && <MarkdownContent text={grade.explanation} />}
+          {explanation && <MarkdownContent text={explanation} />}
           <Button
             onClick={() => onAdvance(grade.correct)}
             className="w-full"

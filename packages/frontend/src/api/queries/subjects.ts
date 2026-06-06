@@ -104,3 +104,41 @@ export function useDeleteSubject() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: subjectKeys.all }),
   });
 }
+
+/**
+ * Adds (`useSelectSubject`) or removes (`useUnselectSubject`) a subject from the user's list.
+ * Both flip `selected` optimistically on the cached list so the grid/Manage toggle feels instant,
+ * roll back on error, and re-sync on settle. The list cache holds `Subject[]` (see `useSubjects`).
+ */
+function useToggleSelection(selected: boolean) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const opts = { params: { path: { id } } };
+      const { error } = selected
+        ? await apiClient.POST('/v1/subjects/{id}/selection', opts)
+        : await apiClient.DELETE('/v1/subjects/{id}/selection', opts);
+      if (error) throw error;
+    },
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: subjectKeys.list() });
+      const prev = queryClient.getQueryData<Subject[]>(subjectKeys.list());
+      queryClient.setQueryData<Subject[]>(subjectKeys.list(), (old) =>
+        old?.map((s) => (s.id === id ? { ...s, selected } : s))
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(subjectKeys.list(), ctx.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: subjectKeys.all }),
+  });
+}
+
+export function useSelectSubject() {
+  return useToggleSelection(true);
+}
+
+export function useUnselectSubject() {
+  return useToggleSelection(false);
+}

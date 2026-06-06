@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { localizeCard, pickTranslation } from '@/api/queries/cards';
 import type { Grade } from '@/api/queries/reviews';
 import { Kbd } from '@/components/common/Kbd';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ function initBoard(pairs: Pair[]): Board {
  */
 export function MatchReview({
   card,
+  cardLanguage = 'all',
   currentIndex,
   totalCards,
   dailyGoalProgress,
@@ -58,6 +60,7 @@ export function MatchReview({
 }: CardReviewProps) {
   const { t } = useTranslation();
   const { exitRequested, overlayOpen } = useLearningSessions();
+  const { question } = localizeCard(card, cardLanguage);
 
   const pairs: Pair[] = useMemo(() => card.matchPairs ?? [], [card.matchPairs]);
   const solution = useMemo(() => new Map(pairs.map((p) => [p.left, p.right])), [pairs]);
@@ -74,6 +77,9 @@ export function MatchReview({
   const [submitError, setSubmitError] = useState(false);
 
   const answered = grade !== null;
+  // Explanation in the learner's card language (post-answer); falls back to the primary.
+  const gradeTr = grade ? pickTranslation(grade.translations, cardLanguage) : undefined;
+  const explanation = gradeTr?.answer?.trim() ? gradeTr.answer : (grade?.explanation ?? '');
   const locked = flash !== null || answered;
   const solved = total - (board.lefts.length + board.queue.length);
 
@@ -215,7 +221,7 @@ export function MatchReview({
   if (answered) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 p-4">
-        <MarkdownContent text={card.question} />
+        <MarkdownContent text={question} />
         <div className="space-y-3 animate-[fadeIn_200ms_ease-in]">
           <p
             className={cn(
@@ -239,7 +245,7 @@ export function MatchReview({
               ))}
             </div>
           )}
-          {grade.explanation && <MarkdownContent text={grade.explanation} />}
+          {explanation && <MarkdownContent text={explanation} />}
           <Button
             onClick={() => onAdvance(grade.correct)}
             className="w-full"

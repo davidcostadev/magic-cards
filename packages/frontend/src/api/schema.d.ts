@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/subjects/{id}/selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SubjectsController_select"];
+        delete: operations["SubjectsController_unselect"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cards": {
         parameters: {
             query?: never;
@@ -331,13 +347,29 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["CatalogController_listCards"];
         put?: never;
         post: operations["CatalogController_createCard"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/catalog/cards/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CatalogController_getCard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["CatalogController_updateCard"];
         trace?: never;
     };
     "/v1/catalog/import": {
@@ -481,6 +513,7 @@ export interface components {
                 icon: string | null;
                 isPublic: boolean;
                 cardCount: number;
+                selected: boolean;
                 createdAt: string;
                 updatedAt: string;
             }[];
@@ -500,6 +533,7 @@ export interface components {
             icon: string | null;
             isPublic: boolean;
             cardCount: number;
+            selected: boolean;
             createdAt: string;
             updatedAt: string;
         };
@@ -818,6 +852,16 @@ export interface components {
             grade?: {
                 correct: boolean;
                 explanation: string;
+                translations?: {
+                    en?: {
+                        question: string;
+                        answer: string;
+                    };
+                    pt?: {
+                        question: string;
+                        answer: string;
+                    };
+                };
                 correctChoiceId?: string;
                 correctText?: string;
                 correctPairs?: {
@@ -848,6 +892,16 @@ export interface components {
         CheckReviewResponseDto: {
             correct: boolean;
             explanation: string;
+            translations?: {
+                en?: {
+                    question: string;
+                    answer: string;
+                };
+                pt?: {
+                    question: string;
+                    answer: string;
+                };
+            };
             correctChoiceId?: string;
             correctText?: string;
             correctPairs?: {
@@ -893,6 +947,123 @@ export interface components {
             today: number;
             tomorrow: number;
             thisWeek: number;
+        };
+        CatalogCardListDto: {
+            /** @constant */
+            object: "list";
+            url: string;
+            has_more: boolean;
+            data: {
+                id: string;
+                subjectId: string;
+                /** @enum {string} */
+                type: "open" | "quiz" | "type-answer" | "match";
+                /** @enum {string} */
+                language: "en" | "pt";
+                question: string;
+                answer: string;
+                translations?: {
+                    en?: {
+                        question: string;
+                        answer: string;
+                    };
+                    pt?: {
+                        question: string;
+                        answer: string;
+                    };
+                };
+                hints: string[];
+                tags: string[];
+                choices?: {
+                    id: string;
+                    text: string;
+                    isCorrect?: boolean;
+                }[];
+                shortAnswer?: string;
+                matchPairs?: {
+                    left: string;
+                    right: string;
+                }[];
+                matchItems?: {
+                    lefts: string[];
+                    rights: string[];
+                };
+                createdAt: string;
+                updatedAt: string;
+                signals: {
+                    reviewCount: number;
+                    accuracy: number;
+                    avgQuality: number;
+                    reportCount: number;
+                    reportsByReason: {
+                        incorrect: number;
+                        improvement: number;
+                    };
+                    translations: {
+                        en: boolean;
+                        pt: boolean;
+                    };
+                };
+            }[];
+        };
+        CatalogCardDetailDto: {
+            id: string;
+            subjectId: string;
+            /** @enum {string} */
+            type: "open" | "quiz" | "type-answer" | "match";
+            /** @enum {string} */
+            language: "en" | "pt";
+            question: string;
+            answer: string;
+            translations?: {
+                en?: {
+                    question: string;
+                    answer: string;
+                };
+                pt?: {
+                    question: string;
+                    answer: string;
+                };
+            };
+            hints: string[];
+            tags: string[];
+            choices?: {
+                id: string;
+                text: string;
+                isCorrect?: boolean;
+            }[];
+            shortAnswer?: string;
+            matchPairs?: {
+                left: string;
+                right: string;
+            }[];
+            matchItems?: {
+                lefts: string[];
+                rights: string[];
+            };
+            createdAt: string;
+            updatedAt: string;
+            signals: {
+                reviewCount: number;
+                accuracy: number;
+                avgQuality: number;
+                reportCount: number;
+                reportsByReason: {
+                    incorrect: number;
+                    improvement: number;
+                };
+                translations: {
+                    en: boolean;
+                    pt: boolean;
+                };
+            };
+            reports: {
+                id: string;
+                /** @enum {string} */
+                reason: "incorrect" | "improvement";
+                message: string | null;
+                createdAt: string;
+            }[];
         };
         CatalogImportDto: {
             subjects?: {
@@ -1277,6 +1448,44 @@ export interface operations {
             };
         };
     };
+    SubjectsController_select: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SubjectsController_unselect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CardsController_list: {
         parameters: {
             query: {
@@ -1630,6 +1839,37 @@ export interface operations {
             };
         };
     };
+    CatalogController_listCards: {
+        parameters: {
+            query?: {
+                subject?: string;
+                type?: "open" | "quiz" | "type-answer" | "match";
+                language?: "en" | "pt";
+                q?: string;
+                missing_translation?: "en" | "pt";
+                reported?: "true" | "false";
+                report_reason?: "incorrect" | "improvement";
+                min_reports?: number;
+                sort?: "newest" | "most_reported" | "most_wrong" | "most_right" | "most_reviewed";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogCardListDto"];
+                };
+            };
+        };
+    };
     CatalogController_createCard: {
         parameters: {
             query?: never;
@@ -1649,6 +1889,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardResponseDto"];
+                };
+            };
+        };
+    };
+    CatalogController_getCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogCardDetailDto"];
+                };
+            };
+        };
+    };
+    CatalogController_updateCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCardDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogCardDetailDto"];
                 };
             };
         };

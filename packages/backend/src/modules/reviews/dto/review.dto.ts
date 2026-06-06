@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { CARD_TYPES } from '../../../db/schema';
-import { cardResponseSchema } from '../../cards/dto/card.dto';
+import { cardResponseSchema, cardTranslationsSchema } from '../../cards/dto/card.dto';
 
 const matchPairSchema = z.object({ left: z.string().min(1), right: z.string().min(1) });
 
@@ -87,6 +87,9 @@ export const cardProgressResponseSchema = z.object({
 export const gradeResultSchema = z.object({
   correct: z.boolean(),
   explanation: z.string(), // the card's Markdown answer/explanation, revealed after grading
+  // Per-language alternates of the question/answer, shipped only here (post-answer, so no spoiler).
+  // The client picks the learner's card language for the explanation, falling back to `explanation`.
+  translations: cardTranslationsSchema.optional(),
   correctChoiceId: z.string().optional(), // quiz
   correctText: z.string().optional(), // type-answer
   correctPairs: z.array(matchPairSchema).optional(), // match
