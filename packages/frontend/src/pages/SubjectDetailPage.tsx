@@ -53,6 +53,11 @@ export function SubjectDetailPage() {
 
   // The cards the current user has reported in this subject — drives the badge and the filter.
   const reportedIds = useMemo(() => new Set(reports.map((r) => r.cardId)), [reports]);
+  // Reports the catalog side has since marked resolved — shown with a "resolved" badge.
+  const resolvedIds = useMemo(
+    () => new Set(reports.filter((r) => r.resolved).map((r) => r.cardId)),
+    [reports]
+  );
   const filteredCards = useMemo(() => {
     const bySearch = filterCards(cards, query);
     return showReportedOnly ? bySearch.filter((c) => reportedIds.has(c.id)) : bySearch;
@@ -228,6 +233,7 @@ export function SubjectDetailPage() {
           <CardList
             cards={pageCards}
             reportedIds={reportedIds}
+            resolvedIds={resolvedIds}
             readOnly={isPublic}
             onView={(card) => {
               setViewingCard(card);

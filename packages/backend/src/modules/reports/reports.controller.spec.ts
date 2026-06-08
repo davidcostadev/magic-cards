@@ -2,7 +2,7 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { subjects, users } from '../../db/schema';
+import { cardReports, subjects, users } from '../../db/schema';
 import { createTestApp, signupAndToken } from '../../test-support/create-test-app';
 
 let app: NestFastifyApplication;
@@ -131,6 +131,53 @@ describe('POST /v1/card_reports', () => {
       request(app.getHttpServer()).post('/v1/card_reports').send({ cardId, reason: 'spam' })
     );
     expect(res.status).toBe(400);
+  });
+
+  it('stores a structured suggestion and defaults resolved to false', async () => {
+    const cardId = await addCard('Q1');
+    const res = await auth(
+      request(app.getHttpServer())
+        .post('/v1/card_reports')
+        .send({ cardId, reason: 'improvement', suggestion: 'add_examples' })
+    );
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      reason: 'improvement',
+      suggestion: 'add_examples',
+      resolved: false,
+      resolvedAt: null,
+    });
+  });
+
+  it('rejects an unknown suggestion with 400', async () => {
+    const cardId = await addCard('Q1');
+    const res = await auth(
+      request(app.getHttpServer())
+        .post('/v1/card_reports')
+        .send({ cardId, reason: 'improvement', suggestion: 'rewrite_everything' })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('reopens a resolved report when the same card is reported again', async () => {
+    const cardId = await addCard('Q1');
+    const created = await auth(
+      request(app.getHttpServer())
+        .post('/v1/card_reports')
+        .send({ cardId, reason: 'improvement', suggestion: 'add_examples' })
+    );
+    // Mark it resolved out-of-band (the catalog side does this after a fix).
+    await db
+      .update(cardReports)
+      .set({ resolved: true, resolvedAt: new Date().toISOString() })
+      .where(eq(cardReports.id, created.body.id));
+
+    const reagain = await auth(
+      request(app.getHttpServer())
+        .post('/v1/card_reports')
+        .send({ cardId, reason: 'incorrect', message: 'still wrong' })
+    );
+    expect(reagain.body).toMatchObject({ resolved: false, resolvedAt: null, suggestion: null });
   });
 });
 

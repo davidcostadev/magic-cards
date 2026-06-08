@@ -64,12 +64,24 @@ async function seedReport(
   cardId: string,
   subjectId: string,
   reason: 'incorrect' | 'improvement',
-  message?: string
-) {
+  message?: string,
+  extra: { suggestion?: 'add_examples'; resolved?: boolean } = {}
+): Promise<string> {
   const userId = await makeUser();
-  await db
+  const [row] = await db
     .insert(cardReports)
-    .values({ userId, cardId, subjectId, reason, message: message ?? null });
+    .values({
+      userId,
+      cardId,
+      subjectId,
+      reason,
+      message: message ?? null,
+      suggestion: extra.suggestion ?? null,
+      resolved: extra.resolved ?? false,
+      resolvedAt: extra.resolved ? new Date().toISOString() : null,
+    })
+    .returning();
+  return row.id;
 }
 
 async function privateCard(email = 'owner@test.com') {
@@ -243,9 +255,9 @@ describe('GET /v1/catalog/cards (search / filter / rank)', () => {
     await seedReview(card.id, subject.id, 4);
     await seedReview(card.id, subject.id, 3);
     await seedReview(card.id, subject.id, 2);
-    // 2 reports (1 of each reason)
+    // 2 reports (1 of each reason); one already resolved.
     await seedReport(card.id, subject.id, 'incorrect');
-    await seedReport(card.id, subject.id, 'improvement');
+    await seedReport(card.id, subject.id, 'improvement', undefined, { resolved: true });
 
     const res = await withKey(request(app.getHttpServer()).get('/v1/catalog/cards'));
     const found = res.body.data.find((c: { id: string }) => c.id === card.id);
@@ -253,6 +265,7 @@ describe('GET /v1/catalog/cards (search / filter / rank)', () => {
     expect(found.signals.accuracy).toBe(75);
     // 4 reviews × 2 reports would be 8 each if the joins fanned out — assert they don't.
     expect(found.signals.reportCount).toBe(2);
+    expect(found.signals.openReportCount).toBe(1); // the resolved one is excluded
     expect(found.signals.reportsByReason).toEqual({ incorrect: 1, improvement: 1 });
     expect(found.signals.avgQuality).toBeCloseTo(3.5, 2);
     expect(found.signals.translations).toEqual({ en: false, pt: false });
@@ -387,6 +400,87 @@ describe('GET /v1/catalog/cards/:id (detail + reports)', () => {
     );
     expect(missing.status).toBe(404);
     const noKey = await request(app.getHttpServer()).get(`/v1/catalog/cards/${card.id}`);
+    expect(noKey.status).toBe(401);
+  });
+
+  it('exposes each report’s suggestion and resolution status', async () => {
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, { question: 'Detail Q', answer: 'A' });
+    await seedReport(card.id, subject.id, 'improvement', 'Add examples', {
+      suggestion: 'add_examples',
+    });
+
+    const res = await withKey(request(app.getHttpServer()).get(`/v1/catalog/cards/${card.id}`));
+    expect(res.body.signals.openReportCount).toBe(1);
+    expect(res.body.reports[0]).toMatchObject({
+      suggestion: 'add_examples',
+      resolved: false,
+      resolvedAt: null,
+    });
+  });
+});
+
+describe('PATCH /v1/catalog/card_reports/:id (resolve a report)', () => {
+  it('marks a report resolved (sets resolvedAt) and reopens it', async () => {
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, { question: 'Q', answer: 'A' });
+    const reportId = await seedReport(card.id, subject.id, 'improvement', 'Add examples', {
+      suggestion: 'add_examples',
+    });
+
+    const resolved = await withKey(
+      request(app.getHttpServer())
+        .patch(`/v1/catalog/card_reports/${reportId}`)
+        .send({ resolved: true })
+    );
+    expect(resolved.status).toBe(200);
+    expect(resolved.body).toMatchObject({ id: reportId, cardId: card.id, resolved: true });
+    expect(resolved.body.resolvedAt).toBeTruthy();
+
+    // The card detail now reports zero open reports.
+    const detail = await withKey(request(app.getHttpServer()).get(`/v1/catalog/cards/${card.id}`));
+    expect(detail.body.signals.openReportCount).toBe(0);
+
+    // Reopening clears resolvedAt.
+    const reopened = await withKey(
+      request(app.getHttpServer())
+        .patch(`/v1/catalog/card_reports/${reportId}`)
+        .send({ resolved: false })
+    );
+    expect(reopened.body).toMatchObject({ resolved: false, resolvedAt: null });
+  });
+
+  it("refuses to resolve a report on a user's private card (404)", async () => {
+    const priv = await privateCard();
+    // The private card's owner reports it.
+    const report = await request(app.getHttpServer())
+      .post('/v1/card_reports')
+      .set('Authorization', `Bearer ${priv.token}`)
+      .send({ cardId: priv.id, reason: 'incorrect' });
+
+    const res = await withKey(
+      request(app.getHttpServer())
+        .patch(`/v1/catalog/card_reports/${report.body.id}`)
+        .send({ resolved: true })
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it('404 for a missing report id; 401 without the key', async () => {
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, { question: 'Q', answer: 'A' });
+    const reportId = await seedReport(card.id, subject.id, 'improvement');
+
+    const missing = await withKey(
+      request(app.getHttpServer())
+        .patch('/v1/catalog/card_reports/01900000-0000-7000-8000-000000000000')
+        .send({ resolved: true })
+    );
+    expect(missing.status).toBe(404);
+
+    const noKey = await request(app.getHttpServer())
+      .patch(`/v1/catalog/card_reports/${reportId}`)
+      .send({ resolved: true });
     expect(noKey.status).toBe(401);
   });
 });

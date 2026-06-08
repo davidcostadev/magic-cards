@@ -20,25 +20,39 @@ export type EliminateChoiceInput = components['schemas']['EliminateChoiceDto'];
 export type CheckReviewInput = components['schemas']['CheckReviewDto'];
 
 export const reviewKeys = {
-  queue: (subject?: string, type?: CardType, ahead = false) =>
-    ['review_queue', subject ?? 'all', type ?? 'all', ahead ? 'ahead' : 'due'] as const,
+  queue: (subject?: string, type?: CardType, ahead = false, mistakes = false) =>
+    [
+      'review_queue',
+      subject ?? 'all',
+      type ?? 'all',
+      ahead ? 'ahead' : 'due',
+      mistakes ? 'mistakes' : 'normal',
+    ] as const,
   counts: (subject?: string) => ['review_queue', 'counts', subject ?? 'all'] as const,
 };
 
 /**
- * Fetches the study batch (due first, then capped new cards) for a session.
+ * Fetches the study batch (weakest-first, then capped new cards) for a session.
  * An optional `type` narrows the batch to a single card type. With `ahead`, the due gate is
- * relaxed so already-seen, not-yet-due cards are pulled in (review-ahead). Pass `enabled: false`
- * to hold off fetching until the learner has chosen a study mode.
+ * relaxed so already-seen, not-yet-due cards are pulled in (review-ahead). With `mistakes`, the
+ * batch is instead the learner's wrong, not-yet-mastered cards (most-errored first), regardless of
+ * schedule. Pass `enabled: false` to hold off fetching until the learner has chosen a study mode.
  */
-export function useReviewQueue(subject?: string, type?: CardType, ahead = false, enabled = true) {
+export function useReviewQueue(
+  subject?: string,
+  type?: CardType,
+  ahead = false,
+  mistakes = false,
+  enabled = true
+) {
   return useQuery({
-    queryKey: reviewKeys.queue(subject, type, ahead),
+    queryKey: reviewKeys.queue(subject, type, ahead, mistakes),
     queryFn: async () => {
-      const query: { subject?: string; type?: CardType; ahead?: boolean } = {};
+      const query: { subject?: string; type?: CardType; ahead?: boolean; mistakes?: boolean } = {};
       if (subject) query.subject = subject;
       if (type) query.type = type;
       if (ahead) query.ahead = true;
+      if (mistakes) query.mistakes = true;
       const { data, error } = await apiClient.GET('/v1/review_queue', { params: { query } });
       if (error || !data) throw error;
       return data;

@@ -415,6 +415,36 @@ describe('GET /v1/review_queue — type filter', () => {
   });
 });
 
+describe('GET /v1/review_queue?mistakes=true (practice mistakes)', () => {
+  it('serves only cards the learner has gotten wrong and exposes a mistakesTotal count', async () => {
+    const wrongId = await addCard('Wrong one');
+    const okId = await addCard('Got it');
+    // Fail the first card (quality < 3), pass the second.
+    await auth(
+      request(app.getHttpServer())
+        .post('/v1/reviews')
+        .send({ cardId: wrongId, quality: 1, timeSpent: 1000, wasHintUsed: false })
+    );
+    await auth(
+      request(app.getHttpServer())
+        .post('/v1/reviews')
+        .send({ cardId: okId, quality: 5, timeSpent: 1000, wasHintUsed: false })
+    );
+
+    const res = await auth(
+      request(app.getHttpServer()).get('/v1/review_queue').query({ mistakes: 'true' })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.due).toHaveLength(1);
+    expect(res.body.due[0].id).toBe(wrongId);
+    expect(res.body.new).toHaveLength(0);
+    expect(res.body.total).toBe(1);
+
+    const counts = await auth(request(app.getHttpServer()).get('/v1/review_queue/counts'));
+    expect(counts.body.mistakesTotal).toBe(1);
+  });
+});
+
 describe('GET /v1/review_queue/counts', () => {
   // One test (each test signs up a user, and the suite's per-IP signup throttle caps the
   // file at ~20 such tests) covering per-type counts, zero types, and subject scoping.

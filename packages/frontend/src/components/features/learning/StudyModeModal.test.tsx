@@ -11,13 +11,14 @@ vi.mock('react-i18next', () => ({
 const byType = { open: 8, quiz: 0, 'type-answer': 3, match: 0 };
 const reviewable = { open: 35, quiz: 23, 'type-answer': 18, match: 0 };
 
-function renderModal(onSelect = vi.fn()) {
+function renderModal(onSelect = vi.fn(), mistakes = 5) {
   render(
     <StudyModeModal
       counts={byType}
       total={11}
       reviewable={reviewable}
       reviewableTotal={76}
+      mistakes={mistakes}
       onSelect={onSelect}
     />
   );
@@ -52,5 +53,21 @@ describe('StudyModeModal', () => {
     renderModal();
     expect(screen.getByRole('button', { name: /modeMatch/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /modeFlashcards/i })).toBeEnabled();
+  });
+
+  it('offers practice mistakes with a count and selects it', async () => {
+    const onSelect = renderModal();
+    const mistakesBtn = screen.getByRole('button', { name: /modeMistakes/i });
+    expect(mistakesBtn).toBeEnabled();
+    // Mistakes show a plain "to practice" count, not a due/total fraction.
+    expect(screen.getByText('learn.mistakesToPractice')).toBeInTheDocument();
+
+    await userEvent.click(mistakesBtn);
+    expect(onSelect).toHaveBeenCalledWith('mistakes');
+  });
+
+  it('disables practice mistakes when the learner has none', () => {
+    renderModal(vi.fn(), 0);
+    expect(screen.getByRole('button', { name: /modeMistakes/i })).toBeDisabled();
   });
 });

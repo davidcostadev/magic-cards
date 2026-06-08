@@ -1,4 +1,12 @@
-import { BookOpen, Keyboard, Layers, Link2, ListChecks, type LucideIcon } from 'lucide-react';
+import {
+  BookOpen,
+  Keyboard,
+  Layers,
+  Link2,
+  ListChecks,
+  type LucideIcon,
+  Target,
+} from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CardType, CardTypeCounts } from '@/api/queries/reviews';
@@ -6,8 +14,8 @@ import { Kbd } from '@/components/common/Kbd';
 import { cn } from '@/utils/cn';
 import { isTypingTarget } from '@/utils/keyboard';
 
-/** What the learner chose to study: every type, or one specific card type. */
-export type StudyMode = 'all' | CardType;
+/** What the learner chose to study: every type, one specific card type, or their past mistakes. */
+export type StudyMode = 'all' | 'mistakes' | CardType;
 
 interface StudyModeOption {
   mode: StudyMode;
@@ -29,6 +37,8 @@ interface StudyModeModalProps {
   /** Per-type counts of the entire pool (`reviewableByType`), regardless of schedule. */
   reviewable: CardTypeCounts['reviewableByType'];
   reviewableTotal: number;
+  /** Distinct non-mastered cards the learner has gotten wrong — the "practice mistakes" tile. */
+  mistakes: number;
   onSelect: (mode: StudyMode) => void;
 }
 
@@ -36,13 +46,14 @@ interface StudyModeModalProps {
  * The "How do you want to study?" screen shown when entering a learning session before a
  * mode is chosen. Each mode shows a "due / total" fraction: how many are studyable now out of
  * the whole pool. A mode is only disabled when its pool is empty — when nothing is due but
- * cards exist, it stays enabled as a review-ahead session. Press 1–5 to choose without the mouse.
+ * cards exist, it stays enabled as a review-ahead session. Press 1–6 to choose without the mouse.
  */
 export function StudyModeModal({
   counts,
   total,
   reviewable,
   reviewableTotal,
+  mistakes,
   onSelect,
 }: StudyModeModalProps) {
   const { t } = useTranslation();
@@ -99,9 +110,20 @@ export function StudyModeModal({
       cardBg: 'bg-primary/15 hover:bg-primary/25',
       borderColor: 'border-primary/30 hover:border-primary',
     },
+    {
+      mode: 'mistakes',
+      icon: Target,
+      labelKey: 'learn.modeMistakes',
+      // Always studyable now (it ignores the schedule), so due and pool are the same count.
+      due: mistakes,
+      pool: mistakes,
+      bgColor: 'bg-rose-500',
+      cardBg: 'bg-rose-500/15 hover:bg-rose-500/25',
+      borderColor: 'border-rose-500/30 hover:border-rose-500',
+    },
   ];
 
-  // Press 1–5 to pick a study mode without reaching for the mouse.
+  // Press 1–6 to pick a study mode without reaching for the mouse.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -158,14 +180,26 @@ export function StudyModeModal({
                   {mode === 'all' ? t('learn.modeAll', { count: pool }) : t(labelKey)}
                 </span>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  <span className="font-semibold tabular-nums text-foreground/80">
-                    {due} / {pool}
-                  </span>
-                  {' · '}
-                  {due > 0 ? (
-                    <span>{t('learn.modeToReview', { count: due })}</span>
+                  {mode === 'mistakes' ? (
+                    // Mistakes are always studyable, so a "due / total" fraction would be redundant
+                    // (N / N) — show just how many there are to drill.
+                    <span className="font-medium text-rose-500">
+                      {t('learn.mistakesToPractice', { count: due })}
+                    </span>
                   ) : (
-                    <span className="font-medium text-primary/80">{t('learn.reviewAhead')}</span>
+                    <>
+                      <span className="font-semibold tabular-nums text-foreground/80">
+                        {due} / {pool}
+                      </span>
+                      {' · '}
+                      {due > 0 ? (
+                        <span>{t('learn.modeToReview', { count: due })}</span>
+                      ) : (
+                        <span className="font-medium text-primary/80">
+                          {t('learn.reviewAhead')}
+                        </span>
+                      )}
+                    </>
                   )}
                 </p>
               </div>

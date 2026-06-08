@@ -38,7 +38,8 @@ export class ReviewsController {
       user.id,
       query.subject,
       query.type,
-      query.ahead
+      query.ahead,
+      query.mistakes
     );
     return { due, new: newCards, total: due.length + newCards.length };
   }
@@ -59,7 +60,13 @@ export class ReviewsController {
     @Query() query: ReviewQueueQueryDto,
     @Res() reply: FastifyReply
   ): Promise<void> {
-    const card = await this.learning.getNextCard(user.id, query.subject, query.type, query.ahead);
+    const card = await this.learning.getNextCard(
+      user.id,
+      query.subject,
+      query.type,
+      query.ahead,
+      query.mistakes
+    );
     // 204 when the queue is empty, otherwise the next card to study.
     if (!card) {
       reply.status(204).send();

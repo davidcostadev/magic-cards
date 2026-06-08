@@ -33,6 +33,9 @@ import {
   CatalogCardListDto,
   CatalogCardQueryDto,
   type CatalogCardResponse,
+  type CatalogReport,
+  CatalogReportDto,
+  ResolveReportDto,
 } from './dto/catalog-cards.dto';
 import {
   type CatalogExport,
@@ -83,6 +86,12 @@ export class CatalogController {
   @ApiOkResponse({ type: CatalogCardDetailDto })
   updateCard(@Param('id') id: string, @Body() body: UpdateCardDto): Promise<CatalogCardDetail> {
     return this.catalog.updateCard(id, body);
+  }
+
+  @Patch('card_reports/:id')
+  @ApiOkResponse({ type: CatalogReportDto })
+  resolveReport(@Param('id') id: string, @Body() body: ResolveReportDto): Promise<CatalogReport> {
+    return this.catalog.resolveReport(id, body);
   }
 
   @Post('import')

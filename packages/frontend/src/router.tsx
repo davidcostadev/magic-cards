@@ -28,9 +28,10 @@ const OnboardingPage = lazy(() =>
 
 /**
  * Study modes the Learn page understands. The chooser screen is shown until `mode` is set;
- * `all` studies every type, the rest narrow to one card type (mirrors the backend `CARD_TYPES`).
+ * `all` studies every type, `mistakes` drills the learner's wrong cards, and the rest narrow to
+ * one card type (mirrors the backend `CARD_TYPES`).
  */
-const STUDY_MODES = ['all', 'open', 'quiz', 'type-answer', 'match'] as const;
+const STUDY_MODES = ['all', 'mistakes', 'open', 'quiz', 'type-answer', 'match'] as const;
 export type StudyMode = (typeof STUDY_MODES)[number];
 
 /**

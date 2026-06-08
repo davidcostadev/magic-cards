@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { DEFAULT_LIMIT, listResponseSchema, MAX_LIMIT } from '../../../common/pagination';
-import { CARD_LANGUAGES, CARD_TYPES, REPORT_REASONS } from '../../../db/schema';
+import { CARD_LANGUAGES, CARD_TYPES, REPORT_REASONS, REPORT_SUGGESTIONS } from '../../../db/schema';
 import { cardResponseSchema } from '../../cards/dto/card.dto';
 
 /**
@@ -57,6 +57,8 @@ export const cardSignalsSchema = z.object({
   accuracy: z.number(), // 0–100 (quality ≥ 3 / total); 0 when never reviewed
   avgQuality: z.number(), // mean quality; 0 when never reviewed
   reportCount: z.number(),
+  // Reports not yet marked resolved — what still needs attention.
+  openReportCount: z.number(),
   reportsByReason: z.object({
     incorrect: z.number(),
     improvement: z.number(),
@@ -78,7 +80,10 @@ export const catalogCardListSchema = listResponseSchema(catalogCardResponseSchem
 export const reportMessageSchema = z.object({
   id: z.string(),
   reason: z.enum(REPORT_REASONS),
+  suggestion: z.enum(REPORT_SUGGESTIONS).nullable(),
   message: z.string().nullable(),
+  resolved: z.boolean(),
+  resolvedAt: z.string().nullable(),
   createdAt: z.string(),
 });
 
@@ -86,13 +91,27 @@ export const catalogCardDetailSchema = catalogCardResponseSchema.extend({
   reports: z.array(reportMessageSchema),
 });
 
+/** Mark a report resolved (the card was fixed) or reopen it. */
+export const resolveReportSchema = z.object({
+  resolved: z.boolean(),
+});
+
+/** The updated report returned by the resolve endpoint (anonymized, plus its cardId). */
+export const catalogReportSchema = reportMessageSchema.extend({
+  cardId: z.string(),
+});
+
 export class CatalogCardQueryDto extends createZodDto(catalogCardQuerySchema) {}
 export class CatalogCardResponseDto extends createZodDto(catalogCardResponseSchema) {}
 export class CatalogCardListDto extends createZodDto(catalogCardListSchema) {}
 export class CatalogCardDetailDto extends createZodDto(catalogCardDetailSchema) {}
+export class ResolveReportDto extends createZodDto(resolveReportSchema) {}
+export class CatalogReportDto extends createZodDto(catalogReportSchema) {}
 
 export type CatalogCardQuery = z.infer<typeof catalogCardQuerySchema>;
 export type CardSignals = z.infer<typeof cardSignalsSchema>;
 export type CatalogCardResponse = z.infer<typeof catalogCardResponseSchema>;
 export type CatalogCardDetail = z.infer<typeof catalogCardDetailSchema>;
 export type ReportMessage = z.infer<typeof reportMessageSchema>;
+export type ResolveReportInput = z.infer<typeof resolveReportSchema>;
+export type CatalogReport = z.infer<typeof catalogReportSchema>;

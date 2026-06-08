@@ -37,7 +37,9 @@ import type {
   CatalogCardDetail,
   CatalogCardQuery,
   CatalogCardResponse,
+  CatalogReport,
   CatalogSort,
+  ResolveReportInput,
 } from './dto/catalog-cards.dto';
 import type { CatalogExport, CatalogImportInput, ImportResult } from './dto/catalog-io.dto';
 
@@ -49,6 +51,7 @@ const reviewCountSql = sql<number>`(select count(*)::int from ${reviewHistory} r
 const accuracySql = sql<number>`(select coalesce(round(100.0 * sum(case when rh.quality >= 3 then 1 else 0 end) / nullif(count(*), 0)), 0)::int from ${reviewHistory} rh where rh.card_id = ${cards.id})`;
 const avgQualitySql = sql<number>`(select coalesce(round(avg(rh.quality)::numeric, 2), 0)::float from ${reviewHistory} rh where rh.card_id = ${cards.id})`;
 const reportCountSql = sql<number>`(select count(*)::int from ${cardReports} cr where cr.card_id = ${cards.id})`;
+const openReportCountSql = sql<number>`(select count(*)::int from ${cardReports} cr where cr.card_id = ${cards.id} and cr.resolved = false)`;
 const incorrectCountSql = sql<number>`(select coalesce(sum(case when cr.reason = 'incorrect' then 1 else 0 end), 0)::int from ${cardReports} cr where cr.card_id = ${cards.id})`;
 const improvementCountSql = sql<number>`(select coalesce(sum(case when cr.reason = 'improvement' then 1 else 0 end), 0)::int from ${cardReports} cr where cr.card_id = ${cards.id})`;
 
@@ -313,6 +316,7 @@ export class CatalogService implements OnModuleInit {
         accuracy: accuracySql,
         avgQuality: avgQualitySql,
         reportCount: reportCountSql,
+        openReportCount: openReportCountSql,
         incorrectCount: incorrectCountSql,
         improvementCount: improvementCountSql,
       })
@@ -330,6 +334,7 @@ export class CatalogService implements OnModuleInit {
         accuracy: row.accuracy,
         avgQuality: row.avgQuality,
         reportCount: row.reportCount,
+        openReportCount: row.openReportCount,
         reportsByReason: { incorrect: row.incorrectCount, improvement: row.improvementCount },
         translations: {
           en: hasCompleteTranslation(row.translations, 'en'),
@@ -377,6 +382,7 @@ export class CatalogService implements OnModuleInit {
     const [rep] = await this.db
       .select({
         total: sql<number>`count(*)::int`,
+        open: sql<number>`coalesce(sum(case when ${cardReports.resolved} = false then 1 else 0 end), 0)::int`,
         incorrect: sql<number>`coalesce(sum(case when ${cardReports.reason} = 'incorrect' then 1 else 0 end), 0)::int`,
         improvement: sql<number>`coalesce(sum(case when ${cardReports.reason} = 'improvement' then 1 else 0 end), 0)::int`,
       })
@@ -387,7 +393,10 @@ export class CatalogService implements OnModuleInit {
       .select({
         id: cardReports.id,
         reason: cardReports.reason,
+        suggestion: cardReports.suggestion,
         message: cardReports.message,
+        resolved: cardReports.resolved,
+        resolvedAt: cardReports.resolvedAt,
         createdAt: cardReports.createdAt,
       })
       .from(cardReports)
@@ -402,6 +411,7 @@ export class CatalogService implements OnModuleInit {
         accuracy: total > 0 ? Math.round(((agg?.right ?? 0) / total) * 100) : 0,
         avgQuality: agg?.avgQuality ?? 0,
         reportCount: rep?.total ?? 0,
+        openReportCount: rep?.open ?? 0,
         reportsByReason: { incorrect: rep?.incorrect ?? 0, improvement: rep?.improvement ?? 0 },
         translations: {
           en: hasCompleteTranslation(card.translations, 'en'),
@@ -440,6 +450,48 @@ export class CatalogService implements OnModuleInit {
       })
       .where(eq(cards.id, id));
     return this.getCardDetail(id);
+  }
+
+  /**
+   * Marks one learner report resolved (its card was fixed) or reopens it. Scoped to reports on
+   * public/system cards, so the key can never touch a report on a user's private card. 404 otherwise.
+   */
+  async resolveReport(id: string, dto: ResolveReportInput): Promise<CatalogReport> {
+    const [existing] = await this.db
+      .select({ id: cardReports.id })
+      .from(cardReports)
+      .innerJoin(cards, eq(cardReports.cardId, cards.id))
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      .where(
+        and(
+          eq(cardReports.id, id),
+          eq(subjects.isPublic, true),
+          eq(subjects.userId, SYSTEM_USER_ID)
+        )
+      )
+      .limit(1);
+    if (!existing) throw ApiError.notFound('reports.notFound');
+
+    const now = new Date().toISOString();
+    const [row] = await this.db
+      .update(cardReports)
+      .set({
+        resolved: dto.resolved,
+        resolvedAt: dto.resolved ? now : null,
+        updatedAt: now,
+      })
+      .where(eq(cardReports.id, id))
+      .returning();
+    return {
+      id: row.id,
+      cardId: row.cardId,
+      reason: row.reason,
+      suggestion: row.suggestion,
+      message: row.message,
+      resolved: row.resolved,
+      resolvedAt: row.resolvedAt,
+      createdAt: row.createdAt,
+    };
   }
 
   /** Loads a card only if it belongs to public/system content; 404 otherwise. */

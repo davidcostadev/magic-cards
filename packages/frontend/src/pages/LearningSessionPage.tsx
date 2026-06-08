@@ -58,8 +58,17 @@ export function LearningSessionPage() {
 
   const chooseMode = useCallback(
     (picked: StudyMode) => {
-      // Nothing due for this mode → start a review-ahead session (study cards before they're due).
       const data = counts.data;
+      // "Practice mistakes" ignores the schedule entirely, so it never starts a review-ahead run.
+      if (picked === 'mistakes') {
+        navigate({
+          to: subjectId ? '/learn/$subjectId' : '/learn',
+          params: subjectId ? { subjectId } : {},
+          search: { mode: picked },
+        });
+        return;
+      }
+      // Nothing due for this mode → start a review-ahead session (study cards before they're due).
       const due = !data ? 0 : picked === 'all' ? data.total : data.byType[picked];
       const search = due === 0 ? { mode: picked, ahead: true } : { mode: picked };
       navigate({
@@ -98,18 +107,21 @@ export function LearningSessionPage() {
         total={counts.data.total}
         reviewable={counts.data.reviewableByType}
         reviewableTotal={counts.data.reviewableTotal}
+        mistakes={counts.data.mistakesTotal}
         onSelect={chooseMode}
       />
     );
   }
 
-  const type: CardType | undefined = mode === 'all' ? undefined : mode;
+  // 'all' and 'mistakes' span every card type; the others narrow the batch to one type.
+  const type: CardType | undefined = mode === 'all' || mode === 'mistakes' ? undefined : mode;
   return (
     <LearningSession
       key={`${subjectId ?? 'all'}:${mode}:${ahead ? 'ahead' : 'due'}`}
       subjectId={subjectId}
       type={type}
       ahead={!!ahead}
+      mistakes={mode === 'mistakes'}
     />
   );
 }
@@ -119,10 +131,17 @@ interface LearningSessionProps {
   type?: CardType;
   /** Review-ahead: pull already-seen cards that aren't due yet (used when nothing is due). */
   ahead?: boolean;
+  /** Practice-mistakes: build the deck from wrong, not-yet-mastered cards (most-errored first). */
+  mistakes?: boolean;
 }
 
 /** Runs one study session: snapshots the deck, tracks progress, and handles the exit dialog. */
-function LearningSession({ subjectId, type, ahead = false }: LearningSessionProps) {
+function LearningSession({
+  subjectId,
+  type,
+  ahead = false,
+  mistakes = false,
+}: LearningSessionProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { setInSession, exitRequested, requestExit, cancelExit, overlayOpen, setOverlayOpen } =
@@ -130,7 +149,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
   const { user } = useAuth();
   const dailyGoal = user?.dailyGoal ?? DEFAULT_DAILY_GOAL;
 
-  const { data: queue, isLoading, refetch } = useReviewQueue(subjectId, type, ahead);
+  const { data: queue, isLoading, refetch } = useReviewQueue(subjectId, type, ahead, mistakes);
   const submitReview = useSubmitReview();
   const checkReview = useCheckReview();
   const eliminateChoice = useEliminateChoice();

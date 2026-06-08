@@ -77,4 +77,53 @@ describe('ReportCardSheet', () => {
       message: undefined,
     });
   });
+
+  it('shows the "add examples" suggestion only for an improvement report', async () => {
+    const user = userEvent.setup();
+    render(<ReportCardSheet open card={card} onOpenChange={vi.fn()} />);
+
+    // Hidden under "incorrect".
+    await user.click(screen.getByRole('button', { name: 'reports.reasonIncorrect' }));
+    expect(
+      screen.queryByRole('button', { name: 'reports.suggestionAddExamples' })
+    ).not.toBeInTheDocument();
+
+    // Shown under "improvement".
+    await user.click(screen.getByRole('button', { name: 'reports.reasonImprovement' }));
+    expect(
+      screen.getByRole('button', { name: 'reports.suggestionAddExamples' })
+    ).toBeInTheDocument();
+  });
+
+  it('includes the chosen suggestion in the submission', async () => {
+    const user = userEvent.setup();
+    render(<ReportCardSheet open card={card} onOpenChange={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: 'reports.reasonImprovement' }));
+    await user.click(screen.getByRole('button', { name: 'reports.suggestionAddExamples' }));
+    await user.click(screen.getByRole('button', { name: 'reports.submit' }));
+
+    expect(mutateAsync).toHaveBeenCalledWith({
+      cardId: 'c1',
+      reason: 'improvement',
+      suggestion: 'add_examples',
+      message: undefined,
+    });
+  });
+
+  it('drops a stale suggestion when switching back to "incorrect"', async () => {
+    const user = userEvent.setup();
+    render(<ReportCardSheet open card={card} onOpenChange={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: 'reports.reasonImprovement' }));
+    await user.click(screen.getByRole('button', { name: 'reports.suggestionAddExamples' }));
+    await user.click(screen.getByRole('button', { name: 'reports.reasonIncorrect' }));
+    await user.click(screen.getByRole('button', { name: 'reports.submit' }));
+
+    expect(mutateAsync).toHaveBeenCalledWith({
+      cardId: 'c1',
+      reason: 'incorrect',
+      message: undefined,
+    });
+  });
 });

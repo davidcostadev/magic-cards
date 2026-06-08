@@ -29,11 +29,20 @@ export class ReportsService {
         cardId: dto.cardId,
         subjectId: card.subjectId,
         reason: dto.reason,
+        suggestion: dto.suggestion ?? null,
         message: dto.message ?? null,
       })
       .onConflictDoUpdate({
         target: [cardReports.userId, cardReports.cardId],
-        set: { reason: dto.reason, message: dto.message ?? null, updatedAt: now },
+        // Re-reporting reopens the report: fresh feedback shouldn't stay marked resolved.
+        set: {
+          reason: dto.reason,
+          suggestion: dto.suggestion ?? null,
+          message: dto.message ?? null,
+          resolved: false,
+          resolvedAt: null,
+          updatedAt: now,
+        },
       })
       .returning();
     return toReportResponse(row);
@@ -75,7 +84,10 @@ function toReportResponse(row: CardReport): ReportResponse {
     cardId: row.cardId,
     subjectId: row.subjectId,
     reason: row.reason,
+    suggestion: row.suggestion,
     message: row.message,
+    resolved: row.resolved,
+    resolvedAt: row.resolvedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

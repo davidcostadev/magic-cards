@@ -93,6 +93,17 @@ A bounded sequence of Reviews that the learner initiates on demand.
 
 An immutable log entry recording the outcome of a single Review: quality, time spent, whether hints were used, and when it happened. Used for analytics, never mutated.
 
+## Card Report
+
+Content feedback a learner files on a card — at most **one per (user, card)**; re-reporting updates that row (and **reopens** it). Fields:
+
+- **reason** — `incorrect` (the card is wrong) or `improvement` (it could be better).
+- **suggestion** *(optional)* — a recurring ask promoted to a first-class, pickable option, so common feedback is structured rather than free text. Currently `add_examples` ("the explanation should include code examples"); extensible. Offered in the report flow only for an `improvement` report.
+- **message** *(optional)* — free-text note.
+- **resolved** / **resolvedAt** — set by the **catalog** (admin/AI) side once the underlying card has been fixed; cleared again if the learner re-reports. A card's `openReportCount` counts only unresolved reports.
+
+Learners manage their own reports under `/v1/card_reports` (file, list, withdraw). The catalog surface (API key) reads them anonymized per card and resolves them via `PATCH /v1/catalog/card_reports/:id`.
+
 ## Endpoint (REST)
 
 A versioned HTTP operation exposed by the backend under `/v1`, modeled on Stripe's API conventions. Endpoints follow conventional REST verbs (`GET` retrieve/list, `POST` create, `PATCH` partial update, `PUT` replace, `DELETE` remove) over resource URLs (`/v1/subjects`, `/v1/cards`, `/v1/reviews`, …). Request params, query, and body are validated with Zod schemas; those same schemas generate the OpenAPI 3.1 spec.

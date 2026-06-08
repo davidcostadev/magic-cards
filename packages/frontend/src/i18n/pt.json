@@ -165,7 +165,10 @@
     "submit": "Enviar report",
     "success": "Obrigado pelo report!",
     "filterReported": "Reportados",
-    "reportedBadge": "Reportado"
+    "reportedBadge": "Reportado",
+    "resolvedBadge": "Resolvido",
+    "suggestionsLabel": "Sugestão (opcional)",
+    "suggestionAddExamples": "Adicionar exemplos de código"
   },
   "learn": {
     "title": "Sessão de Estudo",
@@ -192,6 +195,8 @@
     "modeCardCount": "{{count}} cartões",
     "modeToReview": "{{count}} para revisar",
     "reviewAhead": "revisar adiantado",
+    "modeMistakes": "Praticar Erros",
+    "mistakesToPractice": "{{count}} para reforçar",
     "eliminateChoice": "Eliminar",
     "modeTypeAnswer": "Digite a Resposta",
     "modeMatch": "Combine os Pares",

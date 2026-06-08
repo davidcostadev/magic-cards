@@ -6,6 +6,8 @@ export type CardReport = components['schemas']['ReportResponseDto'];
 export type CreateReportInput = components['schemas']['CreateReportDto'];
 /** Why a card was flagged ('incorrect' | 'improvement'), derived from the API contract. */
 export type ReportReason = CardReport['reason'];
+/** A structured ask attached to a report ('add_examples'), derived from the API contract. */
+export type ReportSuggestion = NonNullable<CreateReportInput['suggestion']>;
 
 export const reportKeys = {
   all: ['card_reports'] as const,

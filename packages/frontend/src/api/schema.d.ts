@@ -372,6 +372,22 @@ export interface paths {
         patch: operations["CatalogController_updateCard"];
         trace?: never;
     };
+    "/v1/catalog/card_reports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["CatalogController_resolveReport"];
+        trace?: never;
+    };
     "/v1/catalog/import": {
         parameters: {
             query?: never;
@@ -811,6 +827,7 @@ export interface components {
                 "type-answer": number;
                 match: number;
             };
+            mistakesTotal: number;
         };
         CreateReviewDto: {
             cardId: string;
@@ -995,6 +1012,7 @@ export interface components {
                     accuracy: number;
                     avgQuality: number;
                     reportCount: number;
+                    openReportCount: number;
                     reportsByReason: {
                         incorrect: number;
                         improvement: number;
@@ -1048,6 +1066,7 @@ export interface components {
                 accuracy: number;
                 avgQuality: number;
                 reportCount: number;
+                openReportCount: number;
                 reportsByReason: {
                     incorrect: number;
                     improvement: number;
@@ -1061,9 +1080,26 @@ export interface components {
                 id: string;
                 /** @enum {string} */
                 reason: "incorrect" | "improvement";
+                suggestion: "add_examples" | null;
                 message: string | null;
+                resolved: boolean;
+                resolvedAt: string | null;
                 createdAt: string;
             }[];
+        };
+        ResolveReportDto: {
+            resolved: boolean;
+        };
+        CatalogReportDto: {
+            id: string;
+            /** @enum {string} */
+            reason: "incorrect" | "improvement";
+            suggestion: "add_examples" | null;
+            message: string | null;
+            resolved: boolean;
+            resolvedAt: string | null;
+            createdAt: string;
+            cardId: string;
         };
         CatalogImportDto: {
             subjects?: {
@@ -1179,7 +1215,10 @@ export interface components {
                 subjectId: string;
                 /** @enum {string} */
                 reason: "incorrect" | "improvement";
+                suggestion: "add_examples" | null;
                 message: string | null;
+                resolved: boolean;
+                resolvedAt: string | null;
                 createdAt: string;
                 updatedAt: string;
             }[];
@@ -1188,6 +1227,8 @@ export interface components {
             cardId: string;
             /** @enum {string} */
             reason: "incorrect" | "improvement";
+            /** @enum {string} */
+            suggestion?: "add_examples";
             message?: string;
         };
         ReportResponseDto: {
@@ -1196,7 +1237,10 @@ export interface components {
             subjectId: string;
             /** @enum {string} */
             reason: "incorrect" | "improvement";
+            suggestion: "add_examples" | null;
             message: string | null;
+            resolved: boolean;
+            resolvedAt: string | null;
             createdAt: string;
             updatedAt: string;
         };
@@ -1625,6 +1669,7 @@ export interface operations {
                 subject?: string;
                 type?: "open" | "quiz" | "type-answer" | "match";
                 ahead?: boolean;
+                mistakes?: boolean;
             };
             header?: never;
             path?: never;
@@ -1648,6 +1693,7 @@ export interface operations {
                 subject?: string;
                 type?: "open" | "quiz" | "type-answer" | "match";
                 ahead?: boolean;
+                mistakes?: boolean;
             };
             header?: never;
             path?: never;
@@ -1671,6 +1717,7 @@ export interface operations {
                 subject?: string;
                 type?: "open" | "quiz" | "type-answer" | "match";
                 ahead?: boolean;
+                mistakes?: boolean;
             };
             header?: never;
             path?: never;
@@ -1935,6 +1982,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CatalogCardDetailDto"];
+                };
+            };
+        };
+    };
+    CatalogController_resolveReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveReportDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogReportDto"];
                 };
             };
         };

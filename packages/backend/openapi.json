@@ -700,6 +700,14 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "mistakes",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -758,6 +766,14 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "mistakes",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -811,6 +827,14 @@
           },
           {
             "name": "ahead",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "mistakes",
             "required": false,
             "in": "query",
             "schema": {
@@ -1326,6 +1350,51 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CatalogCardDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/v1/catalog/card_reports/{id}": {
+      "patch": {
+        "operationId": "CatalogController_resolveReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogReportDto"
                 }
               }
             }
@@ -3151,13 +3220,17 @@
               "type-answer",
               "match"
             ]
+          },
+          "mistakesTotal": {
+            "type": "number"
           }
         },
         "required": [
           "total",
           "byType",
           "reviewableTotal",
-          "reviewableByType"
+          "reviewableByType",
+          "mistakesTotal"
         ]
       },
       "CreateReviewDto": {
@@ -3905,6 +3978,9 @@
                     "reportCount": {
                       "type": "number"
                     },
+                    "openReportCount": {
+                      "type": "number"
+                    },
                     "reportsByReason": {
                       "type": "object",
                       "properties": {
@@ -3941,6 +4017,7 @@
                     "accuracy",
                     "avgQuality",
                     "reportCount",
+                    "openReportCount",
                     "reportsByReason",
                     "translations"
                   ]
@@ -4135,6 +4212,9 @@
               "reportCount": {
                 "type": "number"
               },
+              "openReportCount": {
+                "type": "number"
+              },
               "reportsByReason": {
                 "type": "object",
                 "properties": {
@@ -4171,6 +4251,7 @@
               "accuracy",
               "avgQuality",
               "reportCount",
+              "openReportCount",
               "reportsByReason",
               "translations"
             ]
@@ -4190,7 +4271,33 @@
                     "improvement"
                   ]
                 },
+                "suggestion": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "add_examples"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "message": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "resolved": {
+                  "type": "boolean"
+                },
+                "resolvedAt": {
                   "anyOf": [
                     {
                       "type": "string"
@@ -4207,7 +4314,10 @@
               "required": [
                 "id",
                 "reason",
+                "suggestion",
                 "message",
+                "resolved",
+                "resolvedAt",
                 "createdAt"
               ]
             }
@@ -4226,6 +4336,84 @@
           "updatedAt",
           "signals",
           "reports"
+        ]
+      },
+      "ResolveReportDto": {
+        "type": "object",
+        "properties": {
+          "resolved": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "resolved"
+        ]
+      },
+      "CatalogReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "incorrect",
+              "improvement"
+            ]
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "add_examples"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolved": {
+            "type": "boolean"
+          },
+          "resolvedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "suggestion",
+          "message",
+          "resolved",
+          "resolvedAt",
+          "createdAt",
+          "cardId"
         ]
       },
       "CatalogImportDto": {
@@ -4743,7 +4931,33 @@
                     "improvement"
                   ]
                 },
+                "suggestion": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "add_examples"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "message": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "resolved": {
+                  "type": "boolean"
+                },
+                "resolvedAt": {
                   "anyOf": [
                     {
                       "type": "string"
@@ -4765,7 +4979,10 @@
                 "cardId",
                 "subjectId",
                 "reason",
+                "suggestion",
                 "message",
+                "resolved",
+                "resolvedAt",
                 "createdAt",
                 "updatedAt"
               ]
@@ -4791,6 +5008,12 @@
             "enum": [
               "incorrect",
               "improvement"
+            ]
+          },
+          "suggestion": {
+            "type": "string",
+            "enum": [
+              "add_examples"
             ]
           },
           "message": {
@@ -4822,7 +5045,33 @@
               "improvement"
             ]
           },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "add_examples"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolved": {
+            "type": "boolean"
+          },
+          "resolvedAt": {
             "anyOf": [
               {
                 "type": "string"
@@ -4844,7 +5093,10 @@
           "cardId",
           "subjectId",
           "reason",
+          "suggestion",
           "message",
+          "resolved",
+          "resolvedAt",
           "createdAt",
           "updatedAt"
         ]

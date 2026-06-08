@@ -1,8 +1,8 @@
-import { AlertTriangle, Check, Lightbulb, X } from 'lucide-react';
+import { AlertTriangle, Check, Code, Lightbulb, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card } from '@/api/queries/cards';
-import { type ReportReason, useCreateReport } from '@/api/queries/reports';
+import { type ReportReason, type ReportSuggestion, useCreateReport } from '@/api/queries/reports';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -20,6 +20,11 @@ const REASONS: { value: ReportReason; labelKey: string; icon: typeof AlertTriang
   { value: 'improvement', labelKey: 'reports.reasonImprovement', icon: Lightbulb },
 ];
 
+// Recurring asks promoted to one-tap chips, shown when the reason is "could be improved".
+const SUGGESTIONS: { value: ReportSuggestion; labelKey: string; icon: typeof AlertTriangle }[] = [
+  { value: 'add_examples', labelKey: 'reports.suggestionAddExamples', icon: Code },
+];
+
 const SUCCESS_DISMISS_MS = 1500;
 
 /**
@@ -30,6 +35,7 @@ export function ReportCardSheet({ open, onOpenChange, card }: ReportCardSheetPro
   const { t } = useTranslation();
   const createReport = useCreateReport();
   const [reason, setReason] = useState<ReportReason | null>(null);
+  const [suggestion, setSuggestion] = useState<ReportSuggestion | null>(null);
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
@@ -37,10 +43,17 @@ export function ReportCardSheet({ open, onOpenChange, card }: ReportCardSheetPro
   useEffect(() => {
     if (open) {
       setReason(null);
+      setSuggestion(null);
       setMessage('');
       setSubmitted(false);
     }
   }, [open, card?.id]);
+
+  // A suggestion only attaches to an "improvement" report; clear it if the reason changes.
+  const selectReason = (value: ReportReason) => {
+    setReason(value);
+    if (value !== 'improvement') setSuggestion(null);
+  };
 
   // Auto-close the success confirmation so the learner returns to studying.
   useEffect(() => {
@@ -57,6 +70,7 @@ export function ReportCardSheet({ open, onOpenChange, card }: ReportCardSheetPro
       await createReport.mutateAsync({
         cardId: card.id,
         reason,
+        ...(suggestion ? { suggestion } : {}),
         message: message.trim() || undefined,
       });
       setSubmitted(true);
@@ -105,7 +119,7 @@ export function ReportCardSheet({ open, onOpenChange, card }: ReportCardSheetPro
                     key={value}
                     type="button"
                     aria-pressed={selected}
-                    onClick={() => setReason(value)}
+                    onClick={() => selectReason(value)}
                     className={cn(
                       'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-4 text-left text-base font-medium transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                       selected
@@ -124,6 +138,36 @@ export function ReportCardSheet({ open, onOpenChange, card }: ReportCardSheetPro
                 );
               })}
             </fieldset>
+
+            {reason === 'improvement' && (
+              <fieldset className="mt-4 min-w-0 border-0 p-0">
+                <legend className="mb-2 text-sm font-medium text-muted-foreground">
+                  {t('reports.suggestionsLabel')}
+                </legend>
+                <div className="flex flex-wrap gap-2">
+                  {SUGGESTIONS.map(({ value, labelKey, icon: Icon }) => {
+                    const selected = suggestion === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => setSuggestion(selected ? null : value)}
+                        className={cn(
+                          'inline-flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                          selected
+                            ? 'border-primary bg-primary/10 text-foreground'
+                            : 'border-input bg-background text-muted-foreground hover:border-primary/50 hover:bg-accent hover:text-foreground'
+                        )}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {t(labelKey)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            )}
 
             <div className="mt-5 space-y-2">
               <Label htmlFor="report-message">{t('reports.message')}</Label>

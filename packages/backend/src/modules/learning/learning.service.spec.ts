@@ -141,6 +141,119 @@ describe('LearningService.getSessionCards — review ahead', () => {
   });
 });
 
+describe('LearningService.getSessionCards — recall-probability ordering', () => {
+  it('orders the harder (shorter-interval) card first even when it is less overdue in days', async () => {
+    await addCard('hard');
+    await addCard('easy');
+    // hard: short interval, mildly overdue → high overdue-vs-interval ratio (more likely forgotten).
+    await db.insert(cardProgress).values({
+      userId: 'u1',
+      cardId: 'hard',
+      interval: 2,
+      easeFactor: 1.4,
+      repetitions: 1,
+      nextReviewDate: new Date(Date.now() - 3 * DAY_MS).toISOString(),
+      lastReviewDate: new Date(Date.now() - 5 * DAY_MS).toISOString(),
+      status: 'learning',
+    });
+    // easy: long interval, MORE overdue in absolute days, but a low ratio (still mostly remembered).
+    await db.insert(cardProgress).values({
+      userId: 'u1',
+      cardId: 'easy',
+      interval: 20,
+      easeFactor: 2.6,
+      repetitions: 6,
+      nextReviewDate: new Date(Date.now() - 5 * DAY_MS).toISOString(),
+      lastReviewDate: new Date(Date.now() - 25 * DAY_MS).toISOString(),
+      status: 'reviewing',
+    });
+
+    const { due } = await service().getSessionCards('u1');
+    // ratio hard = 3/2 = 1.5 > easy = 5/20 = 0.25 → 'hard' first. The old nextReviewDate-asc
+    // ordering would have served 'easy' first as the card overdue by more calendar days.
+    expect(due.map((c) => c.id)).toEqual(['hard', 'easy']);
+  });
+});
+
+describe('LearningService.getSessionCards — practice mistakes', () => {
+  function addReview(cardId: string, quality: number) {
+    return db
+      .insert(reviewHistory)
+      .values({ userId: 'u1', cardId, subjectId: 's1', quality, timeSpent: 1000 });
+  }
+  function addProgress(
+    cardId: string,
+    status: 'learning' | 'reviewing' | 'mastered' = 'reviewing'
+  ) {
+    return db.insert(cardProgress).values({
+      userId: 'u1',
+      cardId,
+      interval: 5,
+      easeFactor: 2.5,
+      repetitions: 2,
+      nextReviewDate: new Date(Date.now() - DAY_MS).toISOString(),
+      lastReviewDate: new Date().toISOString(),
+      status,
+    });
+  }
+
+  it('serves only the cards the learner has gotten wrong, most-errored first', async () => {
+    await addCard('worst');
+    await addProgress('worst');
+    await addCard('bad');
+    await addProgress('bad');
+    await addCard('clean');
+    await addProgress('clean');
+    // worst: 3 wrong; bad: 1 wrong; clean: only correct answers.
+    await addReview('worst', 1);
+    await addReview('worst', 2);
+    await addReview('worst', 0);
+    await addReview('worst', 5); // a later success does NOT remove it from the mistakes pool
+    await addReview('bad', 2);
+    await addReview('bad', 4);
+    await addReview('clean', 5);
+    await addReview('clean', 4);
+
+    const { due, new: newCards } = await service().getSessionCards(
+      'u1',
+      undefined,
+      undefined,
+      false,
+      true
+    );
+    expect(due.map((c) => c.id)).toEqual(['worst', 'bad']);
+    expect(newCards).toHaveLength(0);
+  });
+
+  it('excludes mastered cards even if they were once wrong', async () => {
+    await addCard('done');
+    await addProgress('done', 'mastered');
+    await addCard('active');
+    await addProgress('active', 'reviewing');
+    await addReview('done', 1);
+    await addReview('active', 1);
+
+    const { due } = await service().getSessionCards('u1', undefined, undefined, false, true);
+    expect(due.map((c) => c.id)).toEqual(['active']);
+  });
+
+  it('is empty when the learner has no wrong answers', async () => {
+    await addCard('c1');
+    await addProgress('c1');
+    await addReview('c1', 5);
+
+    const { due, new: newCards } = await service().getSessionCards(
+      'u1',
+      undefined,
+      undefined,
+      false,
+      true
+    );
+    expect(due).toHaveLength(0);
+    expect(newCards).toHaveLength(0);
+  });
+});
+
 describe('LearningService.getTypeCounts — reviewable pool', () => {
   it('reports the full reviewable pool separately from the due-now counts', async () => {
     await addCard('c1');
@@ -153,6 +266,35 @@ describe('LearningService.getTypeCounts — reviewable pool', () => {
     expect(counts.total).toBe(1);
     expect(counts.reviewableByType.open).toBe(2);
     expect(counts.reviewableTotal).toBe(2);
+  });
+
+  it('counts distinct non-mastered cards with at least one wrong answer as mistakesTotal', async () => {
+    for (const id of ['a', 'b', 'c', 'm']) await addCard(id);
+    const prog = (id: string, status: 'reviewing' | 'mastered' = 'reviewing') =>
+      db.insert(cardProgress).values({
+        userId: 'u1',
+        cardId: id,
+        interval: 5,
+        easeFactor: 2.5,
+        repetitions: 2,
+        nextReviewDate: new Date(Date.now() - DAY_MS).toISOString(),
+        lastReviewDate: new Date().toISOString(),
+        status,
+      });
+    await prog('a');
+    await prog('b');
+    await prog('c');
+    await prog('m', 'mastered');
+    await db.insert(reviewHistory).values([
+      { userId: 'u1', cardId: 'a', subjectId: 's1', quality: 1, timeSpent: 1 },
+      { userId: 'u1', cardId: 'a', subjectId: 's1', quality: 2, timeSpent: 1 }, // a counts once
+      { userId: 'u1', cardId: 'b', subjectId: 's1', quality: 0, timeSpent: 1 },
+      { userId: 'u1', cardId: 'c', subjectId: 's1', quality: 5, timeSpent: 1 }, // c: never wrong
+      { userId: 'u1', cardId: 'm', subjectId: 's1', quality: 1, timeSpent: 1 }, // m: wrong but mastered
+    ]);
+
+    const counts = await service().getTypeCounts('u1');
+    expect(counts.mistakesTotal).toBe(2); // only a and b
   });
 });
 

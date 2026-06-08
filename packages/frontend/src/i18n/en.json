@@ -165,7 +165,10 @@
     "submit": "Send report",
     "success": "Thanks for the report!",
     "filterReported": "Reported",
-    "reportedBadge": "Reported"
+    "reportedBadge": "Reported",
+    "resolvedBadge": "Resolved",
+    "suggestionsLabel": "Suggestion (optional)",
+    "suggestionAddExamples": "Add code examples"
   },
   "learn": {
     "title": "Learning Session",
@@ -192,6 +195,8 @@
     "modeCardCount": "{{count}} cards",
     "modeToReview": "{{count}} to review",
     "reviewAhead": "review ahead",
+    "modeMistakes": "Practice Mistakes",
+    "mistakesToPractice": "{{count}} to practice",
     "eliminateChoice": "Eliminate",
     "modeTypeAnswer": "Type the Answer",
     "modeMatch": "Match Pairs",

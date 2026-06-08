@@ -1,4 +1,4 @@
-import { Flag, Pencil, Trash2 } from 'lucide-react';
+import { CheckCircle2, Flag, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Card as CardType } from '@/api/queries/cards';
 import { CardStatsPanel } from '@/components/features/learning/CardStatsPanel';
@@ -17,6 +17,8 @@ interface CardListProps {
   readOnly?: boolean;
   /** Ids of cards the current user has reported — shown with a flag badge. */
   reportedIds?: Set<string>;
+  /** Subset of reported ids whose report has been resolved — shown with a "resolved" badge instead. */
+  resolvedIds?: Set<string>;
 }
 
 const TYPE_LABEL_KEY: Record<CardType['type'], string> = {
@@ -33,6 +35,7 @@ export function CardList({
   onDelete,
   readOnly,
   reportedIds,
+  resolvedIds,
 }: CardListProps) {
   const { t } = useTranslation();
 
@@ -65,15 +68,24 @@ export function CardList({
                         {t(TYPE_LABEL_KEY[card.type])}
                       </Badge>
                     )}
-                    {reportedIds?.has(card.id) && (
-                      <Badge
-                        variant="secondary"
-                        className="shrink-0 gap-1 border border-destructive/30 bg-destructive/10 text-destructive"
-                      >
-                        <Flag className="h-3 w-3" />
-                        {t('reports.reportedBadge')}
-                      </Badge>
-                    )}
+                    {reportedIds?.has(card.id) &&
+                      (resolvedIds?.has(card.id) ? (
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 gap-1 border border-success/30 bg-success/10 text-success"
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          {t('reports.resolvedBadge')}
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 gap-1 border border-destructive/30 bg-destructive/10 text-destructive"
+                        >
+                          <Flag className="h-3 w-3" />
+                          {t('reports.reportedBadge')}
+                        </Badge>
+                      ))}
                     {cardLangs.map((l) => (
                       <LanguageBadge key={l} language={l} className="shrink-0" />
                     ))}

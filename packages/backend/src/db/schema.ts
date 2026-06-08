@@ -151,10 +151,19 @@ export const REPORT_REASONS = ['incorrect', 'improvement'] as const;
 export type ReportReason = (typeof REPORT_REASONS)[number];
 
 /**
+ * A structured, first-class request a learner can attach to an `improvement` report instead of
+ * (or alongside) free text — recurring asks promoted to pickable options. `add_examples` is the
+ * first: "the explanation should include code examples". Extensible as new patterns emerge.
+ */
+export const REPORT_SUGGESTIONS = ['add_examples'] as const;
+export type ReportSuggestion = (typeof REPORT_SUGGESTIONS)[number];
+
+/**
  * A learner's report on a card — content feedback ("this is wrong" / "could be better").
- * One report per (user, card): re-reporting updates the existing row. `subjectId` is
- * denormalized (like `reviewHistory`) so the subject-scoped list filter is indexed and the
- * report cascades away with its subject.
+ * One report per (user, card): re-reporting updates the existing row (and reopens it). `subjectId`
+ * is denormalized (like `reviewHistory`) so the subject-scoped list filter is indexed and the
+ * report cascades away with its subject. `resolved` is flipped by the catalog (admin/AI) side once
+ * the card has been fixed; re-reporting clears it so fresh feedback reopens the report.
  */
 export const cardReports = pgTable(
   'card_reports',
@@ -170,7 +179,12 @@ export const cardReports = pgTable(
       .notNull()
       .references(() => subjects.id, { onDelete: 'cascade' }),
     reason: text('reason', { enum: REPORT_REASONS }).notNull(),
+    // Optional structured ask (e.g. "add code examples"); free text still lives in `message`.
+    suggestion: text('suggestion', { enum: REPORT_SUGGESTIONS }),
     message: text('message'),
+    // Set by the catalog side when the underlying card has been improved; reopened on re-report.
+    resolved: boolean('resolved').notNull().default(false),
+    resolvedAt: text('resolved_at'),
     createdAt: text('created_at').notNull().$defaultFn(isoNow),
     updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
   },

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, getTableColumns, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, isNull, lt, lte, ne, or, sql } from 'drizzle-orm';
 import { ApiError } from '../../common/errors/api-error';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
@@ -47,26 +47,39 @@ export class LearningService {
   ) {}
 
   /**
-   * Builds the study batch for one session: overdue cards first (most overdue first, capped at
-   * {@link SESSION_SIZE}), then new (never-reviewed) cards to top the session up to that size.
-   * So a session holds at most `SESSION_SIZE` cards — independent of the user's daily goal. An
-   * optional `type` restricts the batch to a single card type (e.g. only quizzes).
+   * Builds the study batch for one session: seen cards ordered by **recall probability** (the ones
+   * you're most likely to have forgotten first, capped at {@link SESSION_SIZE}), then new
+   * (never-reviewed) cards to top the session up to that size. So a session holds at most
+   * `SESSION_SIZE` cards — independent of the user's daily goal. An optional `type` restricts the
+   * batch to a single card type (e.g. only quizzes).
    *
-   * In **review-ahead** mode (`ahead`), the due gate is relaxed: already-seen cards scheduled
-   * for the future are pulled in too (still soonest-due first), so a learner who is all caught
-   * up can keep practising. Genuinely overdue cards still come first; new cards top up the rest.
+   * Ordering is by how far past its due date a card is **relative to its own interval** (the SM-2
+   * half-life), not by raw due date — so a short-interval card you keep slipping on outranks a
+   * long-interval card overdue by more calendar days. This unifies "overdue" and "hard for me"
+   * into one weakest-first signal (Duolingo/HLR style).
+   *
+   * In **review-ahead** mode (`ahead`), the due gate is relaxed: already-seen cards scheduled for
+   * the future are pulled in too, so a learner who is all caught up can keep practising. With
+   * `mistakes`, the batch is instead the learner's wrong, not-yet-mastered cards (see
+   * {@link getMistakeCards}), regardless of schedule.
    */
   async getSessionCards(
     userId: string,
     subjectId?: string,
     type?: Card['type'],
-    ahead = false
+    ahead = false,
+    mistakes = false
   ): Promise<SessionCards> {
     if (subjectId) await this.assertSubjectVisible(userId, subjectId);
+    // "Practice my mistakes" is its own selection: erred, not-mastered cards, schedule-independent.
+    if (mistakes) return this.getMistakeCards(userId, subjectId);
 
     const now = new Date().toISOString();
     const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
     const typeFilter = type ? eq(cards.type, type) : undefined;
+    // Weakest-first score: seconds overdue ÷ interval. Higher = more likely forgotten. Computed
+    // from the NOT-NULL nextReviewDate (= lastReview + interval), so it needs no lastReviewDate.
+    const recallScore = sql`(extract(epoch from (${now}::timestamptz - ${cardProgress.nextReviewDate}::timestamptz)) / (${cardProgress.interval} * 86400.0))`;
 
     const due = await this.db
       .select(getTableColumns(cards))
@@ -83,7 +96,8 @@ export class LearningService {
           typeFilter
         )
       )
-      .orderBy(asc(cardProgress.nextReviewDate))
+      // Most-forgotten first; nextReviewDate breaks ties for a stable order.
+      .orderBy(desc(recallScore), asc(cardProgress.nextReviewDate))
       .limit(SESSION_SIZE);
 
     // New cards top the session up to the session size after due reviews take their share.
@@ -111,6 +125,43 @@ export class LearningService {
   }
 
   /**
+   * Builds a "practice my mistakes" session: cards the learner has gotten wrong (≥1 review with
+   * quality < 3) and not yet mastered, **most-errored first** — regardless of the review schedule,
+   * so it stays useful even when nothing is due. Modeled on Duolingo's "practice mistakes". Capped
+   * at {@link SESSION_SIZE}; this mode has no "new" cards (every card here has been seen). The
+   * cards are returned in the `due` bucket so the session builds them like any other batch.
+   */
+  private async getMistakeCards(userId: string, subjectId?: string): Promise<SessionCards> {
+    const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
+    const errorCount = sql<number>`count(*) filter (where ${reviewHistory.quality} < 3)`;
+
+    const rows = await this.db
+      .select(getTableColumns(cards))
+      .from(reviewHistory)
+      .innerJoin(cards, eq(reviewHistory.cardId, cards.id))
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      // A reviewed card always has a progress row; the join lets us drop mastered cards.
+      .innerJoin(
+        cardProgress,
+        and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
+      )
+      .where(
+        and(
+          eq(reviewHistory.userId, userId),
+          canSeeSubject(userId),
+          ne(cardProgress.status, 'mastered'),
+          subjectFilter
+        )
+      )
+      .groupBy(cards.id)
+      .having(sql`count(*) filter (where ${reviewHistory.quality} < 3) > 0`)
+      .orderBy(desc(errorCount), asc(cards.id))
+      .limit(SESSION_SIZE);
+
+    return { due: rows.map((card) => toCardResponse(card, false)), new: [] };
+  }
+
+  /**
    * Counts cards per type for the "choose what to study" screen, in two tiers:
    * - `byType` / `total`: studyable RIGHT NOW (never reviewed, or due) — the same gate as
    *   {@link getSessionCards}, so a mode with nothing due reflects today's session exactly.
@@ -126,6 +177,7 @@ export class LearningService {
     byType: Record<Card['type'], number>;
     reviewableTotal: number;
     reviewableByType: Record<Card['type'], number>;
+    mistakesTotal: number;
   }> {
     const now = new Date().toISOString();
     const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
@@ -155,6 +207,26 @@ export class LearningService {
       .where(and(canSeeSubject(userId), subjectFilter))
       .groupBy(cards.type);
 
+    // Distinct non-mastered cards with at least one wrong answer — drives the "practice mistakes" tile.
+    const [mistakeRow] = await this.db
+      .select({ count: sql<number>`count(distinct ${cards.id})::int` })
+      .from(reviewHistory)
+      .innerJoin(cards, eq(reviewHistory.cardId, cards.id))
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      .innerJoin(
+        cardProgress,
+        and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
+      )
+      .where(
+        and(
+          eq(reviewHistory.userId, userId),
+          canSeeSubject(userId),
+          ne(cardProgress.status, 'mastered'),
+          lt(reviewHistory.quality, 3),
+          subjectFilter
+        )
+      );
+
     const zero = (): Record<Card['type'], number> => ({
       open: 0,
       quiz: 0,
@@ -173,17 +245,30 @@ export class LearningService {
       reviewableByType[row.type] = row.count;
       reviewableTotal += row.count;
     }
-    return { total, byType, reviewableTotal, reviewableByType };
+    return {
+      total,
+      byType,
+      reviewableTotal,
+      reviewableByType,
+      mistakesTotal: mistakeRow?.count ?? 0,
+    };
   }
 
-  /** The single next card to study: most overdue, else the next new card, else null. */
+  /** The single next card to study: weakest (most likely forgotten), else the next new card, else null. */
   async getNextCard(
     userId: string,
     subjectId?: string,
     type?: Card['type'],
-    ahead = false
+    ahead = false,
+    mistakes = false
   ): Promise<CardResponse | null> {
-    const { due, new: newCards } = await this.getSessionCards(userId, subjectId, type, ahead);
+    const { due, new: newCards } = await this.getSessionCards(
+      userId,
+      subjectId,
+      type,
+      ahead,
+      mistakes
+    );
     return due[0] ?? newCards[0] ?? null;
   }
 
