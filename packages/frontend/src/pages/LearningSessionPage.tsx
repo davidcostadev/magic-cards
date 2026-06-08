@@ -130,7 +130,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
   const { user } = useAuth();
   const dailyGoal = user?.dailyGoal ?? DEFAULT_DAILY_GOAL;
 
-  const { data: queue, isLoading } = useReviewQueue(subjectId, type, ahead);
+  const { data: queue, isLoading, refetch } = useReviewQueue(subjectId, type, ahead);
   const submitReview = useSubmitReview();
   const checkReview = useCheckReview();
   const eliminateChoice = useEliminateChoice();
@@ -139,13 +139,32 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
   // queue then grows as wrong cards are requeued for re-practice (the short loop).
   const [session, setSession] = useState<SessionState | null>(null);
   const startTime = useRef(Date.now());
+  // Set while "study more" fetches the next batch, so the auto-init effect below doesn't race it
+  // and reseed the session from the stale (already-cleared) queue snapshot.
+  const restarting = useRef(false);
 
   useEffect(() => {
-    if (queue && session === null) {
+    if (queue && session === null && !restarting.current) {
       setSession(initSession(orderedSession(queue)));
       startTime.current = Date.now();
     }
   }, [queue, session]);
+
+  // "Study more": pull the next batch for the SAME subject + type (same review-ahead flag) and
+  // start a fresh session in place. Refetching the live queue moves the learner forward: the cards
+  // just reviewed are now rescheduled into the future, so they drop out of the batch and the next
+  // ones take their place — following the list instead of re-showing what was just studied.
+  const studyMore = useCallback(async () => {
+    restarting.current = true;
+    setSession(null);
+    try {
+      const { data: next } = await refetch();
+      startTime.current = Date.now();
+      if (next) setSession(initSession(orderedSession(next)));
+    } finally {
+      restarting.current = false;
+    }
+  }, [refetch]);
 
   const activeSession = !!session && session.deck.length > 0 && !session.completed;
   const cardIndex = session?.index;
@@ -223,6 +242,7 @@ function LearningSession({ subjectId, type, ahead = false }: LearningSessionProp
         cardsReviewed={session.firstPassLength}
         correctCount={session.firstPassCorrect}
         timeSpentMs={Date.now() - startTime.current}
+        onStudyMore={studyMore}
       />
     );
   }

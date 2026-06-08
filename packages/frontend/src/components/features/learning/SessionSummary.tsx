@@ -8,9 +8,16 @@ interface SessionSummaryProps {
   cardsReviewed: number;
   correctCount: number;
   timeSpentMs: number;
+  /** Starts another batch in the same subject + card type the learner just finished. */
+  onStudyMore: () => void;
 }
 
-export function SessionSummary({ cardsReviewed, correctCount, timeSpentMs }: SessionSummaryProps) {
+export function SessionSummary({
+  cardsReviewed,
+  correctCount,
+  timeSpentMs,
+  onStudyMore,
+}: SessionSummaryProps) {
   const { t } = useTranslation();
   const accuracy = cardsReviewed > 0 ? Math.round((correctCount / cardsReviewed) * 100) : 0;
   const minutes = Math.floor(timeSpentMs / 60000);
@@ -55,9 +62,15 @@ export function SessionSummary({ cardsReviewed, correctCount, timeSpentMs }: Ses
             <Link to="/dashboard" className={buttonVariants({ size: 'lg' })}>
               {t('learn.backToDashboard')}
             </Link>
-            <Link to="/learn" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+            {/* Stays in the same subject + card type — restarts the session in place rather than
+                bouncing back to the chooser, so "study more" continues the list. */}
+            <button
+              type="button"
+              onClick={onStudyMore}
+              className={buttonVariants({ variant: 'outline', size: 'lg' })}
+            >
               {t('learn.studyMore')}
-            </Link>
+            </button>
           </div>
         </CardContent>
       </Card>
