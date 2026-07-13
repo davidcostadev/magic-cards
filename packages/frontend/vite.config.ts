@@ -19,6 +19,14 @@ export default defineConfig({
     port: 5000,
     host: true,
     allowedHosts: true,
+    // Same-origin in production: the preview server proxies API calls to the backend so the
+    // browser only ever talks to this origin (no CORS, no exposed backend port). BACKEND_URL
+    // points at the backend over the internal network; falls back to localhost for `vite preview`
+    // run locally against a dev backend.
+    proxy: {
+      '/v1': { target: process.env.BACKEND_URL ?? 'http://localhost:3001', changeOrigin: true },
+      '/docs': { target: process.env.BACKEND_URL ?? 'http://localhost:3001', changeOrigin: true },
+    },
   },
   resolve: {
     alias: {
