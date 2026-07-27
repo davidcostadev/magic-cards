@@ -15,7 +15,10 @@
       "type": "open",
       "question": "Describe the full agentic loop lifecycle with the Messages API.",
       "answer": "1. **Call** `POST /v1/messages` with `messages`, `tools`, and a system prompt.\n2. **Inspect `stop_reason`**. If it is `end_turn`, the turn is done. If it is `tool_use`, the model wants a tool.\n3. **Append the assistant turn verbatim** - the whole `response.content` array, including every `tool_use` block (and any `thinking` blocks).\n4. **Execute** each requested tool in your own code.\n5. **Append a `user` message** whose content is only `tool_result` blocks, each carrying the matching `tool_use_id`.\n6. **Re-invoke** the API with the grown `messages` array.\n7. Repeat from step 2 until `stop_reason` is no longer `tool_use`.\n\nThe loop is driven by **`stop_reason`**, not by parsing text. Your code owns execution and I/O; the model owns the decision of what to call next.",
-      "tags": ["agentic-loop", "messages-api"]
+      "tags": ["agentic-loop", "messages-api"],
+      "hints": [
+        "Four moving parts: the call, the one field you branch on, what you append, and the fact that you go back to step two."
+      ]
     },
     {
       "id": "ccaf1-open-002",
@@ -23,7 +26,7 @@
       "type": "open",
       "question": "After a response comes back with `stop_reason: \"tool_use\"`, exactly what do you append to `messages` before the next call?",
       "answer": "Two messages, in order:\n\n1. The **assistant** message containing the model's **entire** `content` array, unmodified. Do not drop the text blocks, do not drop `thinking` blocks, do not rewrite the `tool_use` blocks.\n2. A **user** message whose `content` is a list of `tool_result` blocks - **and nothing else**. Each block needs `tool_use_id` matching the `tool_use.id` it answers.\n\n```json\n{ \"role\": \"user\", \"content\": [\n  { \"type\": \"tool_result\", \"tool_use_id\": \"toolu_01A\", \"content\": \"72F, clear\" }\n]}\n```\n\nAdding trailing text after the `tool_result` blocks is a documented mistake: it can produce an empty or degraded response. If several `tool_use` blocks came back in one turn, **all** their results go in that single user message.",
-      "hints": ["Two messages, and the second one is allowed to contain only one kind of block."],
+      "hints": ["Two messages - and the second one is allowed to contain only one kind of block."],
       "tags": ["agentic-loop", "tool-result"]
     },
     {
@@ -32,7 +35,8 @@
       "type": "open",
       "question": "Anti-pattern 1: why is natural-language termination (\"stop when the model writes DONE\") wrong?",
       "answer": "Because it makes the **control flow depend on free-form text**, which is not a contract.\n\n- The model can produce the sentinel inside an explanation, a quote, or a code sample and halt a healthy run early.\n- It can finish correctly and phrase it differently (\"All set!\"), so the loop never terminates.\n- Translation, streaming, and formatting changes silently break the parser.\n\nThe API already gives you a **typed, structured** signal for this: `stop_reason`. `end_turn` means the model is finished; `tool_use` means it needs a tool. Branch on that field. If you need a richer structured verdict, make the model call a `submit_final_answer`-style tool so the completion signal is a `tool_use` block with a validated schema, not prose.",
-      "tags": ["anti-patterns", "termination"]
+      "tags": ["anti-patterns", "termination"],
+      "hints": ["The API already hands you a typed field for this. Prose is not a contract."]
     },
     {
       "id": "ccaf1-open-004",
@@ -40,7 +44,10 @@
       "type": "open",
       "question": "Anti-pattern 2: why is an arbitrary iteration cap not a termination strategy?",
       "answer": "A cap like `for i in range(10)` is a **safety backstop**, not a definition of \"done\". Used as the primary control it fails in both directions:\n\n- **Too low**: a legitimately long task is cut off mid-work and returns a partial answer that looks complete.\n- **Too high**: a stuck agent burns tokens and latency for the full budget before anyone notices.\n- It hides the real bug: an agent that cannot converge usually has a bad tool description, a missing tool, or an unclear goal.\n\nCorrect design: terminate on **`stop_reason`**, and keep a cap only as a circuit breaker that, when tripped, is treated as a **failure path** - log it, emit a metric, and escalate to a human. A silent `break` that returns whatever was accumulated is the dangerous version.",
-      "tags": ["anti-patterns", "termination", "reliability"]
+      "tags": ["anti-patterns", "termination", "reliability"],
+      "hints": [
+        "It fails in both directions - too low and too high - and it hides the real bug underneath."
+      ]
     },
     {
       "id": "ccaf1-open-005",
@@ -48,7 +55,8 @@
       "type": "open",
       "question": "Anti-pattern 3: why is \"the response contains a text block\" not a completion signal?",
       "answer": "Because a single assistant turn can contain **both** text and `tool_use` blocks. The model routinely narrates before it acts:\n\n```json\n\"content\": [\n  { \"type\": \"text\", \"text\": \"Let me look up that order.\" },\n  { \"type\": \"tool_use\", \"name\": \"get_order\", \"id\": \"toolu_01A\", \"input\": {...} }\n]\n```\n\nIf you treat the presence of text as \"the agent answered\", you return the narration to the user, never execute `get_order`, and the conversation is left in an invalid state (an assistant `tool_use` with no matching `tool_result`), which breaks the next request.\n\nThe rule: **`stop_reason` decides whether the turn is over; the content array only tells you what is in it.** Iterate the array to find the blocks you need, but branch on `stop_reason`.",
-      "tags": ["anti-patterns", "termination"]
+      "tags": ["anti-patterns", "termination"],
+      "hints": ["A single assistant turn can hold more than one kind of block at the same time."]
     },
     {
       "id": "ccaf1-open-006",
@@ -56,7 +64,8 @@
       "type": "open",
       "question": "What is the difference between a workflow and an agent, in Anthropic's terminology?",
       "answer": "- **Workflow**: LLMs and tools orchestrated through **predefined code paths**. Your code decides the sequence; the model fills in the steps. Predictable, cheap, easy to test and trace.\n- **Agent**: a system where the LLM **dynamically directs its own process and tool usage**, running in a loop with feedback from the environment. Flexible, handles open-ended work, but less predictable and harder to bound in cost.\n\nThe guidance is to find the **simplest thing that works**: a single well-prompted call, then a workflow, and only then an agent. Agents earn their extra cost and latency when the number of steps cannot be predicted in advance and the environment gives real feedback the model can act on.",
-      "tags": ["patterns", "workflow-vs-agent"]
+      "tags": ["patterns", "workflow-vs-agent"],
+      "hints": ["Ask who owns the control flow: your code, or the model?"]
     },
     {
       "id": "ccaf1-open-007",
@@ -64,7 +73,8 @@
       "type": "open",
       "question": "Describe the orchestrator-workers pattern and when it is the right choice.",
       "answer": "A **central orchestrator LLM decomposes a task at runtime**, dispatches subtasks to worker LLMs (often in parallel), and synthesizes their outputs into one result.\n\nUse it when **the subtasks cannot be predetermined** - they depend on the input. Canonical examples: a code change that touches an unknown set of files; a research question that needs an unknown set of sources.\n\nContrast with **parallelization/sectioning**, where *your code* splits the work along a fixed, known decomposition. The distinguishing question: *who decides how the work is divided?* If it is the model at runtime, that is orchestrator-workers. If it is a hardcoded split, it is parallelization.\n\nIn Claude Code terms, the orchestrator spawns subagents; each worker gets its own clean context window and returns a compact result, which also keeps the orchestrator's context small.",
-      "tags": ["patterns", "multi-agent", "orchestrator"]
+      "tags": ["patterns", "multi-agent", "orchestrator"],
+      "hints": ["The giveaway is *who* decides how the work gets divided, and *when*."]
     },
     {
       "id": "ccaf1-open-008",
@@ -72,7 +82,8 @@
       "type": "open",
       "question": "Describe the evaluator-optimizer pattern.",
       "answer": "Two roles in a loop: one LLM call **generates** a candidate, a second LLM call **evaluates** it against explicit criteria and returns actionable feedback, and the generator revises. Repeat until the evaluator accepts or a budget is reached.\n\nUse it when **both** conditions hold:\n1. You can state clear evaluation criteria.\n2. Iterative refinement measurably improves the output - that is, a human reviewer would also give useful feedback on a first draft.\n\nGood fits: literary translation, complex search where results must be judged and the query refined, writing that must satisfy a rubric. Bad fit: tasks with no verifiable criteria, where the evaluator just produces confident noise and the loop never converges.",
-      "tags": ["patterns", "evaluator-optimizer"]
+      "tags": ["patterns", "evaluator-optimizer"],
+      "hints": ["Two roles in a loop. It only works when one of them can judge reliably."]
     },
     {
       "id": "ccaf1-open-009",
@@ -80,7 +91,8 @@
       "type": "open",
       "question": "Parallelization has two variants - sectioning and voting. What is the difference?",
       "answer": "Both run LLM calls **concurrently**, but for opposite reasons:\n\n- **Sectioning**: split the work into **independent subtasks** and run each on a different slice. The results are combined because each covers a different part. Example: one call screens a request for policy violations while another drafts the answer; a long document split into chunks, each summarized.\n- **Voting**: run **the same task several times** (different prompts, temperatures, or framings) to get diverse attempts, then aggregate - majority vote, best-of-n, or \"flag if any run says unsafe\". Buys **confidence**, not coverage.\n\nMnemonic: sectioning divides *the work*; voting duplicates *the work* and divides *the risk*. Voting is the standard answer for high-stakes checks where a single false negative is expensive.",
-      "tags": ["patterns", "parallelization"]
+      "tags": ["patterns", "parallelization"],
+      "hints": ["One divides the work; the other duplicates it. Ask what each one is buying."]
     },
     {
       "id": "ccaf1-open-010",
@@ -88,7 +100,10 @@
       "type": "open",
       "question": "What is prompt chaining and what does it trade away?",
       "answer": "Decomposing a task into a **fixed sequence** of LLM calls, where each call's output is the next call's input, often with a programmatic gate (\"check\") between steps. Example: generate marketing copy -> verify it meets the brief -> translate it.\n\nIt **trades latency for accuracy**: more round trips, but each call has one narrow job, so each is more reliable, and you can validate between steps instead of only at the end.\n\nUse it when the task decomposes cleanly into steps you know in advance. If you cannot name the steps up front, you want routing, orchestrator-workers, or an agent instead.",
-      "tags": ["patterns", "prompt-chaining"]
+      "tags": ["patterns", "prompt-chaining"],
+      "hints": [
+        "Fixed steps with checks between them. Something gets worse so accuracy can get better."
+      ]
     },
     {
       "id": "ccaf1-open-011",
@@ -96,7 +111,10 @@
       "type": "open",
       "question": "What is the routing pattern and what problem does it solve?",
       "answer": "A first step **classifies** the input, then dispatches it to a **specialized** downstream prompt, model, or tool chain.\n\nIt solves the problem that optimizing one prompt for several distinct input categories degrades all of them - fixing refund handling breaks technical troubleshooting. Routing gives each category its own separation of concerns.\n\nSecond benefit: **cost/latency tiering**. Route easy, high-volume queries to a smaller, faster model and reserve the largest model for hard ones. This is the standard answer when a support scenario asks how to cut cost without hurting quality on complex tickets.",
-      "tags": ["patterns", "routing"]
+      "tags": ["patterns", "routing"],
+      "hints": [
+        "Think about what happens to one prompt forced to serve three very different kinds of input."
+      ]
     },
     {
       "id": "ccaf1-open-012",
@@ -104,7 +122,10 @@
       "type": "open",
       "question": "What is the agent-computer interface (ACI) and why does Anthropic emphasize it?",
       "answer": "The ACI is the surface **between the model and its tools** - tool names, descriptions, input schemas, and the shape of the results you return. It is the agent equivalent of a human-computer interface.\n\nAnthropic's guidance is that teams spend most of their effort on the prompt and almost none on the ACI, when in practice **most agent failures are ACI failures**: an ambiguous description, an argument the model must compute instead of copy, a result that is 40 KB of raw JSON.\n\nPractical rules: write the tool description as if for a new engineer with no context; use formats the model already writes well; remove arguments the model can get wrong (absolute over relative paths); poka-yoke the schema so the mistake is impossible; and test on real inputs, reading the model's failures as bug reports about your interface.",
-      "tags": ["aci", "tool-design", "best-practices"]
+      "tags": ["aci", "tool-design", "best-practices"],
+      "hints": [
+        "It is the surface between the model and its tools - and the place teams under-invest."
+      ]
     },
     {
       "id": "ccaf1-open-013",
@@ -112,7 +133,8 @@
       "type": "open",
       "question": "How do you design human-in-the-loop escalation inside an agentic system?",
       "answer": "Escalation is a **first-class path**, not an error fallback. Design it as:\n\n1. **Explicit triggers** you can enumerate: low model confidence, a policy/PII/compliance category, an action above a value threshold (refund > $X), repeated tool failures, the iteration circuit breaker tripping, or the user asking for a human.\n2. **A tool, not a prose convention**: give the model an `escalate_to_human` tool with a schema (`reason`, `summary`, `urgency`). Then escalation arrives as a typed `tool_use` block you can route, meter, and test - not a sentence you have to parse.\n3. **Handoff context**: pass the conversation summary and what was already tried, so the human does not restart from zero.\n4. **Approval gates** for irreversible actions - the agent proposes, a human confirms, then the tool executes.\n\nThe symmetric failure modes are escalating everything (no value delivered) and never escalating (the agent improvises on a case it cannot handle).",
-      "tags": ["human-in-the-loop", "escalation", "reliability"]
+      "tags": ["human-in-the-loop", "escalation", "reliability"],
+      "hints": ["Make it a typed thing the model can call, and enumerate what sets it off."]
     },
     {
       "id": "ccaf1-open-014",
@@ -120,7 +142,8 @@
       "type": "open",
       "question": "The Messages API is stateless. How do you manage session state across turns in a production agent?",
       "answer": "Every request must carry the **entire** `messages` array; the API stores nothing between calls. So the session lives in your infrastructure:\n\n- **Persist the message list** per conversation (Redis, Postgres, a document store) keyed by session id, and reload it on the next turn.\n- **Persist it as structured blocks**, not rendered text - `tool_use`/`tool_result` pairs must survive the round trip intact or the next request is invalid.\n- **Never drop a `tool_use` without its `tool_result`.** When trimming history, remove complete pairs.\n- **Compact when it grows**: summarize old turns into a compact block and keep recent turns verbatim.\n- **Keep application state out of the transcript.** Order status, cart, and auth belong in your database, reachable through tools; the transcript is the conversation, not the system of record.\n- Put a stable prefix (system prompt + tools) first so **prompt caching** can absorb the re-sent history.",
-      "tags": ["state", "sessions", "context"]
+      "tags": ["state", "sessions", "context"],
+      "hints": ["The API remembers nothing. So who remembers - and what must never be split apart?"]
     },
     {
       "id": "ccaf1-open-015",
@@ -128,7 +151,8 @@
       "type": "open",
       "question": "Why use subagents, and what is the main architectural benefit?",
       "answer": "**Context isolation.** Each subagent runs with its own context window and its own system prompt, does a bounded piece of work (search a subsystem, review one dimension, verify one claim), and returns a **compact result** to the parent. The parent's context grows by the summary, not by everything the subagent had to read.\n\nSecondary benefits: parallelism (independent subagents run concurrently), specialization (a narrower prompt and a smaller toolset per role), and least-privilege (a read-only researcher gets no write tools).\n\nThe cost: each subagent starts with **no memory of the parent conversation**, so the spawn prompt must be self-contained. Subagents are also poor for tightly coupled work that needs constant back-and-forth - the handoff overhead exceeds the benefit.",
-      "tags": ["multi-agent", "subagents", "context"]
+      "tags": ["multi-agent", "subagents", "context"],
+      "hints": ["The main benefit is about context windows, not about speed."]
     },
     {
       "id": "ccaf1-open-016",
@@ -136,7 +160,10 @@
       "type": "open",
       "question": "What guardrails belong around an autonomous agent that takes real actions?",
       "answer": "- **Sandbox the environment** - containers, scoped credentials, a test database - and test extensively there before production.\n- **Least privilege on tools**: expose only what the task needs; separate read tools from write tools; require an approval gate for destructive or irreversible ones.\n- **Circuit breakers**: max iterations, max tokens, max wall-clock, max spend per session. Tripping one is a failure that escalates, not a silent return.\n- **Validate tool inputs in your code** - never trust that the model's arguments are in range just because the schema says so.\n- **Idempotency keys** on side-effecting tools, because retries and loops will re-issue calls.\n- **Transparency**: log every step (the plan, each `tool_use`, each result) so a run can be replayed and audited.\n\nThe framing from *Building effective agents*: agents are for **scaling tasks in trusted environments**; the trust is something you engineer, not assume.",
-      "tags": ["guardrails", "reliability", "security"]
+      "tags": ["guardrails", "reliability", "security"],
+      "hints": [
+        "Least privilege, circuit breakers, a sandbox - plus what happens the moment a breaker trips."
+      ]
     },
     {
       "id": "ccaf1-open-017",
@@ -144,7 +171,10 @@
       "type": "open",
       "question": "How should an agent loop handle `stop_reason: \"max_tokens\"` when it happens in the middle of a tool call?",
       "answer": "Treat the turn as **truncated and unusable as-is**. A `tool_use` block cut off mid-JSON has incomplete `input`, so executing it would act on partial arguments - the worst outcome.\n\nHandling:\n1. Detect `stop_reason == \"max_tokens\"` explicitly, before you scan for `tool_use` blocks.\n2. Do **not** execute a truncated tool call.\n3. Retry with a higher `max_tokens`, or continue the assistant turn by appending it and asking the model to resume.\n4. If it recurs, the real fix is upstream: the model is being asked to emit too much in one turn. Split the work, or trim the tool outputs feeding the context.\n\nRelated: `model_context_window_exceeded` means the response filled the **model's** context window rather than your `max_tokens` - also truncated, but raising `max_tokens` will not help; you must shrink the input.",
-      "tags": ["stop-reason", "error-handling", "agentic-loop"]
+      "tags": ["stop-reason", "error-handling", "agentic-loop"],
+      "hints": [
+        "The tool call may have been cut off mid-JSON. What must you absolutely not do with it?"
+      ]
     },
     {
       "id": "ccaf1-open-018",
@@ -152,7 +182,8 @@
       "type": "open",
       "question": "What does `stop_reason: \"pause_turn\"` mean and how do you handle it?",
       "answer": "It appears with **server-side tools** (for example web search), where Anthropic runs its own sampling loop for you. `pause_turn` means that internal loop hit its iteration limit while the turn was still in progress - it is a **checkpoint, not a completion**.\n\nHandling: append the assistant `content` you received to `messages` and call the API again with the same tools. The model resumes where it paused. You do **not** execute anything yourself, unlike `tool_use`.\n\nTreating `pause_turn` as `end_turn` is the classic bug: you return a half-finished answer to the user and never learn that the search was still running.",
-      "tags": ["stop-reason", "server-tools", "agentic-loop"]
+      "tags": ["stop-reason", "server-tools", "agentic-loop"],
+      "hints": ["It comes from server-side tools. It is a checkpoint, not a finish line."]
     },
     {
       "id": "ccaf1-open-019",
@@ -160,7 +191,8 @@
       "type": "open",
       "question": "The model returns three `tool_use` blocks in one assistant turn. How do you respond?",
       "answer": "Execute all three - **in parallel if they are independent** - and return **all three `tool_result` blocks in a single user message**, each with its matching `tool_use_id`.\n\n```json\n{ \"role\": \"user\", \"content\": [\n  { \"type\": \"tool_result\", \"tool_use_id\": \"toolu_01\", \"content\": \"...\" },\n  { \"type\": \"tool_result\", \"tool_use_id\": \"toolu_02\", \"content\": \"...\" },\n  { \"type\": \"tool_result\", \"tool_use_id\": \"toolu_03\", \"content\": \"...\" }\n]}\n```\n\nSending them one per message, or answering only the first, leaves unmatched `tool_use` blocks and produces an API error. Parallel tool calls are one of the cheapest latency wins in an agent loop - a turn that needed three sequential round trips becomes one.",
-      "tags": ["tool-use", "parallel-tools", "agentic-loop"]
+      "tags": ["tool-use", "parallel-tools", "agentic-loop"],
+      "hints": ["How many user messages do you send back?"]
     },
     {
       "id": "ccaf1-open-020",
@@ -168,7 +200,8 @@
       "type": "open",
       "question": "A tool throws an exception. What do you send back to the model?",
       "answer": "A `tool_result` block for that `tool_use_id` with **`is_error: true`** and a short, actionable message:\n\n```json\n{ \"type\": \"tool_result\", \"tool_use_id\": \"toolu_01A\",\n  \"is_error\": true,\n  \"content\": \"Order not found. order_id must be the 8-digit number from the receipt; got 'ABC'.\" }\n```\n\nWhy this and not the alternatives:\n- **Do not crash the loop** - the model can often recover (fix the argument, try another tool, or tell the user).\n- **Do not silently return an empty result** - the model reads that as \"no data exists\" and confidently reports a wrong conclusion.\n- **Do not dump a raw stack trace** - it burns context and tells the model nothing it can act on.\n- **Do not omit the block** - every `tool_use` needs a matching `tool_result`, or the next request is malformed.\n\nDistinguish **recoverable** errors (bad argument, not found) from **fatal** ones (auth failure, service down); the second kind should break out to your error path, not be handed to the model to retry forever.",
-      "tags": ["error-handling", "tool-use", "is-error"]
+      "tags": ["error-handling", "tool-use", "is-error"],
+      "hints": ["There is a boolean for exactly this, and four tempting wrong ways to skip it."]
     },
     {
       "id": "ccaf1-quiz-001",
@@ -177,16 +210,31 @@
       "question": "You are building a customer support agent. Which signal should drive the loop's decision to continue or stop?",
       "answer": "`stop_reason` is the API's typed control signal. `tool_use` means continue the loop; `end_turn` means the turn is complete. Everything else - text content, sentinel words, iteration counters - is either unreliable or a backstop.",
       "choices": [
-        { "id": "a", "text": "The `stop_reason` field on each response", "isCorrect": true },
-        { "id": "b", "text": "Whether the response contains a text block", "isCorrect": false },
+        {
+          "id": "a",
+          "text": "The `stop_reason` field on each response",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Whether the response contains a text block",
+          "isCorrect": false
+        },
         {
           "id": "c",
           "text": "Whether the model wrote a termination phrase such as TASK COMPLETE",
           "isCorrect": false
         },
-        { "id": "d", "text": "A fixed maximum iteration count", "isCorrect": false }
+        {
+          "id": "d",
+          "text": "A fixed maximum iteration count",
+          "isCorrect": false
+        }
       ],
-      "tags": ["agentic-loop", "anti-patterns"]
+      "tags": ["agentic-loop", "anti-patterns"],
+      "hints": [
+        "One of these is a typed field on every response. The others are inferences you are making."
+      ]
     },
     {
       "id": "ccaf1-quiz-002",
@@ -216,7 +264,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["agentic-loop", "tool-result"]
+      "tags": ["agentic-loop", "tool-result"],
+      "hints": ["Watch what is allowed to appear inside the follow-up user message."]
     },
     {
       "id": "ccaf1-quiz-003",
@@ -225,12 +274,29 @@
       "question": "A research pipeline must break a question into sub-questions that depend on the question itself, delegate each, and merge the findings. Which pattern is this?",
       "answer": "Orchestrator-workers. The decomposition happens at runtime and is decided by the model, which is exactly what separates it from parallelization/sectioning, where the split is hardcoded by your application.",
       "choices": [
-        { "id": "a", "text": "Orchestrator-workers", "isCorrect": true },
-        { "id": "b", "text": "Parallelization with sectioning", "isCorrect": false },
-        { "id": "c", "text": "Prompt chaining", "isCorrect": false },
-        { "id": "d", "text": "Evaluator-optimizer", "isCorrect": false }
+        {
+          "id": "a",
+          "text": "Orchestrator-workers",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Parallelization with sectioning",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Prompt chaining",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Evaluator-optimizer",
+          "isCorrect": false
+        }
       ],
-      "tags": ["patterns", "multi-agent"]
+      "tags": ["patterns", "multi-agent"],
+      "hints": ["Who decided on the sub-questions - your code in advance, or the model at runtime?"]
     },
     {
       "id": "ccaf1-quiz-004",
@@ -239,12 +305,29 @@
       "question": "A compliance check must almost never miss a violation. You run the same classification three times with different prompts and flag the content if any run says unsafe. Which pattern is this?",
       "answer": "Parallelization - voting variant. The same task is run several times to get diverse looks at it, and the results are aggregated. Sectioning would be splitting different subtasks across calls, not repeating one task.",
       "choices": [
-        { "id": "a", "text": "Parallelization (voting)", "isCorrect": true },
-        { "id": "b", "text": "Parallelization (sectioning)", "isCorrect": false },
-        { "id": "c", "text": "Routing", "isCorrect": false },
-        { "id": "d", "text": "Orchestrator-workers", "isCorrect": false }
+        {
+          "id": "a",
+          "text": "Parallelization (voting)",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Parallelization (sectioning)",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Routing",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Orchestrator-workers",
+          "isCorrect": false
+        }
       ],
-      "tags": ["patterns", "parallelization"]
+      "tags": ["patterns", "parallelization"],
+      "hints": ["Same task repeated, results aggregated. Is that buying coverage or confidence?"]
     },
     {
       "id": "ccaf1-quiz-005",
@@ -274,7 +357,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["patterns", "routing"]
+      "tags": ["patterns", "routing"],
+      "hints": ["Distinct categories, each one degrading the others inside a single shared prompt."]
     },
     {
       "id": "ccaf1-quiz-006",
@@ -298,9 +382,16 @@
           "text": "The team wants lower latency and more predictable cost",
           "isCorrect": false
         },
-        { "id": "d", "text": "The output must conform to a strict JSON schema", "isCorrect": false }
+        {
+          "id": "d",
+          "text": "The output must conform to a strict JSON schema",
+          "isCorrect": false
+        }
       ],
-      "tags": ["patterns", "workflow-vs-agent"]
+      "tags": ["patterns", "workflow-vs-agent"],
+      "hints": [
+        "Agents earn their unpredictability only when the steps are genuinely unknowable up front."
+      ]
     },
     {
       "id": "ccaf1-quiz-007",
@@ -314,7 +405,11 @@
           "text": "Hitting the cap is a failure, but it is reported as a successful answer",
           "isCorrect": true
         },
-        { "id": "b", "text": "Ten iterations is too few for any real agent", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "Ten iterations is too few for any real agent",
+          "isCorrect": false
+        },
         {
           "id": "c",
           "text": "Iteration caps are forbidden in agentic systems",
@@ -326,7 +421,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["anti-patterns", "reliability"]
+      "tags": ["anti-patterns", "reliability"],
+      "hints": ["Ask what hitting the cap actually tells you about the run."]
     },
     {
       "id": "ccaf1-quiz-008",
@@ -345,10 +441,21 @@
           "text": "No `tool_result` at all, so the model knows nothing came back",
           "isCorrect": false
         },
-        { "id": "c", "text": "A `tool_result` with empty content", "isCorrect": false },
-        { "id": "d", "text": "A raw stack trace as the `tool_result` content", "isCorrect": false }
+        {
+          "id": "c",
+          "text": "A `tool_result` with empty content",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A raw stack trace as the `tool_result` content",
+          "isCorrect": false
+        }
       ],
-      "tags": ["error-handling", "tool-use"]
+      "tags": ["error-handling", "tool-use"],
+      "hints": [
+        "Every tool_use needs a matching result. The question is what that result should say."
+      ]
     },
     {
       "id": "ccaf1-quiz-009",
@@ -357,12 +464,29 @@
       "question": "Which `stop_reason` tells you the model produced a safety refusal?",
       "answer": "`refusal`. Inspect `stop_details` for the category; a common handling strategy is to surface a friendly message and optionally retry on a fallback model.",
       "choices": [
-        { "id": "a", "text": "`refusal`", "isCorrect": true },
-        { "id": "b", "text": "`end_turn` with empty content", "isCorrect": false },
-        { "id": "c", "text": "`stop_sequence`", "isCorrect": false },
-        { "id": "d", "text": "`pause_turn`", "isCorrect": false }
+        {
+          "id": "a",
+          "text": "`refusal`",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "`end_turn` with empty content",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "`stop_sequence`",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "`pause_turn`",
+          "isCorrect": false
+        }
       ],
-      "tags": ["stop-reason"]
+      "tags": ["stop-reason"],
+      "hints": ["The value is named after exactly what the model did."]
     },
     {
       "id": "ccaf1-quiz-010",
@@ -392,7 +516,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["stop-reason", "server-tools"]
+      "tags": ["stop-reason", "server-tools"],
+      "hints": ["Do you execute anything yourself here?"]
     },
     {
       "id": "ccaf1-quiz-011",
@@ -422,7 +547,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["tool-use", "parallel-tools"]
+      "tags": ["tool-use", "parallel-tools"],
+      "hints": ["Count the user messages, then count the tool_result blocks."]
     },
     {
       "id": "ccaf1-quiz-012",
@@ -452,7 +578,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["structured-output", "termination", "tool-use"]
+      "tags": ["structured-output", "termination", "tool-use"],
+      "hints": ["Prose you have to parse, versus a schema the API validates for you."]
     },
     {
       "id": "ccaf1-quiz-013",
@@ -482,7 +609,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["state", "messages-api"]
+      "tags": ["state", "messages-api"],
+      "hints": ["Ask what the API remembers between two consecutive calls."]
     },
     {
       "id": "ccaf1-quiz-014",
@@ -496,15 +624,24 @@
           "text": "Have each worker return a compact structured summary instead of raw output",
           "isCorrect": true
         },
-        { "id": "b", "text": "Increase the orchestrator's `max_tokens`", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "Increase the orchestrator's `max_tokens`",
+          "isCorrect": false
+        },
         {
           "id": "c",
           "text": "Run the workers sequentially instead of in parallel",
           "isCorrect": false
         },
-        { "id": "d", "text": "Move the worker outputs into the system prompt", "isCorrect": false }
+        {
+          "id": "d",
+          "text": "Move the worker outputs into the system prompt",
+          "isCorrect": false
+        }
       ],
-      "tags": ["multi-agent", "context", "subagents"]
+      "tags": ["multi-agent", "context", "subagents"],
+      "hints": ["Why do subagents exist in the first place?"]
     },
     {
       "id": "ccaf1-quiz-015",
@@ -534,7 +671,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["human-in-the-loop", "guardrails", "security"]
+      "tags": ["human-in-the-loop", "guardrails", "security"],
+      "hints": ["Which one of these is enforcement, and which are suggestions?"]
     },
     {
       "id": "ccaf1-quiz-016",
@@ -543,12 +681,29 @@
       "question": "A drafting step is followed by a critique step that returns feedback, and the draft is regenerated until the critique passes. Which pattern is this?",
       "answer": "Evaluator-optimizer. Two roles - generator and evaluator - in a refinement loop with explicit criteria.",
       "choices": [
-        { "id": "a", "text": "Evaluator-optimizer", "isCorrect": true },
-        { "id": "b", "text": "Prompt chaining", "isCorrect": false },
-        { "id": "c", "text": "Routing", "isCorrect": false },
-        { "id": "d", "text": "Orchestrator-workers", "isCorrect": false }
+        {
+          "id": "a",
+          "text": "Evaluator-optimizer",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Prompt chaining",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Routing",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Orchestrator-workers",
+          "isCorrect": false
+        }
       ],
-      "tags": ["patterns", "evaluator-optimizer"]
+      "tags": ["patterns", "evaluator-optimizer"],
+      "hints": ["A generator and a judge, looping until the judge is satisfied."]
     },
     {
       "id": "ccaf1-quiz-017",
@@ -567,14 +722,19 @@
           "text": "The model's tone does not match the brand voice",
           "isCorrect": false
         },
-        { "id": "c", "text": "The agent's answers are too long", "isCorrect": false },
+        {
+          "id": "c",
+          "text": "The agent's answers are too long",
+          "isCorrect": false
+        },
         {
           "id": "d",
           "text": "The conversation exceeds the context window after 30 turns",
           "isCorrect": false
         }
       ],
-      "tags": ["aci", "tool-design"]
+      "tags": ["aci", "tool-design"],
+      "hints": ["Right tool, wrong arguments. What does that combination point at?"]
     },
     {
       "id": "ccaf1-quiz-018",
@@ -604,7 +764,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["best-practices", "workflow-vs-agent"]
+      "tags": ["best-practices", "workflow-vs-agent"],
+      "hints": ["The word Anthropic keeps repeating is simplicity."]
     },
     {
       "id": "ccaf1-quiz-019",
@@ -634,7 +795,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["guardrails", "human-in-the-loop", "scenario-monitoring"]
+      "tags": ["guardrails", "human-in-the-loop", "scenario-monitoring"],
+      "hints": ["Split diagnosis from remediation, then ask which half needs a human."]
     },
     {
       "id": "ccaf1-quiz-020",
@@ -664,7 +826,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["anti-patterns"]
+      "tags": ["anti-patterns"],
+      "hints": ["Three of these are mistakes. One is the documented recommendation."]
     },
     {
       "id": "ccaf1-type-001",
@@ -673,7 +836,8 @@
       "question": "Which response field should drive an agentic loop's continue/stop decision?",
       "answer": "`stop_reason` - the typed control signal on every Messages API response.",
       "shortAnswer": "stop_reason",
-      "tags": ["agentic-loop"]
+      "tags": ["agentic-loop"],
+      "hints": ["It sits on every response, right next to the content array."]
     },
     {
       "id": "ccaf1-type-002",
@@ -682,7 +846,8 @@
       "question": "Which `stop_reason` value means the model wants you to execute a tool?",
       "answer": "`tool_use`. Execute the requested tools, then append the results as `tool_result` blocks and re-invoke.",
       "shortAnswer": "tool_use",
-      "tags": ["stop-reason"]
+      "tags": ["stop-reason"],
+      "hints": ["It is named after the block type the model just emitted."]
     },
     {
       "id": "ccaf1-type-003",
@@ -691,7 +856,8 @@
       "question": "Which `stop_reason` value means the model finished its response naturally?",
       "answer": "`end_turn` - the most common value; use the response as-is.",
       "shortAnswer": "end_turn",
-      "tags": ["stop-reason"]
+      "tags": ["stop-reason"],
+      "hints": ["Two words joined by an underscore - the most common value of all."]
     },
     {
       "id": "ccaf1-type-004",
@@ -700,7 +866,8 @@
       "question": "Which field on a `tool_result` block links it to the `tool_use` block it answers?",
       "answer": "`tool_use_id`. It must exactly match the `id` of the `tool_use` block from the assistant turn.",
       "shortAnswer": "tool_use_id",
-      "tags": ["tool-use"]
+      "tags": ["tool-use"],
+      "hints": ["It has to match the id of the block it is answering."]
     },
     {
       "id": "ccaf1-type-005",
@@ -709,7 +876,8 @@
       "question": "Which boolean flag on a `tool_result` tells the model the tool call failed?",
       "answer": "`is_error`. Set it to `true` and put a short, actionable message in `content`.",
       "shortAnswer": "is_error",
-      "tags": ["error-handling"]
+      "tags": ["error-handling"],
+      "hints": ["Two words with an underscore, and its value is a boolean."]
     },
     {
       "id": "ccaf1-type-006",
@@ -718,7 +886,8 @@
       "question": "Name the multi-agent pattern where a central LLM decomposes the task at runtime and delegates subtasks it decided on.",
       "answer": "Orchestrator-workers. The runtime, model-decided decomposition is what separates it from parallelization/sectioning.",
       "shortAnswer": "orchestrator-workers",
-      "tags": ["patterns"]
+      "tags": ["patterns"],
+      "hints": ["A hyphenated pair: the one in charge, and the ones doing the work."]
     },
     {
       "id": "ccaf1-type-007",
@@ -727,7 +896,8 @@
       "question": "What is the three-letter acronym for the model-facing surface of tool names, descriptions, schemas, and result formats?",
       "answer": "ACI - agent-computer interface. Anthropic argues teams under-invest in it relative to prompt engineering.",
       "shortAnswer": "ACI",
-      "tags": ["aci"]
+      "tags": ["aci"],
+      "hints": ["Agent-computer-something."]
     },
     {
       "id": "ccaf1-type-008",
@@ -736,7 +906,8 @@
       "question": "Which `stop_reason` indicates the response filled the model's own context window rather than your `max_tokens` limit?",
       "answer": "`model_context_window_exceeded`. Raising `max_tokens` will not help; you must reduce the input.",
       "shortAnswer": "model_context_window_exceeded",
-      "tags": ["stop-reason", "context"]
+      "tags": ["stop-reason", "context"],
+      "hints": ["Long and literal - it names the exact limit that was hit."]
     },
     {
       "id": "ccaf1-match-001",
@@ -745,16 +916,29 @@
       "question": "Match each `stop_reason` to what it means.",
       "answer": "These five cover almost every branch an agent loop needs. `tool_use` and `pause_turn` both continue the loop, but only `tool_use` requires you to execute something.",
       "matchPairs": [
-        { "left": "end_turn", "right": "Model finished naturally - use the response" },
-        { "left": "tool_use", "right": "Model wants a tool executed - return tool_result" },
+        {
+          "left": "end_turn",
+          "right": "Model finished naturally - use the response"
+        },
+        {
+          "left": "tool_use",
+          "right": "Model wants a tool executed - return tool_result"
+        },
         {
           "left": "max_tokens",
           "right": "Truncated at your output limit - do not trust partial content"
         },
-        { "left": "pause_turn", "right": "Server-tool loop checkpoint - resend to continue" },
-        { "left": "refusal", "right": "Safety classifier declined the request" }
+        {
+          "left": "pause_turn",
+          "right": "Server-tool loop checkpoint - resend to continue"
+        },
+        {
+          "left": "refusal",
+          "right": "Safety classifier declined the request"
+        }
       ],
-      "tags": ["stop-reason"]
+      "tags": ["stop-reason"],
+      "hints": ["Two of these mean \"keep going\", but only one asks you to execute something."]
     },
     {
       "id": "ccaf1-match-002",
@@ -784,7 +968,10 @@
           "right": "Clear criteria plus measurable gain from iterating on a draft"
         }
       ],
-      "tags": ["patterns"]
+      "tags": ["patterns"],
+      "hints": [
+        "Sort by two questions: is the split fixed or decided at runtime, and is the goal coverage or confidence?"
+      ]
     },
     {
       "id": "ccaf1-match-003",
@@ -793,7 +980,10 @@
       "question": "Match each agentic anti-pattern to the correct alternative.",
       "answer": "All three anti-patterns share one root cause: inferring control flow from unstructured output instead of using the API's typed signals.",
       "matchPairs": [
-        { "left": "Stop when the model writes DONE", "right": "Branch on stop_reason == end_turn" },
+        {
+          "left": "Stop when the model writes DONE",
+          "right": "Branch on stop_reason == end_turn"
+        },
         {
           "left": "Loop exactly N times and return",
           "right": "Loop on stop_reason; keep N only as a circuit breaker that escalates"
@@ -807,7 +997,8 @@
           "right": "Have the model call a submit_result tool with a JSON schema"
         }
       ],
-      "tags": ["anti-patterns"]
+      "tags": ["anti-patterns"],
+      "hints": ["Every correct fix replaces an inference from text with a typed signal."]
     },
     {
       "id": "ccaf1-match-004",
@@ -833,7 +1024,8 @@
           "right": "Queue it for human approval before executing"
         }
       ],
-      "tags": ["error-handling", "reliability"]
+      "tags": ["error-handling", "reliability"],
+      "hints": ["One of these is not the model’s problem to solve - it leaves the loop."]
     },
     {
       "id": "ccaf1-match-005",
@@ -846,7 +1038,10 @@
           "left": "Choosing which tool to call next",
           "right": "The model, from the tools you expose"
         },
-        { "left": "Executing the call and handling its failure", "right": "Your application code" },
+        {
+          "left": "Executing the call and handling its failure",
+          "right": "Your application code"
+        },
         {
           "left": "Enforcing the refund approval threshold",
           "right": "A server-side check inside the tool"
@@ -855,9 +1050,15 @@
           "left": "Carrying the conversation across turns",
           "right": "Your datastore, keyed by session id"
         },
-        { "left": "Deciding the turn is over", "right": "The stop_reason field on the response" }
+        {
+          "left": "Deciding the turn is over",
+          "right": "The stop_reason field on the response"
+        }
       ],
-      "tags": ["architecture", "guardrails"]
+      "tags": ["architecture", "guardrails"],
+      "hints": [
+        "The model proposes, something else disposes - and termination is owned by neither."
+      ]
     }
   ]
 }

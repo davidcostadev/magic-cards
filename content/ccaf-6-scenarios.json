@@ -15,7 +15,10 @@
       "type": "open",
       "question": "Scenario 1 - Customer Support Agent. Sketch the end-to-end architecture.",
       "answer": "**Shape**: routing -> agentic loop with tools -> escalation.\n\n- **Router** classifies the ticket (billing / technical / account) and picks a specialized system prompt; easy high-volume categories go to a smaller model.\n- **System prompt** (cached prefix): role, tone, policy, escalation rules, output contract. **User turn**: this customer's message.\n- **Tools**: `get_order`, `get_account`, `search_kb` (read), `issue_refund`, `create_ticket` (write, gated), `escalate_to_human`.\n- **Knowledge base** through an MCP server, so the same tools serve the web widget and the internal agent console.\n- **Loop**: branch on `stop_reason`; execute tools; return `tool_result` (with `is_error: true` on failure); repeat.\n- **Escalation** is a **tool**, not a phrase - triggered by low confidence, policy categories, a refund above the threshold, repeated tool failures, or the user asking for a human.\n- **State**: conversation persisted per session; order/account state stays in your DB and is reached through tools.\n- **Guardrails**: the refund threshold is enforced **in code**, never by prompt.\n- **Reliability**: retry 429/5xx with backoff, fall back to a smaller model, degrade to \"a specialist will follow up\" plus a ticket.\n- **Observability**: containment rate, escalation rate, tool error rate, cost per conversation.",
-      "tags": ["scenario-support", "architecture"]
+      "tags": ["scenario-support", "architecture"],
+      "hints": [
+        "Start with the router, end with escalation - and remember where the refund threshold has to live."
+      ]
     },
     {
       "id": "ccaf6-open-002",
@@ -23,7 +26,10 @@
       "type": "open",
       "question": "Scenario 2 - Multi-Agent Research Pipeline. Sketch the end-to-end architecture.",
       "answer": "**Shape**: orchestrator-workers, then synthesis, then verification.\n\n- **Orchestrator** decomposes the question at runtime into sub-questions (the decomposition depends on the question - this is what makes it orchestrator-workers, not sectioning).\n- **Workers** run **in parallel**, each with its own context window, a **read-only** tool set (search, fetch, read), and a self-contained brief - a subagent inherits no memory of the parent conversation.\n- **Workers return compact structured summaries**, with citations - never raw pages. This is what keeps the orchestrator's context from exploding.\n- **Synthesis** merges findings, resolves contradictions, and flags gaps.\n- **Verification** pass: independent checkers try to **refute** each claim; a claim survives only with support. Perspective diversity beats repeating the same check.\n- **Context**: key summary at the top, tool outputs trimmed at the source, orchestrator history compacted at a threshold.\n- **Caching**: the shared research system prompt and tool definitions sit in the cached prefix reused by every worker.\n- **Termination**: `stop_reason`, plus a per-worker circuit breaker that escalates rather than returning partial findings as complete.\n- **Cost control**: cap workers per run and depth per worker; log what was dropped instead of silently truncating coverage.",
-      "tags": ["scenario-research", "multi-agent", "architecture"]
+      "tags": ["scenario-research", "multi-agent", "architecture"],
+      "hints": [
+        "Runtime decomposition, parallel read-only workers, and one rule about what they hand back."
+      ]
     },
     {
       "id": "ccaf6-open-003",
@@ -31,7 +37,10 @@
       "type": "open",
       "question": "Scenario 3 - CI/CD Integration. Sketch the end-to-end architecture.",
       "answer": "**Shape**: Claude Code in headless mode inside the pipeline, with configuration in version control.\n\n- **Trigger**: `@claude` mentions on issues/PRs via the GitHub app for interactive work; a plain workflow step running `claude -p` for checks that must run on **every** PR.\n- **Invocation**: `claude -p \"<task>\" --output-format json --allowedTools \"Read,Grep,Bash(git diff:*)\"` so a downstream step can parse the result.\n- **Configuration in the repo**: `CLAUDE.md` (conventions - the only way a CI agent learns them, since no human corrects it mid-run), `.claude/settings.json` (permissions, hooks), `.claude/commands/` (the review command), `.mcp.json` (shared servers).\n- **Permissions**: explicit allow list; `deny` on secrets and infra paths. **Never** `--dangerously-skip-permissions` on a repo with real credentials - CI content (issue text, dependency files) is untrusted input that can carry injected instructions.\n- **Secrets**: `ANTHROPIC_API_KEY` in repository secrets, referenced from the workflow; job `permissions` scoped to `contents`/`pull-requests`/`issues`.\n- **Hooks** for deterministic steps: `PostToolUse` to format after edits, `PreToolUse` to block protected paths.\n- **Guardrails**: Claude proposes a branch/PR; merging stays a human decision.\n- **Observability**: cost per run (from the JSON output), pass/fail rate, and how often the review's findings are acted on.",
-      "tags": ["scenario-cicd", "claude-code", "architecture"]
+      "tags": ["scenario-cicd", "claude-code", "architecture"],
+      "hints": [
+        "Headless in the pipeline, configuration in the repo, and untrusted content everywhere."
+      ]
     },
     {
       "id": "ccaf6-open-004",
@@ -39,7 +48,10 @@
       "type": "open",
       "question": "Scenario 4 - Structured Data Extraction. Sketch the end-to-end architecture.",
       "answer": "**Shape**: a workflow, not an agent - the steps are known in advance.\n\n- **Prompt layout**: document **first** inside `<document>` tags with a source and index; instructions and the question **last** (long data at the top, query at the end).\n- **Contract**: a tool whose `input_schema` is the target schema, forced with `tool_choice`. Enums for closed sets, `null` allowed for absent fields, plus a `confidence` or `needs_review` field.\n- **Grounding**: require the model to quote the source passage before extracting, which suppresses invention on long documents.\n- **Chunking** for documents beyond the window: split with overlap, extract per chunk, merge and de-duplicate in code. Chunk boundaries are a correctness risk - a table split in half loses rows.\n- **Sampling**: `temperature: 0`.\n- **Caching**: instructions, schema, and few-shot examples in the stable prefix; only the document varies.\n- **Validation in code**: schema check, business rules (line items sum to the total), and route failures + low confidence to human review rather than into the database.\n- **Scale**: batch processing for bulk backfills; retry 429/5xx with backoff and jitter.\n- **Monitoring**: field-level accuracy, `needs_review` rate, and rejected-record rate against a labeled gold set.",
-      "tags": ["scenario-extraction", "structured-output", "architecture"]
+      "tags": ["scenario-extraction", "structured-output", "architecture"],
+      "hints": [
+        "The steps are known in advance - so this is not an agent. Document first, contract second."
+      ]
     },
     {
       "id": "ccaf6-open-005",
@@ -47,7 +59,10 @@
       "type": "open",
       "question": "Scenario 5 - Enterprise Content Management with compliance requirements. Sketch the architecture.",
       "answer": "**Shape**: workflow with hard policy gates in code, plus auditability by design.\n\n- **Ingestion**: classify content, detect PII/PHI, and tag sensitivity **before** anything reaches the model. Redact what must not leave your boundary.\n- **Access control lives in your systems, not the prompt**: tools filter by the caller's entitlements server-side. \"Only show documents the user may see\" as a prompt instruction is not access control.\n- **Parallelization (sectioning)**: one call drafts/summarizes while another screens for policy violations, so the compliance check is not competing with the main task inside one prompt.\n- **Voting** on the high-stakes classification: run the policy check several times with different framings and flag if **any** run says violation - false negatives are the expensive error.\n- **Human-in-the-loop**: anything flagged, anything above a sensitivity tier, and any publish action goes to an approver.\n- **Untrusted content**: documents are wrapped in XML tags and declared to be data, never instructions - ingested content is an injection surface.\n- **Audit**: log every request, tool call, decision, and approval, with the model/prompt version, so a decision can be reconstructed later. Consider zero-retention settings where required.\n- **Enforcement layer**: managed settings / `permissions.deny` for anything that must be impossible, not a CLAUDE.md line.",
-      "tags": ["scenario-content", "compliance", "security", "architecture"]
+      "tags": ["scenario-content", "compliance", "security", "architecture"],
+      "hints": [
+        "Policy gates in code, untrusted documents in tags, and everything logged for audit."
+      ]
     },
     {
       "id": "ccaf6-open-006",
@@ -55,7 +70,10 @@
       "type": "open",
       "question": "Scenario 6 - Real-time Monitoring and Alerting. Sketch the architecture.",
       "answer": "**Shape**: deterministic detection, LLM triage, gated remediation.\n\n- **Do not put the model in the detection path.** Thresholds and anomaly detection stay deterministic - cheap, fast, and testable. The model enters **after** an alert fires.\n- **Routing by severity**: low-severity alerts get a small, fast model or a template; a page-worthy incident gets the full agentic loop.\n- **Triage agent** with **read-only** tools: query metrics, fetch logs, read recent deploys, search runbooks and past incidents. It correlates signals and produces a hypothesis with evidence.\n- **Structured output**: a `submit_triage` tool returning `severity`, `probable_cause`, `evidence[]`, `recommended_action`, `confidence` - so downstream routing is typed, not parsed from prose.\n- **Remediation is gated**: irreversible actions (restart, rollback, scale, failover) go through an approval gate or a strictly bounded, validated action set. Autonomy on diagnosis, control on writes.\n- **Latency and cost**: cache the system prompt, runbooks, and tool definitions; trim log output at the source - dumping 10k log lines exhausts context and buries the signal in the middle.\n- **Reliability**: alerting must not depend on a single provider. Retry with backoff; if the model is unavailable, fall back to the deterministic runbook and page a human - **degrade to a human, never to silence**.\n- **Noise control**: deduplicate correlated alerts before invoking the model; one incident should be one run, not forty.",
-      "tags": ["scenario-monitoring", "reliability", "architecture"]
+      "tags": ["scenario-monitoring", "reliability", "architecture"],
+      "hints": [
+        "Keep the model out of the detection path. Autonomy on diagnosis, control on writes."
+      ]
     },
     {
       "id": "ccaf6-quiz-001",
@@ -69,11 +87,24 @@
           "text": "Enforced in the `issue_refund` tool implementation, which routes anything over $500 to approval",
           "isCorrect": true
         },
-        { "id": "b", "text": "In the system prompt as a hard rule", "isCorrect": false },
-        { "id": "c", "text": "As `maximum: 500` in the tool's JSON schema", "isCorrect": false },
-        { "id": "d", "text": "In a CLAUDE.md file for the project", "isCorrect": false }
+        {
+          "id": "b",
+          "text": "In the system prompt as a hard rule",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "As `maximum: 500` in the tool's JSON schema",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "In a CLAUDE.md file for the project",
+          "isCorrect": false
+        }
       ],
-      "tags": ["scenario-support", "guardrails"]
+      "tags": ["scenario-support", "guardrails"],
+      "hints": ["Which of these is enforcement, and which are polite requests?"]
     },
     {
       "id": "ccaf6-quiz-002",
@@ -87,7 +118,11 @@
           "text": "Add a `cache_control` breakpoint after the system prompt and tool definitions",
           "isCorrect": true
         },
-        { "id": "b", "text": "Reduce `max_tokens` so replies are shorter", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "Reduce `max_tokens` so replies are shorter",
+          "isCorrect": false
+        },
         {
           "id": "c",
           "text": "Drop the oldest turns from history on every request",
@@ -99,7 +134,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-support", "caching", "cost"]
+      "tags": ["scenario-support", "caching", "cost"],
+      "hints": ["What is being re-sent, unchanged, on every one of those 30 turns?"]
     },
     {
       "id": "ccaf6-quiz-003",
@@ -118,10 +154,19 @@
           "text": "Run the workers sequentially so results arrive spread out",
           "isCorrect": false
         },
-        { "id": "c", "text": "Move to a model with a larger context window", "isCorrect": false },
-        { "id": "d", "text": "Increase the orchestrator's `max_tokens`", "isCorrect": false }
+        {
+          "id": "c",
+          "text": "Move to a model with a larger context window",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Increase the orchestrator's `max_tokens`",
+          "isCorrect": false
+        }
       ],
-      "tags": ["scenario-research", "context", "multi-agent"]
+      "tags": ["scenario-research", "context", "multi-agent"],
+      "hints": ["Why do subagents exist in the first place?"]
     },
     {
       "id": "ccaf6-quiz-004",
@@ -140,10 +185,19 @@
           "text": "Ask the synthesizing agent to double-check its own output",
           "isCorrect": false
         },
-        { "id": "c", "text": "Raise the thinking budget on the orchestrator", "isCorrect": false },
-        { "id": "d", "text": "Set temperature to 0 on every worker", "isCorrect": false }
+        {
+          "id": "c",
+          "text": "Raise the thinking budget on the orchestrator",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Set temperature to 0 on every worker",
+          "isCorrect": false
+        }
       ],
-      "tags": ["scenario-research", "reliability"]
+      "tags": ["scenario-research", "reliability"],
+      "hints": ["Independence and disagreement are the point - self-review is not."]
     },
     {
       "id": "ccaf6-quiz-005",
@@ -162,14 +216,19 @@
           "text": "A bot that posts `@claude review this` on each PR",
           "isCorrect": false
         },
-        { "id": "c", "text": "An interactive session on a self-hosted runner", "isCorrect": false },
+        {
+          "id": "c",
+          "text": "An interactive session on a self-hosted runner",
+          "isCorrect": false
+        },
         {
           "id": "d",
           "text": "A scheduled job that opens the repo in the desktop app",
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-cicd", "headless"]
+      "tags": ["scenario-cicd", "headless"],
+      "hints": ["\"Automatically on every PR\" rules out anything a human has to trigger."]
     },
     {
       "id": "ccaf6-quiz-006",
@@ -188,14 +247,19 @@
           "text": "Add the conventions to each workflow step's prompt string",
           "isCorrect": false
         },
-        { "id": "c", "text": "Raise the model tier for CI runs", "isCorrect": false },
+        {
+          "id": "c",
+          "text": "Raise the model tier for CI runs",
+          "isCorrect": false
+        },
         {
           "id": "d",
           "text": "Enable `--dangerously-skip-permissions` so the agent is not interrupted",
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-cicd", "claude-md"]
+      "tags": ["scenario-cicd", "claude-md"],
+      "hints": ["In CI nobody corrects the agent mid-run. Where do conventions have to live?"]
     },
     {
       "id": "ccaf6-quiz-007",
@@ -209,7 +273,11 @@
           "text": "Chunk with overlap, extract per chunk with the same schema, merge and de-duplicate in code",
           "isCorrect": true
         },
-        { "id": "b", "text": "Truncate each document to the window size", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "Truncate each document to the window size",
+          "isCorrect": false
+        },
         {
           "id": "c",
           "text": "Summarize the document first, then extract from the summary",
@@ -221,7 +289,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-extraction", "long-context"]
+      "tags": ["scenario-extraction", "long-context"],
+      "hints": ["What protects a record that straddles a chunk boundary?"]
     },
     {
       "id": "ccaf6-quiz-008",
@@ -235,7 +304,11 @@
           "text": "Forced tool schema, business-rule validation in code, and a confidence field that routes uncertain records to review",
           "isCorrect": true
         },
-        { "id": "b", "text": "A strongly worded instruction to be accurate", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "A strongly worded instruction to be accurate",
+          "isCorrect": false
+        },
         {
           "id": "c",
           "text": "Extended thinking with a large budget on every document",
@@ -247,7 +320,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-extraction", "reliability"]
+      "tags": ["scenario-extraction", "reliability"],
+      "hints": ["No single layer is enough - look for the option that stacks several."]
     },
     {
       "id": "ccaf6-quiz-009",
@@ -271,9 +345,14 @@
           "text": "By post-filtering the model's answer for restricted titles",
           "isCorrect": false
         },
-        { "id": "d", "text": "By giving each user a separate CLAUDE.md", "isCorrect": false }
+        {
+          "id": "d",
+          "text": "By giving each user a separate CLAUDE.md",
+          "isCorrect": false
+        }
       ],
-      "tags": ["scenario-content", "security", "compliance"]
+      "tags": ["scenario-content", "security", "compliance"],
+      "hints": ["The model is not an authorization layer."]
     },
     {
       "id": "ccaf6-quiz-010",
@@ -287,15 +366,24 @@
           "text": "Parallelization with voting - flag if any run reports a violation",
           "isCorrect": true
         },
-        { "id": "b", "text": "Prompt chaining with a single final check", "isCorrect": false },
-        { "id": "c", "text": "Routing to a smaller model for cost", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "Prompt chaining with a single final check",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Routing to a smaller model for cost",
+          "isCorrect": false
+        },
         {
           "id": "d",
           "text": "Evaluator-optimizer refining the wording of the content",
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-content", "patterns", "compliance"]
+      "tags": ["scenario-content", "patterns", "compliance"],
+      "hints": ["Asymmetric cost means you want confidence, not coverage."]
     },
     {
       "id": "ccaf6-quiz-011",
@@ -319,9 +407,14 @@
           "text": "Only at the end, writing the post-incident report",
           "isCorrect": false
         },
-        { "id": "d", "text": "Replacing the alerting system entirely", "isCorrect": false }
+        {
+          "id": "d",
+          "text": "Replacing the alerting system entirely",
+          "isCorrect": false
+        }
       ],
-      "tags": ["scenario-monitoring", "architecture"]
+      "tags": ["scenario-monitoring", "architecture"],
+      "hints": ["Detection should be cheap, fast, and testable. Is that a model?"]
     },
     {
       "id": "ccaf6-quiz-012",
@@ -340,10 +433,21 @@
           "text": "Nothing breaks if the model has a large context window",
           "isCorrect": false
         },
-        { "id": "c", "text": "Rate limits - reduce the polling interval", "isCorrect": false },
-        { "id": "d", "text": "Only cost - enable caching on the log output", "isCorrect": false }
+        {
+          "id": "c",
+          "text": "Rate limits - reduce the polling interval",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Only cost - enable caching on the log output",
+          "isCorrect": false
+        }
       ],
-      "tags": ["scenario-monitoring", "context", "tool-design"]
+      "tags": ["scenario-monitoring", "context", "tool-design"],
+      "hints": [
+        "Two problems at once: the window fills, and the signal lands in the worst position."
+      ]
     },
     {
       "id": "ccaf6-quiz-013",
@@ -362,10 +466,19 @@
           "text": "Queue the alerts and process them when the API recovers",
           "isCorrect": false
         },
-        { "id": "c", "text": "Retry indefinitely until a response arrives", "isCorrect": false },
-        { "id": "d", "text": "Suppress the alert to avoid noise", "isCorrect": false }
+        {
+          "id": "c",
+          "text": "Retry indefinitely until a response arrives",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Suppress the alert to avoid noise",
+          "isCorrect": false
+        }
       ],
-      "tags": ["scenario-monitoring", "degradation", "reliability"]
+      "tags": ["scenario-monitoring", "degradation", "reliability"],
+      "hints": ["An alerting system may degrade in quality, but never into one particular thing."]
     },
     {
       "id": "ccaf6-quiz-014",
@@ -379,11 +492,24 @@
           "text": "State it is out of scope and call the escalation tool with the context gathered so far",
           "isCorrect": true
         },
-        { "id": "b", "text": "Answer as best it can from general knowledge", "isCorrect": false },
-        { "id": "c", "text": "Return an empty response", "isCorrect": false },
-        { "id": "d", "text": "Loop until it finds a tool that seems related", "isCorrect": false }
+        {
+          "id": "b",
+          "text": "Answer as best it can from general knowledge",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Return an empty response",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Loop until it finds a tool that seems related",
+          "isCorrect": false
+        }
       ],
-      "tags": ["scenario-support", "edge-cases", "escalation"]
+      "tags": ["scenario-support", "edge-cases", "escalation"],
+      "hints": ["Undefined out-of-scope behavior is where agents improvise confidently."]
     },
     {
       "id": "ccaf6-quiz-015",
@@ -397,11 +523,24 @@
           "text": "Is the constraint enforced in code, or only suggested to the model?",
           "isCorrect": true
         },
-        { "id": "b", "text": "Which model tier is being used?", "isCorrect": false },
-        { "id": "c", "text": "Is the temperature set to 0?", "isCorrect": false },
-        { "id": "d", "text": "Is the context window large enough?", "isCorrect": false }
+        {
+          "id": "b",
+          "text": "Which model tier is being used?",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Is the temperature set to 0?",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Is the context window large enough?",
+          "isCorrect": false
+        }
       ],
-      "tags": ["exam-strategy", "guardrails"]
+      "tags": ["exam-strategy", "guardrails"],
+      "hints": ["Look at what almost every wrong option in this deck has in common."]
     },
     {
       "id": "ccaf6-match-001",
@@ -410,8 +549,14 @@
       "question": "Match each exam scenario to the orchestration pattern it most naturally uses.",
       "answer": "Recognizing the pattern from the scenario framing is most of the work - once the pattern is right, the tooling, context, and reliability answers usually follow.",
       "matchPairs": [
-        { "left": "Customer support agent", "right": "Routing + agentic loop with escalation" },
-        { "left": "Multi-agent research pipeline", "right": "Orchestrator-workers + synthesis" },
+        {
+          "left": "Customer support agent",
+          "right": "Routing + agentic loop with escalation"
+        },
+        {
+          "left": "Multi-agent research pipeline",
+          "right": "Orchestrator-workers + synthesis"
+        },
         {
           "left": "Structured data extraction",
           "right": "Workflow (prompt chain) with a forced tool schema"
@@ -425,7 +570,8 @@
           "right": "Deterministic detection + LLM triage + gated remediation"
         }
       ],
-      "tags": ["exam-strategy", "patterns"]
+      "tags": ["exam-strategy", "patterns"],
+      "hints": ["Ask for each: are the steps known in advance, and who decides the decomposition?"]
     },
     {
       "id": "ccaf6-match-002",
@@ -434,16 +580,31 @@
       "question": "Match each scenario to the failure mode it is most likely to be tested on.",
       "answer": "Each scenario has a signature trap. Spotting it narrows four plausible-looking options to one quickly.",
       "matchPairs": [
-        { "left": "Customer support", "right": "Policy enforced by prompt instead of by code" },
-        { "left": "Research pipeline", "right": "Worker output floods the orchestrator's context" },
-        { "left": "CI/CD", "right": "Over-broad permissions on untrusted repository content" },
+        {
+          "left": "Customer support",
+          "right": "Policy enforced by prompt instead of by code"
+        },
+        {
+          "left": "Research pipeline",
+          "right": "Worker output floods the orchestrator's context"
+        },
+        {
+          "left": "CI/CD",
+          "right": "Over-broad permissions on untrusted repository content"
+        },
         {
           "left": "Data extraction",
           "right": "Invented values for fields missing from the source"
         },
-        { "left": "Monitoring", "right": "Irreversible remediation taken without a human gate" }
+        {
+          "left": "Monitoring",
+          "right": "Irreversible remediation taken without a human gate"
+        }
       ],
-      "tags": ["exam-strategy"]
+      "tags": ["exam-strategy"],
+      "hints": [
+        "Each scenario has one signature trap - usually a control that got moved into a prompt."
+      ]
     },
     {
       "id": "ccaf6-type-001",
@@ -452,7 +613,8 @@
       "question": "In the support scenario, what should escalation to a human be implemented as, rather than a phrase in the reply?",
       "answer": "A tool (e.g. `escalate_to_human`) with a schema. Escalation then arrives as a typed `tool_use` block you can route, meter, and test.",
       "shortAnswer": "a tool",
-      "tags": ["scenario-support", "escalation"]
+      "tags": ["scenario-support", "escalation"],
+      "hints": ["It should be a typed thing you can route, meter, and test."]
     },
     {
       "id": "ccaf6-type-002",
@@ -461,7 +623,8 @@
       "question": "In the research pipeline, what should each worker return to the orchestrator instead of raw source text?",
       "answer": "A compact structured summary with citations. That is what preserves the orchestrator's context window.",
       "shortAnswer": "a compact summary",
-      "tags": ["scenario-research", "context"]
+      "tags": ["scenario-research", "context"],
+      "hints": ["Small, structured, and with citations."]
     }
   ]
 }

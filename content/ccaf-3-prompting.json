@@ -15,7 +15,8 @@
       "type": "open",
       "question": "What belongs in the system prompt versus the user message?",
       "answer": "**System prompt** - everything stable across the whole conversation: the model's **role**, standing rules, tone, output-format contract, safety and escalation policy, and background the model always needs.\n\n**User message** - the specific, variable request: this ticket, this document, this question, plus the data to work on.\n\nThe practical reasons for the split:\n- **Persistence** - system instructions govern every turn; a rule buried in turn 1's user message fades as the conversation grows.\n- **Caching** - the system prompt is a stable prefix, so it is the natural cache breakpoint. Mixing per-request data into it destroys the cache on every call.\n- **Separation of trust** - policy in the system prompt, untrusted input in the user turn. Never interpolate user-supplied text into the system prompt.\n\nIn the API the system prompt is a **top-level `system` parameter**, not a message with `role: \"system\"`.",
-      "tags": ["system-prompt", "fundamentals"]
+      "tags": ["system-prompt", "fundamentals"],
+      "hints": ["Sort the content by one question: does it change on every request, or not?"]
     },
     {
       "id": "ccaf3-open-002",
@@ -23,7 +24,10 @@
       "type": "open",
       "question": "Why does Anthropic recommend XML tags in prompts, and what are the rules for using them?",
       "answer": "Because Claude is trained to notice them, XML tags give **unambiguous boundaries** between the parts of a prompt: instructions, examples, the document, the schema, the user's question. Without them a long prompt is one undifferentiated blob and the model can confuse an example for the actual input.\n\nRules:\n- **Be consistent** - if you call it `<document>` in the instructions, refer to it as `<document>` everywhere.\n- **Nest** for hierarchy: `<examples><example>...</example></examples>`.\n- **Tag names are yours** - there is no reserved vocabulary. Pick semantically obvious ones (`<contract>`, `<criteria>`, `<output_format>`).\n- **Combine with other techniques** - tag the reasoning space (`<thinking>`) and the answer (`<answer>`) so you can extract one without the other.\n\nThe biggest practical win: wrapping **untrusted input** in tags (`<user_input>...</user_input>`) and telling the model that content inside is data, never instructions.",
-      "tags": ["xml-tags", "best-practices"]
+      "tags": ["xml-tags", "best-practices"],
+      "hints": [
+        "The model was trained to notice them. Think about what a long prompt looks like without any boundaries."
+      ]
     },
     {
       "id": "ccaf3-open-003",
@@ -31,7 +35,10 @@
       "type": "open",
       "question": "What is prefilling and what is it best used for?",
       "answer": "Start the `messages` array with an **assistant** turn whose content is the beginning of the answer. The model continues from there instead of starting fresh.\n\n```json\n\"messages\": [\n  { \"role\": \"user\", \"content\": \"Extract the invoice as JSON.\" },\n  { \"role\": \"assistant\", \"content\": \"{\" }\n]\n```\n\nUses:\n- **Skip the preamble** - no \"Sure! Here's the JSON you asked for:\" before the payload.\n- **Force a format** - prefill `{` or `[` and the output starts as JSON; prefill `<analysis>` and it starts inside your tag.\n- **Hold a persona or a structure** across turns.\n\nConstraints worth remembering: the prefill text is **not repeated** in the response - you must concatenate it yourself. It **cannot end with trailing whitespace**. And it is **not compatible with extended thinking**.",
-      "tags": ["prefill", "structured-output"]
+      "tags": ["prefill", "structured-output"],
+      "hints": [
+        "You write the first characters of the answer yourself - and it is not echoed back to you."
+      ]
     },
     {
       "id": "ccaf3-open-004",
@@ -39,7 +46,8 @@
       "type": "open",
       "question": "What is the most reliable way to get structured output from Claude in production?",
       "answer": "**Tool use.** Define a tool whose `input_schema` is the JSON Schema you want, and the model returns a `tool_use` block whose `input` already conforms to it:\n\n```json\n{\n  \"name\": \"record_ticket\",\n  \"description\": \"Record the extracted support ticket.\",\n  \"input_schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"category\": { \"type\": \"string\", \"enum\": [\"billing\",\"technical\",\"account\"] },\n      \"severity\": { \"type\": \"integer\", \"minimum\": 1, \"maximum\": 5 },\n      \"summary\":  { \"type\": \"string\" }\n    },\n    \"required\": [\"category\", \"severity\", \"summary\"]\n  }\n}\n```\n\nAdd `tool_choice: {\"type\": \"tool\", \"name\": \"record_ticket\"}` to force it, so the model cannot answer in prose.\n\nWhy this beats \"reply with JSON only\": the schema is a machine-checked contract rather than an instruction, enums constrain the value space, and you get a typed object instead of text you have to find, strip of markdown fences, and parse. The fallback technique - ask for JSON and **prefill `{`** - is fine for a quick job but has no schema enforcement.",
-      "tags": ["structured-output", "tool-use", "json-schema"]
+      "tags": ["structured-output", "tool-use", "json-schema"],
+      "hints": ["Stop asking for a format and start defining a contract the API can validate."]
     },
     {
       "id": "ccaf3-open-005",
@@ -47,7 +55,8 @@
       "type": "open",
       "question": "When should output come back as `tool_use` versus plain text?",
       "answer": "**`tool_use`** when the output is **consumed by code**: extraction results, classifications, routing decisions, actions to perform, anything you will validate or store. You get schema conformance, enums, and required fields.\n\n**Text** when the output is **read by a human**: explanations, summaries, drafted replies, anything where phrasing is the product.\n\nTwo hybrid cases worth knowing:\n- A support agent that must both **reply to the user** and **file a structured ticket** should emit prose for the reply and call a `create_ticket` tool for the record - not stuff the reply inside a JSON string field.\n- An agent that must return a final structured verdict should call a `submit_result` tool, which doubles as an unambiguous completion signal.",
-      "tags": ["structured-output", "tool-use", "architecture"]
+      "tags": ["structured-output", "tool-use", "architecture"],
+      "hints": ["Ask who reads the output: your code, or a person?"]
     },
     {
       "id": "ccaf3-open-006",
@@ -55,7 +64,10 @@
       "type": "open",
       "question": "How do you use few-shot (multishot) prompting well, and when does it beat instructions?",
       "answer": "Give 3-5 **diverse, relevant** input/output pairs wrapped in XML tags:\n\n```xml\n<examples>\n  <example>\n    <input>Charged twice for May</input>\n    <output>{\"category\":\"billing\",\"severity\":3}</output>\n  </example>\n  ...\n</examples>\n```\n\nExamples beat prose when the rule is **easier to show than to state** - tone, formatting, edge-case handling, a classification boundary. \"Match this style\" in three examples outperforms two paragraphs describing the style.\n\nRules that matter:\n- **Cover the edge cases**, not just the happy path. Include the ambiguous input and show the desired handling (e.g. returning `\"unknown\"`), or the model will guess.\n- **Keep them consistent** - a single example that violates your format teaches the exception.\n- **Diversity over volume** - near-duplicate examples add tokens and nothing else.\n- Put them in the **stable prefix** so prompt caching covers them.",
-      "tags": ["few-shot", "best-practices"]
+      "tags": ["few-shot", "best-practices"],
+      "hints": [
+        "Some rules are far easier to show than to describe. And the happy path is not the interesting part."
+      ]
     },
     {
       "id": "ccaf3-open-007",
@@ -63,7 +75,10 @@
       "type": "open",
       "question": "What is chain-of-thought prompting and what is the cost/benefit?",
       "answer": "Ask the model to reason before answering. Three levels:\n1. **Basic** - \"Think step by step.\"\n2. **Guided** - name the steps: \"First identify the parties, then the obligations, then flag conflicts.\"\n3. **Structured** - separate the reasoning from the answer with tags: reason inside `<thinking>`, answer inside `<answer>`, and strip the first before showing the user.\n\nUse it for multi-step analysis, math, complex classification with real trade-offs, and anything where you want to audit the reasoning.\n\nCosts: more output tokens, higher latency. And a real caveat - **reasoning the model never emits does not happen**. \"Think about it internally, then just give the answer\" gets you the cost of a short answer and none of the benefit. If you want the reasoning suppressed for the user, still generate it, then strip it in your code.\n\nDo not use CoT for simple, single-step tasks; it adds latency and can talk the model out of a correct first answer.",
-      "tags": ["chain-of-thought", "reasoning"]
+      "tags": ["chain-of-thought", "reasoning"],
+      "hints": [
+        "Three levels of it - and one very common instruction that destroys the whole benefit."
+      ]
     },
     {
       "id": "ccaf3-open-008",
@@ -71,7 +86,7 @@
       "type": "open",
       "question": "How is extended thinking configured, and what constraints apply to `budget_tokens`?",
       "answer": "```json\n{\n  \"model\": \"...\",\n  \"max_tokens\": 16000,\n  \"thinking\": { \"type\": \"enabled\", \"budget_tokens\": 10000 }\n}\n```\n\nConstraints:\n- **Minimum 1024** tokens; smaller values are rejected.\n- **Must be less than `max_tokens`** - thinking tokens count toward the same output budget, so the budget has to leave room for the answer. (The exception is interleaved thinking, where the budget spans the whole turn.)\n- It is a **target, not a hard cap** - Claude may stop reasoning earlier; `max_tokens` is the real ceiling.\n- Thinking tokens are **billed as output tokens**.\n- Sampling controls (`temperature`, `top_p`, `top_k`) are **not supported** with thinking enabled, and **prefill is not allowed**.\n- In tool-use loops, **thinking blocks must be passed back unmodified** with their signature - stripping them breaks the turn.\n\nTuning: start near 1024 for simple tasks; start at 16000+ for genuinely hard ones. Above ~32k, use batch processing to avoid timeouts.",
-      "hints": ["One number is the floor, and one relationship ties it to max_tokens."],
+      "hints": ["One number is the floor, and one relationship ties the budget to max_tokens."],
       "tags": ["extended-thinking", "reasoning", "parameters"]
     },
     {
@@ -80,7 +95,10 @@
       "type": "open",
       "question": "How should `temperature`, `top_p`, and `top_k` be used?",
       "answer": "- **`temperature`** (0.0-1.0 on Claude) controls randomness. **0** for deterministic, analytical work: extraction, classification, routing, code, anything a test asserts on. Higher (0.7-1.0) for creative variety.\n- **`top_p`** (nucleus sampling) truncates to the smallest set of tokens whose probability mass reaches p.\n- **`top_k`** truncates to the k most likely tokens.\n\nThe operational rules:\n1. **Change one of `temperature` and `top_p`, not both.** Tuning both makes the effect impossible to reason about.\n2. Most production systems only ever touch `temperature`. `top_k`/`top_p` are rarely the right lever.\n3. **Temperature 0 is not a correctness guarantee** - it makes the output far more consistent, not verified. Structured output still needs a schema, and facts still need grounding.\n4. With **extended thinking enabled these parameters are unsupported**.",
-      "tags": ["parameters", "temperature", "sampling"]
+      "tags": ["parameters", "temperature", "sampling"],
+      "hints": [
+        "One of them is the only lever most production systems ever touch - and two should not be tuned together."
+      ]
     },
     {
       "id": "ccaf3-open-010",
@@ -88,7 +106,10 @@
       "type": "open",
       "question": "Design a prompt for extracting structured data from a long document. What is the layout?",
       "answer": "```xml\n<documents>\n  <document index=\"1\">\n    <source>invoice_2026_04.pdf</source>\n    <document_content>...the full text...</document_content>\n  </document>\n</documents>\n\n<instructions>\n  Extract each line item. If a field is absent, use null - never guess.\n  Quote the source text you relied on before extracting.\n</instructions>\n```\n\nThe rules that matter:\n1. **Long input near the top, the query at the end.** For long-context prompts this ordering measurably improves quality; a question buried above 50 pages of text gets worse answers.\n2. **XML-structure multiple documents** with an index and a source, so citations can point at one.\n3. **Ground before extracting** - have the model quote the relevant passages first; it reduces invention on long inputs.\n4. **Return the result through a tool schema**, with an explicit `null` policy for missing fields. Without that instruction the model fills gaps plausibly.\n5. **Include a confidence or `needs_review` field** so low-certainty extractions can be routed to a human instead of silently entering your database.",
-      "tags": ["document-extraction", "long-context", "structured-output"]
+      "tags": ["document-extraction", "long-context", "structured-output"],
+      "hints": [
+        "Long data first, question last. Then think about what stops it inventing missing fields."
+      ]
     },
     {
       "id": "ccaf3-open-011",
@@ -96,7 +117,8 @@
       "type": "open",
       "question": "How do you handle ambiguity and edge cases in a production prompt?",
       "answer": "Make the uncertain path **explicit and representable**, instead of hoping the model handles it:\n\n1. **Give uncertainty a legal value.** If the schema has no `\"unknown\"`, an unsure model must still pick one of your enum values - so it guesses. Add `unknown` / `null` / `needs_review` and say when to use them.\n2. **State the tie-break rule.** \"If a ticket is both billing and technical, classify as billing.\" Any rule beats leaving it to chance, because at least it is consistent.\n3. **Show edge cases in the examples** - the empty document, the contradictory field, the out-of-scope request.\n4. **Prefer positive instructions.** \"Respond in plain prose\" works better than \"do not use markdown.\"\n5. **Define the out-of-scope behavior**: what the agent says when a question is outside its domain, and when it escalates.\n6. **Ask for confidence** and route low-confidence outputs to review.\n\nThe underlying principle: an ambiguous prompt does not fail loudly - it produces a confident wrong answer, which is much more expensive to detect.",
-      "tags": ["edge-cases", "reliability", "best-practices"]
+      "tags": ["edge-cases", "reliability", "best-practices"],
+      "hints": ["An ambiguous prompt does not fail loudly. Give uncertainty somewhere legal to go."]
     },
     {
       "id": "ccaf3-open-012",
@@ -104,7 +126,10 @@
       "type": "open",
       "question": "In what order should prompt engineering techniques be applied?",
       "answer": "Anthropic's guide orders them roughly by effort-to-payoff:\n\n1. **Be clear and direct** - explicit, specific instructions with the context and the success criteria. Most \"the model is bad at this\" problems die here.\n2. **Multishot examples** - show 3-5 diverse examples, including edge cases.\n3. **Let Claude think** - chain of thought, or extended thinking for genuinely hard reasoning.\n4. **Use XML tags** - separate instructions, data, examples, and output format.\n5. **Give Claude a role** via the system prompt.\n6. **Prefill the response** to force format and skip preamble.\n7. **Chain prompts** - split a complex task into focused calls.\n8. **Long-context tips** - long data at the top, query at the end.\n\nTwo meta-rules: start with the best model and a clear evaluation before optimizing anything, and change **one thing at a time** so you know which change helped.",
-      "tags": ["best-practices", "methodology"]
+      "tags": ["best-practices", "methodology"],
+      "hints": [
+        "Roughly cheapest-to-most-effortful, and the very first step kills most problems on its own."
+      ]
     },
     {
       "id": "ccaf3-quiz-001",
@@ -123,10 +148,19 @@
           "text": "Instruct in the system prompt to output only valid JSON",
           "isCorrect": false
         },
-        { "id": "c", "text": "Set temperature to 0 and parse the text block", "isCorrect": false },
-        { "id": "d", "text": "Use a stop sequence after the closing brace", "isCorrect": false }
+        {
+          "id": "c",
+          "text": "Set temperature to 0 and parse the text block",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Use a stop sequence after the closing brace",
+          "isCorrect": false
+        }
       ],
-      "tags": ["structured-output", "tool-use"]
+      "tags": ["structured-output", "tool-use"],
+      "hints": ["\"Always validate\" means you want a contract, not an instruction."]
     },
     {
       "id": "ccaf3-quiz-002",
@@ -145,10 +179,19 @@
           "text": "The specific customer's order history for this request",
           "isCorrect": false
         },
-        { "id": "c", "text": "The document to be summarized", "isCorrect": false },
-        { "id": "d", "text": "The user's current question", "isCorrect": false }
+        {
+          "id": "c",
+          "text": "The document to be summarized",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The user's current question",
+          "isCorrect": false
+        }
       ],
-      "tags": ["system-prompt"]
+      "tags": ["system-prompt"],
+      "hints": ["Which one of these is identical on every single request?"]
     },
     {
       "id": "ccaf3-quiz-003",
@@ -157,16 +200,29 @@
       "question": "You want the response to begin directly with a JSON object and no preamble. What is the simplest technique?",
       "answer": "Prefill the assistant turn with `{`. The model continues from there. Remember the prefill is not echoed in the response, so concatenate it yourself.",
       "choices": [
-        { "id": "a", "text": "Prefill the assistant message with `{`", "isCorrect": true },
-        { "id": "b", "text": "Set temperature to 0", "isCorrect": false },
-        { "id": "c", "text": "Add a stop sequence of `{`", "isCorrect": false },
+        {
+          "id": "a",
+          "text": "Prefill the assistant message with `{`",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Set temperature to 0",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Add a stop sequence of `{`",
+          "isCorrect": false
+        },
         {
           "id": "d",
           "text": "Repeat the instruction three times in the system prompt",
           "isCorrect": false
         }
       ],
-      "tags": ["prefill", "structured-output"]
+      "tags": ["prefill", "structured-output"],
+      "hints": ["You can write the first character of the answer yourself."]
     },
     {
       "id": "ccaf3-quiz-004",
@@ -180,7 +236,11 @@
           "text": "Contract first inside XML tags, then the instructions and question at the end",
           "isCorrect": true
         },
-        { "id": "b", "text": "Question first, then the contract", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "Question first, then the contract",
+          "isCorrect": false
+        },
         {
           "id": "c",
           "text": "Question first and repeated again after the contract",
@@ -192,7 +252,10 @@
           "isCorrect": false
         }
       ],
-      "tags": ["long-context", "document-extraction"]
+      "tags": ["long-context", "document-extraction"],
+      "hints": [
+        "For long-context prompts there is a documented ordering. Which end does the question go?"
+      ]
     },
     {
       "id": "ccaf3-quiz-005",
@@ -201,12 +264,31 @@
       "question": "What is the minimum allowed value of `budget_tokens` for extended thinking?",
       "answer": "1024. The API rejects anything smaller, and the budget must also be less than `max_tokens` because thinking tokens count toward the same output budget.",
       "choices": [
-        { "id": "a", "text": "1024", "isCorrect": true },
-        { "id": "b", "text": "512", "isCorrect": false },
-        { "id": "c", "text": "2048", "isCorrect": false },
-        { "id": "d", "text": "There is no minimum", "isCorrect": false }
+        {
+          "id": "a",
+          "text": "1024",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "512",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "2048",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "There is no minimum",
+          "isCorrect": false
+        }
       ],
-      "tags": ["extended-thinking", "parameters"]
+      "tags": ["extended-thinking", "parameters"],
+      "hints": [
+        "A round power of two - the same size as the minimum cacheable prefix on some models."
+      ]
     },
     {
       "id": "ccaf3-quiz-006",
@@ -220,7 +302,11 @@
           "text": "`budget_tokens` must be less than `max_tokens`, because thinking counts toward it",
           "isCorrect": true
         },
-        { "id": "b", "text": "`budget_tokens` is independent of `max_tokens`", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "`budget_tokens` is independent of `max_tokens`",
+          "isCorrect": false
+        },
         {
           "id": "c",
           "text": "`budget_tokens` must be greater than `max_tokens`",
@@ -232,7 +318,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["extended-thinking", "parameters"]
+      "tags": ["extended-thinking", "parameters"],
+      "hints": ["Thinking tokens are not free of the output budget."]
     },
     {
       "id": "ccaf3-quiz-007",
@@ -251,10 +338,19 @@
           "text": "Temperature applies only to the thinking blocks",
           "isCorrect": false
         },
-        { "id": "c", "text": "Temperature applies only to the final answer", "isCorrect": false },
-        { "id": "d", "text": "It works normally with no restriction", "isCorrect": false }
+        {
+          "id": "c",
+          "text": "Temperature applies only to the final answer",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "It works normally with no restriction",
+          "isCorrect": false
+        }
       ],
-      "tags": ["extended-thinking", "parameters"]
+      "tags": ["extended-thinking", "parameters"],
+      "hints": ["Sampling controls and thinking do not coexist."]
     },
     {
       "id": "ccaf3-quiz-008",
@@ -268,15 +364,24 @@
           "text": "Add an `unknown` value to the enum and state when to use it",
           "isCorrect": true
         },
-        { "id": "b", "text": "Lower the temperature to 0", "isCorrect": false },
-        { "id": "c", "text": "Instruct it to never guess", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "Lower the temperature to 0",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Instruct it to never guess",
+          "isCorrect": false
+        },
         {
           "id": "d",
           "text": "Increase `max_tokens` so it can deliberate longer",
           "isCorrect": false
         }
       ],
-      "tags": ["edge-cases", "structured-output"]
+      "tags": ["edge-cases", "structured-output"],
+      "hints": ["If the enum has no escape hatch, an unsure model is forced to pick something."]
     },
     {
       "id": "ccaf3-quiz-009",
@@ -290,15 +395,24 @@
           "text": "Four diverse input/output examples of the desired tone, wrapped in XML tags",
           "isCorrect": true
         },
-        { "id": "b", "text": "Three paragraphs describing the tone in detail", "isCorrect": false },
-        { "id": "c", "text": "A single example repeated for emphasis", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "Three paragraphs describing the tone in detail",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A single example repeated for emphasis",
+          "isCorrect": false
+        },
         {
           "id": "d",
           "text": "A high temperature so the model can find the right voice",
           "isCorrect": false
         }
       ],
-      "tags": ["few-shot"]
+      "tags": ["few-shot"],
+      "hints": ["Tone is one of those things that is easier to show than to describe."]
     },
     {
       "id": "ccaf3-quiz-010",
@@ -322,9 +436,14 @@
           "text": "\"First identify the parties, then the obligations, then the conflicts\"",
           "isCorrect": false
         },
-        { "id": "d", "text": "\"Think step by step before answering\"", "isCorrect": false }
+        {
+          "id": "d",
+          "text": "\"Think step by step before answering\"",
+          "isCorrect": false
+        }
       ],
-      "tags": ["chain-of-thought"]
+      "tags": ["chain-of-thought"],
+      "hints": ["Reasoning the model never emits did not happen."]
     },
     {
       "id": "ccaf3-quiz-011",
@@ -333,12 +452,29 @@
       "question": "A summarization endpoint must produce a repeatable result for the same input. Which setting helps most?",
       "answer": "`temperature: 0` maximizes consistency for analytical and deterministic work. Note it is a consistency lever, not a correctness guarantee.",
       "choices": [
-        { "id": "a", "text": "`temperature: 0`", "isCorrect": true },
-        { "id": "b", "text": "`temperature: 1` with `top_p: 0.9`", "isCorrect": false },
-        { "id": "c", "text": "`top_k: 1` with `temperature: 1`", "isCorrect": false },
-        { "id": "d", "text": "Tuning `temperature` and `top_p` together", "isCorrect": false }
+        {
+          "id": "a",
+          "text": "`temperature: 0`",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "`temperature: 1` with `top_p: 0.9`",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "`top_k: 1` with `temperature: 1`",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Tuning `temperature` and `top_p` together",
+          "isCorrect": false
+        }
       ],
-      "tags": ["parameters", "temperature"]
+      "tags": ["parameters", "temperature"],
+      "hints": ["One number, at the bottom of its range."]
     },
     {
       "id": "ccaf3-quiz-012",
@@ -352,15 +488,24 @@
           "text": "Wrap the document in XML tags and instruct that its contents are data, never instructions",
           "isCorrect": true
         },
-        { "id": "b", "text": "Lower the temperature to 0", "isCorrect": false },
-        { "id": "c", "text": "Move the document into the system prompt", "isCorrect": false },
+        {
+          "id": "b",
+          "text": "Lower the temperature to 0",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Move the document into the system prompt",
+          "isCorrect": false
+        },
         {
           "id": "d",
           "text": "Strip every occurrence of the word 'ignore' from the input",
           "isCorrect": false
         }
       ],
-      "tags": ["xml-tags", "security", "prompt-injection"]
+      "tags": ["xml-tags", "security", "prompt-injection"],
+      "hints": ["Structural separation plus an explicit rule about what the content *is*."]
     },
     {
       "id": "ccaf3-quiz-013",
@@ -390,7 +535,8 @@
           "isCorrect": false
         }
       ],
-      "tags": ["structured-output", "tool-use", "scenario-support"]
+      "tags": ["structured-output", "tool-use", "scenario-support"],
+      "hints": ["Two different audiences, so two different channels."]
     },
     {
       "id": "ccaf3-quiz-014",
@@ -399,16 +545,29 @@
       "question": "Which is a valid limitation of prefilling?",
       "answer": "Prefill cannot be used with extended thinking. It also must not end in trailing whitespace, and the prefill text is not repeated in the response.",
       "choices": [
-        { "id": "a", "text": "It cannot be combined with extended thinking", "isCorrect": true },
-        { "id": "b", "text": "It only works with `temperature: 0`", "isCorrect": false },
-        { "id": "c", "text": "It cannot be used together with tools", "isCorrect": false },
+        {
+          "id": "a",
+          "text": "It cannot be combined with extended thinking",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "It only works with `temperature: 0`",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "It cannot be used together with tools",
+          "isCorrect": false
+        },
         {
           "id": "d",
           "text": "It is limited to the first turn of a conversation",
           "isCorrect": false
         }
       ],
-      "tags": ["prefill", "extended-thinking"]
+      "tags": ["prefill", "extended-thinking"],
+      "hints": ["One other feature is flatly incompatible with it."]
     },
     {
       "id": "ccaf3-quiz-015",
@@ -422,11 +581,24 @@
           "text": "Allow `null` in the schema, instruct that missing fields must be null, and require source quotes",
           "isCorrect": true
         },
-        { "id": "b", "text": "Increase the model's thinking budget", "isCorrect": false },
-        { "id": "c", "text": "Ask it to be accurate and not hallucinate", "isCorrect": false },
-        { "id": "d", "text": "Add more required fields to the schema", "isCorrect": false }
+        {
+          "id": "b",
+          "text": "Increase the model's thinking budget",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Ask it to be accurate and not hallucinate",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Add more required fields to the schema",
+          "isCorrect": false
+        }
       ],
-      "tags": ["document-extraction", "edge-cases"]
+      "tags": ["document-extraction", "edge-cases"],
+      "hints": ["The model has no legal way to say \"this field was not there\"."]
     },
     {
       "id": "ccaf3-quiz-016",
@@ -435,12 +607,29 @@
       "question": "Which pair of sampling parameters should you avoid tuning at the same time?",
       "answer": "`temperature` and `top_p` both reshape the sampling distribution; changing both makes the combined effect very hard to reason about. Adjust one and leave the other at its default.",
       "choices": [
-        { "id": "a", "text": "`temperature` and `top_p`", "isCorrect": true },
-        { "id": "b", "text": "`temperature` and `max_tokens`", "isCorrect": false },
-        { "id": "c", "text": "`top_k` and `max_tokens`", "isCorrect": false },
-        { "id": "d", "text": "`temperature` and `stop_sequences`", "isCorrect": false }
+        {
+          "id": "a",
+          "text": "`temperature` and `top_p`",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "`temperature` and `max_tokens`",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "`top_k` and `max_tokens`",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "`temperature` and `stop_sequences`",
+          "isCorrect": false
+        }
       ],
-      "tags": ["parameters", "sampling"]
+      "tags": ["parameters", "sampling"],
+      "hints": ["Both of them reshape the same sampling distribution."]
     },
     {
       "id": "ccaf3-type-001",
@@ -449,7 +638,8 @@
       "question": "Which request parameter forces the model to call one specific tool?",
       "answer": "`tool_choice` - e.g. `{\"type\": \"tool\", \"name\": \"record_ticket\"}`. It is how you turn tool use into guaranteed structured output.",
       "shortAnswer": "tool_choice",
-      "tags": ["tool-use", "structured-output"]
+      "tags": ["tool-use", "structured-output"],
+      "hints": ["Two words with an underscore; it sits next to `tools` in the request."]
     },
     {
       "id": "ccaf3-type-002",
@@ -458,7 +648,8 @@
       "question": "Which tool field carries the JSON Schema describing the tool's arguments?",
       "answer": "`input_schema`. Making it precise is the main lever on whether the model calls the tool correctly.",
       "shortAnswer": "input_schema",
-      "tags": ["tool-use", "json-schema"]
+      "tags": ["tool-use", "json-schema"],
+      "hints": ["Two words with an underscore, and it lives inside the tool definition."]
     },
     {
       "id": "ccaf3-type-003",
@@ -467,7 +658,8 @@
       "question": "What is the technique called when you start the assistant turn with the first characters of the answer?",
       "answer": "Prefilling (prefill Claude's response). It forces format and skips the preamble.",
       "shortAnswer": "prefilling",
-      "tags": ["prefill"]
+      "tags": ["prefill"],
+      "hints": ["A gerund - you are filling in the start of the answer."]
     },
     {
       "id": "ccaf3-type-004",
@@ -476,7 +668,8 @@
       "question": "Which markup style does Anthropic recommend for separating instructions, examples, and data inside a prompt?",
       "answer": "XML tags. Claude is trained to attend to them, and they give unambiguous boundaries between prompt sections.",
       "shortAnswer": "XML tags",
-      "tags": ["xml-tags"]
+      "tags": ["xml-tags"],
+      "hints": ["Angle brackets - the same shape you would use to wrap a document or an example."]
     },
     {
       "id": "ccaf3-type-005",
@@ -485,7 +678,8 @@
       "question": "Which `thinking` object field sets the reasoning token target?",
       "answer": "`budget_tokens`. Minimum 1024, must be less than `max_tokens`, and it is a target rather than a hard cap.",
       "shortAnswer": "budget_tokens",
-      "tags": ["extended-thinking"]
+      "tags": ["extended-thinking"],
+      "hints": ["Two words with an underscore; the second word is what you are spending."]
     },
     {
       "id": "ccaf3-type-006",
@@ -494,7 +688,8 @@
       "question": "Which temperature value gives the most consistent output for extraction and classification?",
       "answer": "0. It maximizes determinism - though it still guarantees consistency, not correctness.",
       "shortAnswer": "0",
-      "tags": ["parameters"]
+      "tags": ["parameters"],
+      "hints": ["The very bottom of the 0-to-1 range."]
     },
     {
       "id": "ccaf3-match-001",
@@ -524,7 +719,10 @@
           "right": "Output that must validate against a fixed contract"
         }
       ],
-      "tags": ["best-practices"]
+      "tags": ["best-practices"],
+      "hints": [
+        "Each technique fixes a different kind of unclear: boundaries, style, reasoning, format, or contract."
+      ]
     },
     {
       "id": "ccaf3-match-002",
@@ -533,15 +731,27 @@
       "question": "Match each piece of prompt content to where it belongs.",
       "answer": "Stable content goes in the system prompt (also making it cacheable); per-request content goes in the user turn; the contract goes in the tool schema.",
       "matchPairs": [
-        { "left": "Role, tone, escalation policy", "right": "System prompt" },
-        { "left": "The customer's current message", "right": "User message" },
-        { "left": "The exact shape of the output record", "right": "Tool input_schema" },
+        {
+          "left": "Role, tone, escalation policy",
+          "right": "System prompt"
+        },
+        {
+          "left": "The customer's current message",
+          "right": "User message"
+        },
+        {
+          "left": "The exact shape of the output record",
+          "right": "Tool input_schema"
+        },
         {
           "left": "Few-shot examples reused on every call",
           "right": "System prompt (inside the cached prefix)"
         }
       ],
-      "tags": ["system-prompt", "architecture"]
+      "tags": ["system-prompt", "architecture"],
+      "hints": [
+        "Stable content in one place, per-request content in another, and the contract in a third."
+      ]
     },
     {
       "id": "ccaf3-match-003",
@@ -550,13 +760,29 @@
       "question": "Match each parameter to what it controls.",
       "answer": "`max_tokens` is a hard ceiling on output; `budget_tokens` is a target for reasoning inside that ceiling; `temperature` shapes randomness; `stop_sequences` ends generation on a string.",
       "matchPairs": [
-        { "left": "max_tokens", "right": "Hard ceiling on tokens generated in the turn" },
-        { "left": "budget_tokens", "right": "Target depth of extended thinking (min 1024)" },
-        { "left": "temperature", "right": "Randomness of sampling, 0 for deterministic work" },
-        { "left": "stop_sequences", "right": "Custom strings that end generation early" },
-        { "left": "tool_choice", "right": "Whether and which tool the model must call" }
+        {
+          "left": "max_tokens",
+          "right": "Hard ceiling on tokens generated in the turn"
+        },
+        {
+          "left": "budget_tokens",
+          "right": "Target depth of extended thinking (min 1024)"
+        },
+        {
+          "left": "temperature",
+          "right": "Randomness of sampling, 0 for deterministic work"
+        },
+        {
+          "left": "stop_sequences",
+          "right": "Custom strings that end generation early"
+        },
+        {
+          "left": "tool_choice",
+          "right": "Whether and which tool the model must call"
+        }
       ],
-      "tags": ["parameters"]
+      "tags": ["parameters"],
+      "hints": ["One is a hard ceiling, one is a target inside that ceiling. Do not mix them up."]
     }
   ]
 }
