@@ -94,3 +94,21 @@ describe('TypeAnswerReview', () => {
     expect(screen.queryByText('learn.submitError')).not.toBeInTheDocument();
   });
 });
+
+describe('TypeAnswerReview regions', () => {
+  it('names the question region for screen readers', () => {
+    render(
+      <TypeAnswerReview
+        card={card}
+        currentIndex={0}
+        totalCards={1}
+        dailyGoalProgress={0}
+        dailyGoal={20}
+        onSubmit={vi.fn()}
+        onAdvance={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('region', { name: 'learn.part.question' })).toBeInTheDocument();
+  });
+});

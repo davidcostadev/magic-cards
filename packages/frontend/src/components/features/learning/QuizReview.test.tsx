@@ -273,3 +273,27 @@ describe('QuizReview', () => {
     expect(screen.queryByText('learn.submitError')).not.toBeInTheDocument();
   });
 });
+
+describe('QuizReview regions', () => {
+  it('names the question and the options for screen readers', () => {
+    renderQuiz(vi.fn(), vi.fn());
+
+    expect(screen.getByRole('region', { name: 'learn.part.question' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'learn.part.options' })).toBeInTheDocument();
+  });
+
+  it('names the explanation once the answer comes back', async () => {
+    const onSubmit = vi.fn().mockResolvedValue({
+      correct: false,
+      correctChoiceId: 'b',
+      explanation: 'Beta is right',
+    });
+    renderQuiz(onSubmit, vi.fn());
+
+    await userEvent.click(screen.getByText('Alpha'));
+
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'learn.part.explanation' })).toBeInTheDocument()
+    );
+  });
+});

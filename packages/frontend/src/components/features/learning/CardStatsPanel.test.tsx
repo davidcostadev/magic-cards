@@ -63,6 +63,21 @@ describe('CardStatsPanel', () => {
     expect(screen.getByText('dashboard.reviewing')).toBeInTheDocument(); // status (reused key)
   });
 
+  it('shows the card id, selectable, even before the card has been studied', () => {
+    useAuthMock.mockReturnValue({ user: { nerdStats: true } });
+    useCardStatsMock.mockReturnValue({
+      data: { ...FULL_STATS, totalReviews: 0 },
+      isLoading: false,
+    });
+
+    render(<CardStatsPanel cardId="ccaf1-open-001" />);
+
+    const id = screen.getByText('ccaf1-open-001');
+    expect(id).toBeInTheDocument();
+    expect(id).toHaveAttribute('title', 'ccaf1-open-001');
+    expect(screen.getByText('cardStats.cardId')).toBeInTheDocument();
+  });
+
   it('shows a no-data hint for a never-reviewed card', () => {
     useAuthMock.mockReturnValue({ user: { nerdStats: true } });
     useCardStatsMock.mockReturnValue({

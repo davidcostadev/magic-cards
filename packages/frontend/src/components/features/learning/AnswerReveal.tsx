@@ -2,6 +2,7 @@ import { Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Kbd } from '@/components/common/Kbd';
 import { Button } from '@/components/ui/button';
+import { CardPart } from './CardPart';
 import { MarkdownContent } from './MarkdownContent';
 
 interface AnswerRevealProps {
@@ -24,8 +25,8 @@ export function AnswerReveal({ answer, revealed, onReveal }: AnswerRevealProps) 
   }
 
   return (
-    <div className="animate-[slideDown_300ms_ease-out]">
+    <CardPart part="answer" className="animate-[slideDown_300ms_ease-out]">
       <MarkdownContent text={answer} />
-    </div>
+    </CardPart>
   );
 }

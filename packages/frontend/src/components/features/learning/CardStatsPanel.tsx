@@ -65,9 +65,18 @@ export function CardStatsPanel({ cardId, variant = 'panel', className }: CardSta
       )}
       aria-label={t('cardStats.title')}
     >
-      <h4 className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide">
+      <h4 className="mb-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px] font-semibold uppercase tracking-wide">
         <span aria-hidden>🤓</span>
         {t('cardStats.title')}
+        {/* The card id is the handle you need to find this card in the catalog API or the
+            content JSON, so it shows even for a card with no review history yet. */}
+        <span className="sr-only">{t('cardStats.cardId')}</span>
+        <code
+          title={cardId}
+          className="select-all rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] normal-case tracking-normal text-foreground/70"
+        >
+          {cardId}
+        </code>
       </h4>
       {data.totalReviews === 0 ? (
         <p>{t('cardStats.noData')}</p>

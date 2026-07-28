@@ -1,5 +1,5 @@
 import { Check, Pencil, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card } from '@/api/queries/cards';
 import { CardStatsPanel } from '@/components/features/learning/CardStatsPanel';
@@ -28,9 +28,15 @@ interface CardViewProps {
 }
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  // Point the section at its own heading so it is announced as a named region ("Question",
+  // "Choices", …) rather than an unlabelled block a screen reader has to infer from position.
+  const headingId = `card-section-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
-    <section className="space-y-2.5">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <section className="space-y-2.5" aria-labelledby={headingId}>
+      <h3
+        id={headingId}
+        className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+      >
         {label}
       </h3>
       {children}

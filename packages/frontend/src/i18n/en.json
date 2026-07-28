@@ -208,6 +208,16 @@
     "suggestionAddTable": "Better as a table"
   },
   "learn": {
+    "part": {
+      "question": "Question",
+      "hints": "Hints",
+      "options": "Options",
+      "pairs": "Pairs",
+      "yourAnswer": "Your answer",
+      "answer": "Answer",
+      "explanation": "Explanation",
+      "stats": "Your stats"
+    },
     "title": "Learning Session",
     "diagramFailed": "Could not render this diagram",
     "showHint": "Show Hint",
@@ -279,6 +289,7 @@
     "saved": "Settings saved!"
   },
   "cardStats": {
+    "cardId": "Card id",
     "title": "Your stats",
     "correct": "right",
     "incorrect": "wrong",

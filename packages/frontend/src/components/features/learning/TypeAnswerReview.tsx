@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useLearningSessions } from '@/context/LearningContext';
 import { cn } from '@/utils/cn';
 import { isInteractiveTarget, isTypingTarget } from '@/utils/keyboard';
+import { CardPart } from './CardPart';
 import { HintReveal } from './HintReveal';
 import { MarkdownContent } from './MarkdownContent';
 import type { CardReviewProps } from './reviewTypes';
@@ -112,7 +113,9 @@ export function TypeAnswerReview({
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <MarkdownContent text={question} />
+      <CardPart part="question">
+        <MarkdownContent text={question} />
+      </CardPart>
 
       <HintReveal
         hints={card.hints}
@@ -171,7 +174,11 @@ export function TypeAnswerReview({
             </div>
           )}
 
-          {explanation && <MarkdownContent text={explanation} />}
+          {explanation && (
+            <CardPart part="explanation">
+              <MarkdownContent text={explanation} />
+            </CardPart>
+          )}
 
           <Button
             onClick={() => onAdvance(grade.correct)}

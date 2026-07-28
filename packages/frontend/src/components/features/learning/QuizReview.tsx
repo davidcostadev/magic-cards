@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useLearningSessions } from '@/context/LearningContext';
 import { cn } from '@/utils/cn';
 import { isInteractiveTarget, isTypingTarget } from '@/utils/keyboard';
+import { CardPart } from './CardPart';
 import { InlineMarkdown } from './InlineMarkdown';
 import { MarkdownContent } from './MarkdownContent';
 import type { CardReviewProps } from './reviewTypes';
@@ -162,7 +163,9 @@ export function QuizReview({
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <MarkdownContent text={question} />
+      <CardPart part="question">
+        <MarkdownContent text={question} />
+      </CardPart>
 
       {/* Keep the hint button mounted for the whole unanswered phase and toggle `disabled`
           instead of unmounting it: unmounting while the request is in flight (or once every
@@ -181,7 +184,7 @@ export function QuizReview({
         </Button>
       )}
 
-      <div className="space-y-3">
+      <CardPart part="options" className="space-y-3">
         {choices.map((choice, index) => {
           const showCorrect = answered && choice.id === grade.correctChoiceId;
           const showWrong =
@@ -214,7 +217,7 @@ export function QuizReview({
             </button>
           );
         })}
-      </div>
+      </CardPart>
 
       {submitError && !answered && (
         <p role="alert" className="text-center text-sm font-medium text-destructive">
@@ -246,7 +249,11 @@ export function QuizReview({
           >
             {grade.correct ? t('learn.correct') : t('learn.incorrect')}
           </p>
-          {explanation && <MarkdownContent text={explanation} />}
+          {explanation && (
+            <CardPart part="explanation">
+              <MarkdownContent text={explanation} />
+            </CardPart>
+          )}
           <Button
             onClick={() => onAdvance(grade.correct)}
             className="w-full"

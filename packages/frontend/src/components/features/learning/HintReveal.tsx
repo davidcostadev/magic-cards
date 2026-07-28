@@ -2,6 +2,7 @@ import { Lightbulb } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Kbd } from '@/components/common/Kbd';
 import { Button } from '@/components/ui/button';
+import { CardPart } from './CardPart';
 
 interface HintRevealProps {
   hints: string[];
@@ -17,7 +18,7 @@ export function HintReveal({ hints, revealedCount, onRevealNext, shortcutKey }: 
   if (hints.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <CardPart part="hints" className="space-y-3">
       {hints.slice(0, revealedCount).map((hint, index) => (
         <div
           key={index}
@@ -47,6 +48,6 @@ export function HintReveal({ hints, revealedCount, onRevealNext, shortcutKey }: 
           )}
         </Button>
       )}
-    </div>
+    </CardPart>
   );
 }

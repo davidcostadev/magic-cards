@@ -145,3 +145,21 @@ describe('MatchReview', () => {
     expect(onAdvance).toHaveBeenCalledWith(true);
   });
 });
+
+describe('MatchReview regions', () => {
+  it('names the question region for screen readers', () => {
+    render(
+      <MatchReview
+        card={card}
+        currentIndex={0}
+        totalCards={1}
+        dailyGoalProgress={0}
+        dailyGoal={20}
+        onSubmit={vi.fn()}
+        onAdvance={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('region', { name: 'learn.part.question' })).toBeInTheDocument();
+  });
+});

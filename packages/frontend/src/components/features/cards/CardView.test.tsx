@@ -125,3 +125,18 @@ describe('CardView', () => {
     expect(screen.getByText('markup')).toBeInTheDocument();
   });
 });
+
+describe('CardView regions', () => {
+  it('exposes each labelled part as a named region', () => {
+    render(
+      <CardView
+        open
+        onOpenChange={vi.fn()}
+        card={make({ type: 'open', question: 'Q text', answer: 'A text' })}
+      />
+    );
+
+    expect(screen.getByRole('region', { name: 'cards.question' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'cards.answer' })).toBeInTheDocument();
+  });
+});

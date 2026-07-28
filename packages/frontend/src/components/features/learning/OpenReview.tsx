@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useLearningSessions } from '@/context/LearningContext';
 import { isInteractiveTarget, isTypingTarget } from '@/utils/keyboard';
 import { AnswerReveal } from './AnswerReveal';
+import { CardPart } from './CardPart';
 import { HintReveal } from './HintReveal';
 import { MarkdownContent } from './MarkdownContent';
 import type { CardReviewProps } from './reviewTypes';
@@ -105,7 +106,9 @@ export function OpenReview({
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <MarkdownContent text={question} />
+      <CardPart part="question">
+        <MarkdownContent text={question} />
+      </CardPart>
 
       <HintReveal
         hints={card.hints}

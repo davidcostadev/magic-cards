@@ -208,6 +208,16 @@
     "suggestionAddTable": "Ficaria melhor em tabela"
   },
   "learn": {
+    "part": {
+      "question": "Pergunta",
+      "hints": "Dicas",
+      "options": "Alternativas",
+      "pairs": "Pares",
+      "yourAnswer": "Sua resposta",
+      "answer": "Resposta",
+      "explanation": "Explicação",
+      "stats": "Suas estatísticas"
+    },
     "title": "Sessão de Estudo",
     "diagramFailed": "Não foi possível renderizar este diagrama",
     "showHint": "Mostrar Dica",
@@ -279,6 +289,7 @@
     "saved": "Configurações salvas!"
   },
   "cardStats": {
+    "cardId": "ID do cartão",
     "title": "Suas estatísticas",
     "correct": "acertos",
     "incorrect": "erros",

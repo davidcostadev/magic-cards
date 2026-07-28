@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useLearningSessions } from '@/context/LearningContext';
 import { cn } from '@/utils/cn';
 import { isInteractiveTarget, isTypingTarget } from '@/utils/keyboard';
+import { CardPart } from './CardPart';
 import { MarkdownContent } from './MarkdownContent';
 import type { CardReviewProps } from './reviewTypes';
 import { useReviewSession } from './useReviewSession';
@@ -221,7 +222,9 @@ export function MatchReview({
   if (answered) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 p-4">
-        <MarkdownContent text={question} />
+        <CardPart part="question">
+          <MarkdownContent text={question} />
+        </CardPart>
         <div className="space-y-3 animate-[fadeIn_200ms_ease-in]">
           <p
             className={cn(
@@ -245,7 +248,11 @@ export function MatchReview({
               ))}
             </div>
           )}
-          {explanation && <MarkdownContent text={explanation} />}
+          {explanation && (
+            <CardPart part="explanation">
+              <MarkdownContent text={explanation} />
+            </CardPart>
+          )}
           <Button
             onClick={() => onAdvance(grade.correct)}
             className="w-full"
@@ -262,7 +269,9 @@ export function MatchReview({
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <MarkdownContent text={card.question} />
+      <CardPart part="question">
+        <MarkdownContent text={card.question} />
+      </CardPart>
 
       <p className="text-sm text-muted-foreground">
         {solved}/{total} {t('learn.matchPairsFound')}
