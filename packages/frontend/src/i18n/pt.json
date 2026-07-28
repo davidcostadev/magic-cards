@@ -12,7 +12,8 @@
     "close": "Fechar",
     "options": "Opções",
     "previous": "Anterior",
-    "next": "Próximo"
+    "next": "Próximo",
+    "sortBy": "Ordenar por"
   },
   "validation": {
     "required": "Campo obrigatório",
@@ -108,7 +109,21 @@
     "statDue": "Para revisar",
     "noSubjects": "Nenhum assunto ainda. Crie o primeiro!",
     "deleteConfirm": "Tem certeza que deseja excluir este assunto?",
-    "viewCards": "Ver Cartões"
+    "viewCards": "Ver Cartões",
+    "statAccuracy": "Acertos",
+    "statReviews": "Revisões",
+    "statEase": "Facilidade média",
+    "progressMastered": "{{mastered}}/{{total}} dominados",
+    "progressAccuracy": "{{value}}% de acertos",
+    "sort": {
+      "recent": "Mais recentes",
+      "title": "A-Z",
+      "due": "Mais a revisar",
+      "progress": "Mais estudados",
+      "mastered": "Mais dominados",
+      "accuracy": "Melhor desempenho",
+      "weakest": "Piores primeiro"
+    }
   },
   "cards": {
     "title": "Cartões",
@@ -153,7 +168,25 @@
     "search": "Buscar cards...",
     "noResults": "Nenhum card corresponde à busca.",
     "correct": "Resposta correta",
-    "pagination": "Páginas de cartões"
+    "pagination": "Páginas de cartões",
+    "notStudied": "Ainda não estudado",
+    "scoreAccuracy": "{{value}}% de acertos",
+    "scoreEase": "facilidade {{value}}",
+    "reviewCount_one": "{{count}} revisão",
+    "reviewCount_other": "{{count}} revisões",
+    "difficulty": {
+      "hard": "Difícil",
+      "medium": "Média",
+      "easy": "Fácil"
+    },
+    "sort": {
+      "recent": "Mais recentes",
+      "hardest": "Mais difíceis primeiro",
+      "easiest": "Mais fáceis primeiro",
+      "mostReviewed": "Mais revisados",
+      "lastReviewed": "Estudados recentemente",
+      "alphabetical": "A-Z"
+    }
   },
   "reports": {
     "button": "Reportar",

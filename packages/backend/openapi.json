@@ -376,6 +376,41 @@
         ]
       }
     },
+    "/v1/subjects/{id}/card-stats": {
+      "get": {
+        "operationId": "SubjectsController_cardStats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectCardStatsListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "subjects"
+        ]
+      }
+    },
     "/v1/subjects/{id}/selection": {
       "post": {
         "operationId": "SubjectsController_select",
@@ -2036,13 +2071,25 @@
                 },
                 "due": {
                   "type": "number"
+                },
+                "mastered": {
+                  "type": "number"
+                },
+                "totalReviews": {
+                  "type": "number"
+                },
+                "accuracy": {
+                  "type": "number"
                 }
               },
               "required": [
                 "subjectId",
                 "total",
                 "reviewed",
-                "due"
+                "due",
+                "mastered",
+                "totalReviews",
+                "accuracy"
               ]
             }
           }
@@ -2093,6 +2140,22 @@
           },
           "due": {
             "type": "number"
+          },
+          "totalReviews": {
+            "type": "number"
+          },
+          "accuracy": {
+            "type": "number"
+          },
+          "avgEaseFactor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -2101,7 +2164,128 @@
           "learning",
           "reviewing",
           "mastered",
-          "due"
+          "due",
+          "totalReviews",
+          "accuracy",
+          "avgEaseFactor"
+        ]
+      },
+      "SubjectCardStatsListDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cardId": {
+                  "type": "string"
+                },
+                "totalReviews": {
+                  "type": "number"
+                },
+                "correctCount": {
+                  "type": "number"
+                },
+                "incorrectCount": {
+                  "type": "number"
+                },
+                "accuracy": {
+                  "type": "number"
+                },
+                "avgTimeMs": {
+                  "type": "number"
+                },
+                "hintedCount": {
+                  "type": "number"
+                },
+                "easeFactor": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "interval": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "repetitions": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "status": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "new",
+                        "learning",
+                        "reviewing",
+                        "mastered"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "lastReviewDate": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "nextReviewDate": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "cardId",
+                "totalReviews",
+                "correctCount",
+                "incorrectCount",
+                "accuracy",
+                "avgTimeMs",
+                "hintedCount",
+                "easeFactor",
+                "interval",
+                "repetitions",
+                "status",
+                "lastReviewDate",
+                "nextReviewDate"
+              ]
+            }
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "CardListDto": {

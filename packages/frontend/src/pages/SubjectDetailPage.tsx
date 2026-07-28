@@ -18,11 +18,13 @@ import {
   useUpdateCard,
 } from '@/api/queries/cards';
 import { useCardReports } from '@/api/queries/reports';
-import { useSubject, useSubjectStats } from '@/api/queries/subjects';
+import { useSubject, useSubjectCardStats, useSubjectStats } from '@/api/queries/subjects';
+import { SortSelect } from '@/components/common/SortSelect';
 import { CardForm, type CardFormData } from '@/components/features/cards/CardForm';
 import { CardList } from '@/components/features/cards/CardList';
 import { CardView } from '@/components/features/cards/CardView';
 import { filterCards } from '@/components/features/cards/filterCards';
+import { CARD_SORTS, type CardSort, sortCards } from '@/components/features/cards/sortCards';
 import { getSubjectIcon } from '@/components/features/subjects/subjectIcons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { CardContent, CardHeader, CardTitle, Card as UiCard } from '@/components/ui/card';
@@ -31,6 +33,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/utils/cn';
 
 const PAGE_SIZE = 20;
+/** Stable empty map so sorting doesn't re-run while the per-card stats are still loading. */
+const EMPTY_STATS = new Map<string, never>();
 
 export function SubjectDetailPage() {
   const { subjectId } = useParams({ from: '/subjects/$subjectId' });
@@ -39,6 +43,7 @@ export function SubjectDetailPage() {
   const { data: cards = [] } = useCards(subjectId);
   const { data: reports = [] } = useCardReports(subjectId);
   const { data: stats } = useSubjectStats(subjectId);
+  const { data: cardStats } = useSubjectCardStats(subjectId);
   const createCard = useCreateCard();
   const updateCard = useUpdateCard();
   const deleteCard = useDeleteCard();
@@ -49,6 +54,7 @@ export function SubjectDetailPage() {
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
   const [query, setQuery] = useState('');
   const [showReportedOnly, setShowReportedOnly] = useState(false);
+  const [sort, setSort] = useState<CardSort>('recent');
   const [page, setPage] = useState(0);
 
   // The cards the current user has reported in this subject — drives the badge and the filter.
@@ -60,12 +66,14 @@ export function SubjectDetailPage() {
   );
   const filteredCards = useMemo(() => {
     const bySearch = filterCards(cards, query);
-    return showReportedOnly ? bySearch.filter((c) => reportedIds.has(c.id)) : bySearch;
-  }, [cards, query, showReportedOnly, reportedIds]);
-  // A new search or filter change resets to the first page.
+    const visible = showReportedOnly ? bySearch.filter((c) => reportedIds.has(c.id)) : bySearch;
+    // Sorting runs over the whole filtered deck, so paging walks the sorted order.
+    return sortCards(visible, cardStats ?? EMPTY_STATS, sort);
+  }, [cards, query, showReportedOnly, reportedIds, cardStats, sort]);
+  // A new search, filter, or ordering resets to the first page.
   useEffect(() => {
     setPage(0);
-  }, [query, showReportedOnly]);
+  }, [query, showReportedOnly, sort]);
   const pageCount = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
   const pageCards = filteredCards.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
@@ -179,6 +187,20 @@ export function SubjectDetailPage() {
                 <p className="text-3xl font-bold tabular-nums text-primary">{stats?.due ?? 0}</p>
                 <p className="text-sm text-muted-foreground">{t('subjects.statDue')}</p>
               </div>
+              <div>
+                <p className="text-3xl font-bold tabular-nums">{stats?.accuracy ?? 0}%</p>
+                <p className="text-sm text-muted-foreground">{t('subjects.statAccuracy')}</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold tabular-nums">{stats?.totalReviews ?? 0}</p>
+                <p className="text-sm text-muted-foreground">{t('subjects.statReviews')}</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold tabular-nums">
+                  {stats?.avgEaseFactor != null ? stats.avgEaseFactor.toFixed(2) : '—'}
+                </p>
+                <p className="text-sm text-muted-foreground">{t('subjects.statEase')}</p>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-5 border-t pt-5 sm:grid-cols-4">
               {(
@@ -223,6 +245,13 @@ export function SubjectDetailPage() {
               {t('reports.filterReported')} ({reportedIds.size})
             </Button>
           )}
+          <SortSelect
+            className="w-full sm:w-auto"
+            value={sort}
+            options={CARD_SORTS}
+            optionLabel={(option) => t(`cards.sort.${option}`)}
+            onChange={setSort}
+          />
         </div>
       )}
 
@@ -234,6 +263,7 @@ export function SubjectDetailPage() {
             cards={pageCards}
             reportedIds={reportedIds}
             resolvedIds={resolvedIds}
+            stats={cardStats}
             readOnly={isPublic}
             onView={(card) => {
               setViewingCard(card);

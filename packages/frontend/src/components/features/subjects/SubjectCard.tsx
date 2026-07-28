@@ -159,6 +159,20 @@ export function SubjectCard({ subject, cardCount, progress, onEdit, onDelete }: 
                 )
               )}
             </div>
+            {/* How well it's going, not just how far: mastery and answer accuracy so far. */}
+            {progress.totalReviews > 0 && (
+              <div className="mt-1 flex items-center justify-between text-xs">
+                <span className="text-muted-foreground tabular-nums">
+                  {t('subjects.progressMastered', {
+                    mastered: progress.mastered,
+                    total: progress.total,
+                  })}
+                </span>
+                <span className="font-medium tabular-nums">
+                  {t('subjects.progressAccuracy', { value: progress.accuracy })}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </Link>

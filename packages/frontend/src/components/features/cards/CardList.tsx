@@ -6,6 +6,7 @@ import { LanguageBadge } from '@/components/features/subjects/LanguageBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { type CardDifficulty, type CardStatsMap, cardDifficulty } from './sortCards';
 
 interface CardListProps {
   cards: CardType[];
@@ -19,6 +20,8 @@ interface CardListProps {
   reportedIds?: Set<string>;
   /** Subset of reported ids whose report has been resolved — shown with a "resolved" badge instead. */
   resolvedIds?: Set<string>;
+  /** The user's own performance per card — drives the score row. Absent while loading. */
+  stats?: CardStatsMap;
 }
 
 const TYPE_LABEL_KEY: Record<CardType['type'], string> = {
@@ -26,6 +29,12 @@ const TYPE_LABEL_KEY: Record<CardType['type'], string> = {
   quiz: 'cards.typeQuiz',
   'type-answer': 'cards.typeTypeAnswer',
   match: 'cards.typeMatch',
+};
+
+const DIFFICULTY_STYLE: Record<CardDifficulty, string> = {
+  hard: 'border border-destructive/30 bg-destructive/10 text-destructive',
+  medium: 'border border-warning/30 bg-warning/10 text-amber-700 dark:text-amber-400',
+  easy: 'border border-success/30 bg-success/10 text-success',
 };
 
 export function CardList({
@@ -36,6 +45,7 @@ export function CardList({
   readOnly,
   reportedIds,
   resolvedIds,
+  stats,
 }: CardListProps) {
   const { t } = useTranslation();
 
@@ -47,6 +57,8 @@ export function CardList({
     <div className="space-y-3 sm:space-y-4">
       {cards.map((card) => {
         const title = card.question.split('\n')[0].replace(/[#`*]/g, '');
+        const cardStats = stats?.get(card.id);
+        const difficulty = cardDifficulty(cardStats);
         // Every language the card is available in: its primary plus any translations present.
         const cardLangs = [
           card.language,
@@ -105,6 +117,28 @@ export function CardList({
                       {t('cards.hintCount', { count: card.hints.length })}
                     </p>
                   )}
+                  {/* How this learner is doing on the card: difficulty, accuracy, reps, ease. */}
+                  {stats &&
+                    (difficulty ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+                        <Badge variant="secondary" className={DIFFICULTY_STYLE[difficulty]}>
+                          {t(`cards.difficulty.${difficulty}`)}
+                        </Badge>
+                        <span className="font-medium tabular-nums">
+                          {t('cards.scoreAccuracy', { value: cardStats?.accuracy ?? 0 })}
+                        </span>
+                        <span className="text-muted-foreground tabular-nums">
+                          {t('cards.reviewCount', { count: cardStats?.totalReviews ?? 0 })}
+                        </span>
+                        {cardStats?.easeFactor != null && (
+                          <span className="text-muted-foreground tabular-nums">
+                            {t('cards.scoreEase', { value: cardStats.easeFactor.toFixed(2) })}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-muted-foreground">{t('cards.notStudied')}</p>
+                    ))}
                   {/* Opt-in "nerd stats": self-hides unless the preference is on. */}
                   <CardStatsPanel cardId={card.id} variant="inline" className="mt-1.5" />
                 </div>

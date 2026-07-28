@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { Card } from '@/api/queries/cards';
+import type { Card, CardStats } from '@/api/queries/cards';
 import { CardList } from './CardList';
 
 vi.mock('react-i18next', () => ({
@@ -26,6 +26,22 @@ const card = (over: Partial<Card> = {}): Card =>
     updatedAt: '',
     ...over,
   }) as Card;
+
+const stats = (over: Partial<CardStats> = {}): CardStats => ({
+  totalReviews: 4,
+  correctCount: 1,
+  incorrectCount: 3,
+  accuracy: 25,
+  avgTimeMs: 1000,
+  hintedCount: 0,
+  easeFactor: 1.7,
+  interval: 1,
+  repetitions: 1,
+  status: 'learning',
+  lastReviewDate: '2026-07-01T00:00:00.000Z',
+  nextReviewDate: '2026-07-02T00:00:00.000Z',
+  ...over,
+});
 
 describe('CardList', () => {
   it('opens the view when a card row is clicked', async () => {
@@ -58,5 +74,39 @@ describe('CardList', () => {
     expect(onDelete).toHaveBeenCalledWith('c1');
 
     expect(onView).not.toHaveBeenCalled();
+  });
+
+  it('scores each card from the user own stats', () => {
+    render(
+      <CardList
+        cards={[card()]}
+        stats={new Map([['c1', stats()]])}
+        onView={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+    expect(screen.getByText('cards.difficulty.hard')).toBeInTheDocument();
+    expect(screen.getByText('cards.scoreAccuracy')).toBeInTheDocument();
+    expect(screen.getByText('cards.reviewCount')).toBeInTheDocument();
+  });
+
+  it('marks a card with no stats as not studied yet', () => {
+    render(
+      <CardList
+        cards={[card()]}
+        stats={new Map()}
+        onView={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+    expect(screen.getByText('cards.notStudied')).toBeInTheDocument();
+    expect(screen.queryByText('cards.scoreAccuracy')).toBeNull();
+  });
+
+  it('shows no score row at all until the stats have loaded', () => {
+    render(<CardList cards={[card()]} onView={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.queryByText('cards.notStudied')).toBeNull();
   });
 });

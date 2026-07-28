@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/subjects/{id}/card-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SubjectsController_cardStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/subjects/{id}/selection": {
         parameters: {
             query?: never;
@@ -559,6 +575,9 @@ export interface components {
                 total: number;
                 reviewed: number;
                 due: number;
+                mastered: number;
+                totalReviews: number;
+                accuracy: number;
             }[];
         };
         UpdateSubjectDto: {
@@ -574,6 +593,26 @@ export interface components {
             reviewing: number;
             mastered: number;
             due: number;
+            totalReviews: number;
+            accuracy: number;
+            avgEaseFactor: number | null;
+        };
+        SubjectCardStatsListDto: {
+            data: {
+                cardId: string;
+                totalReviews: number;
+                correctCount: number;
+                incorrectCount: number;
+                accuracy: number;
+                avgTimeMs: number;
+                hintedCount: number;
+                easeFactor: number | null;
+                interval: number | null;
+                repetitions: number | null;
+                status: ("new" | "learning" | "reviewing" | "mastered") | null;
+                lastReviewDate: string | null;
+                nextReviewDate: string | null;
+            }[];
         };
         CardListDto: {
             /** @constant */
@@ -1488,6 +1527,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubjectStatsDto"];
+                };
+            };
+        };
+    };
+    SubjectsController_cardStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectCardStatsListDto"];
                 };
             };
         };

@@ -13,6 +13,7 @@ export const subjectKeys = {
   list: () => [...subjectKeys.all, 'list'] as const,
   detail: (id: string) => [...subjectKeys.all, 'detail', id] as const,
   stats: (id: string) => [...subjectKeys.all, 'stats', id] as const,
+  cardStats: (id: string) => [...subjectKeys.all, 'card-stats', id] as const,
   progress: () => [...subjectKeys.all, 'progress'] as const,
 };
 
@@ -61,6 +62,24 @@ export function useSubjectStats(id: string) {
       });
       if (error || !data) throw error;
       return data;
+    },
+  });
+}
+
+/**
+ * The user's performance on every studied card of a subject, in one request. Returned as a Map
+ * keyed by card id so the list can look a card's score up while rendering; cards the user has
+ * never studied simply have no entry.
+ */
+export function useSubjectCardStats(id: string) {
+  return useQuery({
+    queryKey: subjectKeys.cardStats(id),
+    queryFn: async () => {
+      const { data, error } = await apiClient.GET('/v1/subjects/{id}/card-stats', {
+        params: { path: { id } },
+      });
+      if (error || !data) throw error;
+      return new Map(data.data.map((row) => [row.cardId, row]));
     },
   });
 }

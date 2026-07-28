@@ -6,6 +6,8 @@ import { PaginationQueryDto, toListResponse } from '../../common/pagination';
 import type { AuthUser } from '../../common/types/authenticated-request';
 import {
   CreateSubjectDto,
+  type SubjectCardStats,
+  SubjectCardStatsListDto,
   SubjectListDto,
   type SubjectProgress,
   SubjectProgressListDto,
@@ -73,6 +75,16 @@ export class SubjectsController {
   @ApiOkResponse({ type: SubjectStatsDto })
   stats(@CurrentUser() user: AuthUser, @Param('id') id: string): Promise<SubjectStats> {
     return this.subjects.stats(user.id, id);
+  }
+
+  // Per-card performance for the whole subject, in one request (scores + "hardest first" sorting).
+  @Get(':id/card-stats')
+  @ApiOkResponse({ type: SubjectCardStatsListDto })
+  async cardStats(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string
+  ): Promise<{ data: SubjectCardStats[] }> {
+    return { data: await this.subjects.cardStats(user.id, id) };
   }
 
   // Add the subject to the user's list ("My Subjects"). Idempotent.

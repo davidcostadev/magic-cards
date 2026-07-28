@@ -9,10 +9,16 @@ import {
   useSubjectsProgress,
   useUpdateSubject,
 } from '@/api/queries/subjects';
+import { SortSelect } from '@/components/common/SortSelect';
 import { CreateSubjectModal } from '@/components/features/subjects/CreateSubjectModal';
 import { filterSubjects } from '@/components/features/subjects/filterSubjects';
 import { ManageSubjectsModal } from '@/components/features/subjects/ManageSubjectsModal';
 import { SubjectCard } from '@/components/features/subjects/SubjectCard';
+import {
+  SUBJECT_SORTS,
+  type SubjectSort,
+  sortSubjects,
+} from '@/components/features/subjects/sortSubjects';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,17 +35,18 @@ export function SubjectsPage() {
   const [manageOpen, setManageOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [query, setQuery] = useState('');
-
-  // The grid shows only the subjects the user has added to their list ("Manage" toggles this).
-  const activeSubjects = useMemo(() => subjects.filter((s) => s.selected), [subjects]);
-  const filteredSubjects = useMemo(
-    () => filterSubjects(activeSubjects, query),
-    [activeSubjects, query]
-  );
+  const [sort, setSort] = useState<SubjectSort>('recent');
 
   const progressById = useMemo(
     () => new Map((progressList ?? []).map((p) => [p.subjectId, p])),
     [progressList]
+  );
+
+  // The grid shows only the subjects the user has added to their list ("Manage" toggles this).
+  const activeSubjects = useMemo(() => subjects.filter((s) => s.selected), [subjects]);
+  const filteredSubjects = useMemo(
+    () => sortSubjects(filterSubjects(activeSubjects, query), progressById, sort),
+    [activeSubjects, query, progressById, sort]
   );
 
   const handleSave = (data: {
@@ -116,14 +123,24 @@ export function SubjectsPage() {
         </div>
       ) : (
         <>
-          <div className="relative mb-5 max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('subjects.search')}
-              className="pl-11"
+          <div className="mb-5 flex flex-wrap items-center gap-3">
+            <div className="relative min-w-[12rem] max-w-md flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('subjects.search')}
+                aria-label={t('subjects.search')}
+                className="pl-11"
+              />
+            </div>
+            <SortSelect
+              className="w-full sm:w-auto"
+              value={sort}
+              options={SUBJECT_SORTS}
+              optionLabel={(option) => t(`subjects.sort.${option}`)}
+              onChange={setSort}
             />
           </div>
           {filteredSubjects.length === 0 ? (

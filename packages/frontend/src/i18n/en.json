@@ -12,7 +12,8 @@
     "close": "Close",
     "options": "Options",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "sortBy": "Sort by"
   },
   "validation": {
     "required": "This field is required",
@@ -108,7 +109,21 @@
     "statDue": "To review",
     "noSubjects": "No subjects yet. Create your first one!",
     "deleteConfirm": "Are you sure you want to delete this subject?",
-    "viewCards": "View Cards"
+    "viewCards": "View Cards",
+    "statAccuracy": "Accuracy",
+    "statReviews": "Reviews",
+    "statEase": "Avg ease",
+    "progressMastered": "{{mastered}}/{{total}} mastered",
+    "progressAccuracy": "{{value}}% accuracy",
+    "sort": {
+      "recent": "Recently added",
+      "title": "A-Z",
+      "due": "Most to review",
+      "progress": "Most studied",
+      "mastered": "Most mastered",
+      "accuracy": "Best accuracy",
+      "weakest": "Weakest first"
+    }
   },
   "cards": {
     "title": "Cards",
@@ -153,7 +168,25 @@
     "search": "Search cards...",
     "noResults": "No cards match your search.",
     "correct": "Correct answer",
-    "pagination": "Card pages"
+    "pagination": "Card pages",
+    "notStudied": "Not studied yet",
+    "scoreAccuracy": "{{value}}% correct",
+    "scoreEase": "ease {{value}}",
+    "reviewCount_one": "{{count}} review",
+    "reviewCount_other": "{{count}} reviews",
+    "difficulty": {
+      "hard": "Hard",
+      "medium": "Medium",
+      "easy": "Easy"
+    },
+    "sort": {
+      "recent": "Newest",
+      "hardest": "Hardest first",
+      "easiest": "Easiest first",
+      "mostReviewed": "Most reviewed",
+      "lastReviewed": "Recently studied",
+      "alphabetical": "A-Z"
+    }
   },
   "reports": {
     "button": "Report",

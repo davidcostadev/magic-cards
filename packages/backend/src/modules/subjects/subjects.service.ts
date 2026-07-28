@@ -4,10 +4,11 @@ import { ApiError } from '../../common/errors/api-error';
 import { cursorWhere, type PaginationQuery } from '../../common/pagination';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
-import { cardProgress, cards, subjects, userSubjects } from '../../db/schema';
+import { cardProgress, cards, reviewHistory, subjects, userSubjects } from '../../db/schema';
 import { Sm2Service } from '../learning/sm2.service';
 import type {
   CreateSubjectDto,
+  SubjectCardStats,
   SubjectProgress,
   SubjectResponse,
   SubjectStats,
@@ -27,6 +28,16 @@ const cardCountSql = sql<number>`count(${cards.id})::int`;
 // sidestepping the unqualified-subquery-column pitfall noted above for `cardCount`.
 const selectedSql = (userId: string) =>
   sql<boolean>`exists(select 1 from ${userSubjects} us where us.subject_id = ${subjects.id} and us.user_id = ${userId})`;
+
+// count(*)/sum(...) are bigint (string over the wire) — cast to int for JS numbers.
+const countInt = sql<number>`count(*)::int`;
+/** Reviews graded 3+ ("got it right") — the numerator of every accuracy figure. */
+const passedInt = sql<number>`coalesce(sum(case when ${reviewHistory.quality} >= 3 then 1 else 0 end), 0)::int`;
+
+/** Whole-percent accuracy, 0 when nothing has been reviewed yet. */
+function toAccuracy(passed: number, total: number): number {
+  return total > 0 ? Math.round((passed / total) * 100) : 0;
+}
 
 @Injectable()
 export class SubjectsService {
@@ -107,6 +118,12 @@ export class SubjectsService {
       .from(cards)
       .where(eq(cards.subjectId, id));
 
+    const [reviews] = await this.db
+      .select({ total: countInt, passed: passedInt })
+      .from(reviewHistory)
+      .innerJoin(cards, eq(reviewHistory.cardId, cards.id))
+      .where(and(eq(reviewHistory.userId, userId), eq(cards.subjectId, id)));
+
     const progressRows = await this.db
       .select({
         interval: cardProgress.interval,
@@ -132,7 +149,82 @@ export class SubjectsService {
     counts.new += neverReviewed;
     due += neverReviewed;
 
-    return { totalCards: total, ...counts, due };
+    // Average ease across the cards the user has actually studied — the subject's "difficulty".
+    const easeSum = progressRows.reduce((sum, p) => sum + p.easeFactor, 0);
+    const avgEaseFactor = progressRows.length > 0 ? easeSum / progressRows.length : null;
+
+    return {
+      totalCards: total,
+      ...counts,
+      due,
+      totalReviews: reviews?.total ?? 0,
+      accuracy: toAccuracy(reviews?.passed ?? 0, reviews?.total ?? 0),
+      avgEaseFactor,
+    };
+  }
+
+  /**
+   * The current user's performance on every card of a subject they have studied, in two queries:
+   * review-history aggregates plus the SM-2 scheduler state. Powers the per-card score chips and
+   * the "hardest first" ordering on the subject page without an N+1 of `/cards/:id/stats` calls.
+   * Cards with neither reviews nor progress are omitted — the caller treats a missing row as new.
+   */
+  async cardStats(userId: string, id: string): Promise<SubjectCardStats[]> {
+    await this.assertVisible(userId, id);
+
+    const [reviewRows, progressRows] = await Promise.all([
+      this.db
+        .select({
+          cardId: reviewHistory.cardId,
+          total: countInt,
+          correct: passedInt,
+          avgTime: sql<number>`coalesce(round(avg(${reviewHistory.timeSpent})), 0)::int`,
+          hinted: sql<number>`coalesce(sum(case when ${reviewHistory.wasHintUsed} then 1 else 0 end), 0)::int`,
+        })
+        .from(reviewHistory)
+        .innerJoin(cards, eq(reviewHistory.cardId, cards.id))
+        .where(and(eq(reviewHistory.userId, userId), eq(cards.subjectId, id)))
+        .groupBy(reviewHistory.cardId),
+      this.db
+        .select({
+          cardId: cardProgress.cardId,
+          easeFactor: cardProgress.easeFactor,
+          interval: cardProgress.interval,
+          repetitions: cardProgress.repetitions,
+          status: cardProgress.status,
+          lastReviewDate: cardProgress.lastReviewDate,
+          nextReviewDate: cardProgress.nextReviewDate,
+        })
+        .from(cardProgress)
+        .innerJoin(cards, eq(cardProgress.cardId, cards.id))
+        .where(and(eq(cardProgress.userId, userId), eq(cards.subjectId, id))),
+    ]);
+
+    const progressById = new Map(progressRows.map((p) => [p.cardId, p]));
+    const reviewsById = new Map(reviewRows.map((r) => [r.cardId, r]));
+    const cardIds = [...new Set([...reviewsById.keys(), ...progressById.keys()])].sort();
+
+    return cardIds.map((cardId) => {
+      const agg = reviewsById.get(cardId);
+      const progress = progressById.get(cardId);
+      const total = agg?.total ?? 0;
+      const correct = agg?.correct ?? 0;
+      return {
+        cardId,
+        totalReviews: total,
+        correctCount: correct,
+        incorrectCount: total - correct,
+        accuracy: toAccuracy(correct, total),
+        avgTimeMs: agg?.avgTime ?? 0,
+        hintedCount: agg?.hinted ?? 0,
+        easeFactor: progress?.easeFactor ?? null,
+        interval: progress?.interval ?? null,
+        repetitions: progress?.repetitions ?? null,
+        status: progress?.status ?? null,
+        lastReviewDate: progress?.lastReviewDate ?? null,
+        nextReviewDate: progress?.nextReviewDate ?? null,
+      };
+    });
   }
 
   /**
@@ -155,6 +247,7 @@ export class SubjectsService {
         subjectId: cards.subjectId,
         reviewed: sql<number>`count(*)::int`,
         dueSeen: sql<number>`coalesce(sum(case when ${cardProgress.nextReviewDate} <= ${now} then 1 else 0 end), 0)::int`,
+        mastered: sql<number>`coalesce(sum(case when ${cardProgress.status} = 'mastered' then 1 else 0 end), 0)::int`,
       })
       .from(cardProgress)
       .innerJoin(cards, eq(cardProgress.cardId, cards.id))
@@ -162,9 +255,20 @@ export class SubjectsService {
       .where(and(eq(cardProgress.userId, userId), canSeeSubject(userId)))
       .groupBy(cards.subjectId);
 
+    // Review accuracy per subject, so the list can be scored and sorted by how well it's going.
+    const graded = await this.db
+      .select({ subjectId: cards.subjectId, total: countInt, passed: passedInt })
+      .from(reviewHistory)
+      .innerJoin(cards, eq(reviewHistory.cardId, cards.id))
+      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+      .where(and(eq(reviewHistory.userId, userId), canSeeSubject(userId)))
+      .groupBy(cards.subjectId);
+
     const seenById = new Map(seen.map((s) => [s.subjectId, s]));
+    const gradedById = new Map(graded.map((g) => [g.subjectId, g]));
     return totals.map((t) => {
       const s = seenById.get(t.subjectId);
+      const g = gradedById.get(t.subjectId);
       const reviewed = s?.reviewed ?? 0;
       const dueSeen = s?.dueSeen ?? 0;
       // Never-reviewed cards are immediately studyable, so they count as due too.
@@ -173,6 +277,9 @@ export class SubjectsService {
         total: t.total,
         reviewed,
         due: dueSeen + (t.total - reviewed),
+        mastered: s?.mastered ?? 0,
+        totalReviews: g?.total ?? 0,
+        accuracy: toAccuracy(g?.passed ?? 0, g?.total ?? 0),
       };
     });
   }
