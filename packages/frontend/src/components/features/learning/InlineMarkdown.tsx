@@ -1,4 +1,5 @@
 import ReactMarkdown, { type Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { cn } from '@/utils/cn';
 
 // Unwrap the block <p> react-markdown emits so parsed content (notably inline `code`) flows
@@ -16,7 +17,9 @@ interface InlineMarkdownProps {
 export function InlineMarkdown({ text, className }: InlineMarkdownProps) {
   return (
     <span className={cn('md-inline', className)}>
-      <ReactMarkdown components={INLINE_COMPONENTS}>{text}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={INLINE_COMPONENTS}>
+        {text}
+      </ReactMarkdown>
     </span>
   );
 }

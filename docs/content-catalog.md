@@ -64,6 +64,7 @@ Catalog disabled (no key configured) → `401 { "error": { "code": "catalog.disa
 | `GET /v1/catalog/cards` | `x-api-key` | — (query params) | `200` list of `Card` + `signals` — search / filter / rank (see §4c) |
 | `GET /v1/catalog/cards/:id` | `x-api-key` | — | `200` `Card` + `signals` + `reports[]` (learner feedback); `404` if not public |
 | `PATCH /v1/catalog/cards/:id` | `x-api-key` | partial card (`question?`, `answer?`, `translations?`, `choices?`, …) | `200` updated `Card` + `signals`; `404` if not public |
+| `PATCH /v1/catalog/card_reports/:id` | `x-api-key` | `{ resolved: boolean }` | `200` the report + its `cardId`; `404` if the report isn't on public content |
 | `DELETE /v1/catalog/subjects/:id` | `x-api-key` | — | `204` (removes a public subject **and its cards**); `404` if it isn't a public catalog subject |
 
 Cards can only be added to a **public** subject id (one returned by `POST /catalog/subjects`).
@@ -242,6 +243,55 @@ curl -sS "http://localhost:3001/v1/catalog/cards/<id>" -H "x-api-key: $CONTENT_A
 > reported) → read the per-card `signals` and `reports[]` → `PATCH` the fix → re-query to confirm
 > the filter no longer matches. When done, `GET /catalog/export` for the updated seed JSON. No seed
 > file is edited by hand and the live DB is the source of truth throughout.
+
+---
+
+## 4d. Querying the live home-lab instance
+
+Everything above uses `http://localhost:3001`. The deployed instance answers the **same**
+endpoints at **`http://david-homelab:5001`** (tailnet-only — you must be on the tailnet).
+That is where real learner reports live; your local dev DB has none of them.
+
+The production key lives outside git, in `~/workspace/homelab/.secrets/magic-cards-prod.env`.
+**Load it with `source`, never `cat`/`grep`** — that way the secret never lands in a shell
+transcript, a log, or an agent's context:
+
+```bash
+set -a; . ~/workspace/homelab/.secrets/magic-cards-prod.env; set +a
+export API=http://david-homelab:5001
+```
+
+**Read the open reports** (the reason to reach for this at all):
+
+```bash
+# Which cards did learners flag? (`signals.reportCount` per card)
+curl -sS "$API/v1/catalog/cards?reported=true&sort=most_reported&limit=50" \
+  -H "x-api-key: $CONTENT_API_KEY" | jq -r '.data[] | [.id, .question[0:60]] | @tsv'
+
+# Read *why* — the actual messages for one card
+curl -sS "$API/v1/catalog/cards/ccaf4-open-004" -H "x-api-key: $CONTENT_API_KEY" \
+  | jq -r '.reports[] | [.reason, .suggestion // "-", .message // "-", .resolved] | @tsv'
+```
+
+`reports[]` is anonymized (no user id) and comes back only on the single-card `GET`; the list
+endpoint carries counts in `signals`, not messages.
+
+**Close a report once the fix is actually live.** A report is closed against the deployed app,
+not against a local branch — if the card content was fine and only the rendering was broken,
+wait for the frontend deploy before flipping it:
+
+```bash
+curl -sS -X PATCH "$API/v1/catalog/card_reports/<report-id>" \
+  -H "x-api-key: $CONTENT_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"resolved":true}'
+```
+
+Re-reporting the same card reopens the report, so `resolved` reflects "fixed as far as the
+learner is concerned", not "we looked at it".
+
+> **Careful:** this key writes to production. `PATCH`/`POST`/`DELETE` against `$API` change what
+> every learner sees, and `DELETE /v1/catalog/subjects/:id` cascades to its cards and to everyone's
+> progress on them. Reads (`GET`) are always safe.
 
 ---
 

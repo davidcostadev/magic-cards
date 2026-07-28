@@ -134,6 +134,43 @@
 }
 
 /*
+ * GFM tables. There is no typography plugin in this project, so `prose` is inert and tables
+ * would otherwise render borderless with collapsed padding. Each table sits inside its own
+ * `.md-table-scroll` wrapper (see MarkdownContent) so a wide table scrolls by itself on a
+ * phone instead of stretching the card.
+ */
+.learn-markdown .md-table-scroll {
+  /* The wrapper is a direct child of .learn-markdown, so it already carries the side padding. */
+  overscroll-behavior-x: contain;
+}
+
+.learn-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.learn-markdown th,
+.learn-markdown td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+}
+
+.learn-markdown thead th {
+  background: var(--color-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Keep prose columns readable on desktop without letting one long cell squeeze the rest. */
+.learn-markdown td {
+  min-width: 8rem;
+}
+
+/*
  * Theme-aware syntax highlighting (GitHub light/dark palettes via CSS variables).
  * Replaces the always-dark highlight.js stylesheet so code respects the active theme.
  */
