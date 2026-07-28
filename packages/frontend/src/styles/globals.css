@@ -171,6 +171,34 @@
 }
 
 /*
+ * Mermaid diagrams (```mermaid fences). Mermaid emits a fixed-size SVG, so the container scrolls
+ * sideways on a phone rather than shrinking the diagram into unreadability. While the lazy chunk
+ * loads — and if the diagram fails to parse — the source shows instead, so the card is never blank.
+ */
+.learn-markdown .md-mermaid {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  overscroll-behavior-x: contain;
+}
+
+.learn-markdown .md-mermaid svg {
+  display: block;
+  margin: 0 auto;
+  max-width: none; /* let it scroll instead of squashing the labels */
+  height: auto;
+}
+
+.learn-markdown .md-mermaid-pending {
+  opacity: 0.55;
+}
+
+.learn-markdown .md-mermaid-note {
+  color: var(--color-muted-foreground);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+/*
  * Theme-aware syntax highlighting (GitHub light/dark palettes via CSS variables).
  * Replaces the always-dark highlight.js stylesheet so code respects the active theme.
  */

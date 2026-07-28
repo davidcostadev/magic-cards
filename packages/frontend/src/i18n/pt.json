@@ -165,7 +165,7 @@
     "hintCount_one": "{{count}} dica",
     "hintCount_other": "{{count}} dicas",
     "hintNumber": "Dica {{n}}",
-    "markdownPlaceholder": "Suporta **Markdown** e ```blocos de código```",
+    "markdownPlaceholder": "Suporta **Markdown**, tabelas, ```código``` e diagramas ```mermaid```",
     "tagPlaceholder": "Digite e pressione Enter",
     "search": "Buscar cards...",
     "noResults": "Nenhum card corresponde à busca.",
@@ -203,10 +203,13 @@
     "reportedBadge": "Reportado",
     "resolvedBadge": "Resolvido",
     "suggestionsLabel": "Sugestão (opcional)",
-    "suggestionAddExamples": "Adicionar exemplos de código"
+    "suggestionAddExamples": "Adicionar exemplos de código",
+    "suggestionAddDiagram": "Um diagrama ajudaria",
+    "suggestionAddTable": "Ficaria melhor em tabela"
   },
   "learn": {
     "title": "Sessão de Estudo",
+    "diagramFailed": "Não foi possível renderizar este diagrama",
     "showHint": "Mostrar Dica",
     "revealAnswer": "Revelar Resposta",
     "nextCard": "Próximo Cartão",

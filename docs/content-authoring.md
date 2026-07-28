@@ -68,6 +68,34 @@ The original flashcard: a question and a Markdown **answer** the learner reveals
 - **Requires:** `answer` (Markdown).
 - **Study:** read → *Reveal Answer* → rate **Wrong** / **Right** → (if Right) **Hard / Good / Easy**.
 
+#### What the Markdown renderer supports
+
+Question and answer go through the same renderer, which is CommonMark + **GFM**:
+
+- **Fenced code**, syntax-highlighted and theme-aware.
+- **Tables** (GFM pipe tables). Wide ones scroll sideways on their own, so a table never
+  stretches the card on a phone.
+- **Mermaid diagrams** — a ` ```mermaid ` fence renders as a diagram, the way VS Code and GitHub
+  do. Good for a loop, a decision tree, or a sequence that a table would flatten:
+
+  ````markdown
+  ```mermaid
+  graph TD
+    A[Model responds] --> B{stop_reason?}
+    B -->|tool_use| C[Run tool, append result]
+    C --> A
+    B -->|end_turn| D[Done]
+  ```
+  ````
+
+  Mermaid is loaded **lazily** — a card without a diagram downloads none of it. A diagram that
+  fails to parse falls back to showing its source, so a typo never blanks out the card.
+- Strikethrough, task lists, and autolinks (also GFM).
+
+> **Leading content:** the renderer promotes the first paragraph to a bold title above the answer
+> card. A card that *starts* with a table or diagram has no such paragraph and renders whole — but
+> a one-line lead in front of it usually reads better.
+
 ### 3.2 `quiz` — multiple choice
 Pick one option; the server says which was correct and shows the explanation.
 

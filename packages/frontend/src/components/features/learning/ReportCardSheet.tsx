@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Code, Lightbulb, X } from 'lucide-react';
+import { AlertTriangle, Check, Code, Lightbulb, Table, Workflow, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card } from '@/api/queries/cards';
@@ -23,6 +23,8 @@ const REASONS: { value: ReportReason; labelKey: string; icon: typeof AlertTriang
 // Recurring asks promoted to one-tap chips, shown when the reason is "could be improved".
 const SUGGESTIONS: { value: ReportSuggestion; labelKey: string; icon: typeof AlertTriangle }[] = [
   { value: 'add_examples', labelKey: 'reports.suggestionAddExamples', icon: Code },
+  { value: 'add_diagram', labelKey: 'reports.suggestionAddDiagram', icon: Workflow },
+  { value: 'add_table', labelKey: 'reports.suggestionAddTable', icon: Table },
 ];
 
 const SUCCESS_DISMISS_MS = 1500;

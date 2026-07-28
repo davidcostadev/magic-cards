@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MarkdownContent } from './MarkdownContent';
+
+// The diagram itself is covered by MermaidDiagram.test.tsx; here we only assert the routing
+// decision — which fences become diagrams and which stay code blocks.
+vi.mock('./MermaidDiagram', () => ({
+  MermaidDiagram: ({ chart }: { chart: string }) => <div data-mermaid="stub">{chart}</div>,
+}));
 
 const TABLE_ANSWER = [
   'Four scopes, loaded broadest to most specific:',
@@ -47,6 +53,27 @@ describe('MarkdownContent', () => {
     expect(container.querySelectorAll('table')).toHaveLength(1);
     expect(container.querySelectorAll('table thead th')).toHaveLength(2);
     expect(screen.getByText('Each has discovery methods.')).toBeInTheDocument();
+  });
+
+  it('turns a ```mermaid fence into a diagram, not a code block', () => {
+    const withDiagram = ['The agent loop:', '', '```mermaid', 'graph TD;', '  A-->B;', '```'].join(
+      '\n'
+    );
+
+    const { container } = render(<MarkdownContent text={withDiagram} />);
+
+    expect(container.querySelector('[data-mermaid]')).not.toBeNull();
+    // The fence must not also render as a highlighted code block.
+    expect(container.querySelector('pre > code.hljs')).toBeNull();
+  });
+
+  it('leaves a normal code fence as a code block', () => {
+    const withCode = ['Example:', '', '```js', 'const a = 1;', '```'].join('\n');
+
+    const { container } = render(<MarkdownContent text={withCode} />);
+
+    expect(container.querySelector('[data-mermaid]')).toBeNull();
+    expect(container.querySelector('pre code')).not.toBeNull();
   });
 
   it('renders other GFM syntax (strikethrough)', () => {

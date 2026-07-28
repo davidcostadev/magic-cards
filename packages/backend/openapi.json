@@ -4471,7 +4471,9 @@
                     {
                       "type": "string",
                       "enum": [
-                        "add_examples"
+                        "add_examples",
+                        "add_diagram",
+                        "add_table"
                       ]
                     },
                     {
@@ -4562,7 +4564,9 @@
               {
                 "type": "string",
                 "enum": [
-                  "add_examples"
+                  "add_examples",
+                  "add_diagram",
+                  "add_table"
                 ]
               },
               {
@@ -5131,7 +5135,9 @@
                     {
                       "type": "string",
                       "enum": [
-                        "add_examples"
+                        "add_examples",
+                        "add_diagram",
+                        "add_table"
                       ]
                     },
                     {
@@ -5208,7 +5214,9 @@
           "suggestion": {
             "type": "string",
             "enum": [
-              "add_examples"
+              "add_examples",
+              "add_diagram",
+              "add_table"
             ]
           },
           "message": {
@@ -5245,7 +5253,9 @@
               {
                 "type": "string",
                 "enum": [
-                  "add_examples"
+                  "add_examples",
+                  "add_diagram",
+                  "add_table"
                 ]
               },
               {

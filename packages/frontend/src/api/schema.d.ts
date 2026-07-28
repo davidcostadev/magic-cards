@@ -1120,7 +1120,7 @@ export interface components {
                 id: string;
                 /** @enum {string} */
                 reason: "incorrect" | "improvement";
-                suggestion: "add_examples" | null;
+                suggestion: ("add_examples" | "add_diagram" | "add_table") | null;
                 message: string | null;
                 resolved: boolean;
                 resolvedAt: string | null;
@@ -1134,7 +1134,7 @@ export interface components {
             id: string;
             /** @enum {string} */
             reason: "incorrect" | "improvement";
-            suggestion: "add_examples" | null;
+            suggestion: ("add_examples" | "add_diagram" | "add_table") | null;
             message: string | null;
             resolved: boolean;
             resolvedAt: string | null;
@@ -1255,7 +1255,7 @@ export interface components {
                 subjectId: string;
                 /** @enum {string} */
                 reason: "incorrect" | "improvement";
-                suggestion: "add_examples" | null;
+                suggestion: ("add_examples" | "add_diagram" | "add_table") | null;
                 message: string | null;
                 resolved: boolean;
                 resolvedAt: string | null;
@@ -1268,7 +1268,7 @@ export interface components {
             /** @enum {string} */
             reason: "incorrect" | "improvement";
             /** @enum {string} */
-            suggestion?: "add_examples";
+            suggestion?: "add_examples" | "add_diagram" | "add_table";
             message?: string;
         };
         ReportResponseDto: {
@@ -1277,7 +1277,7 @@ export interface components {
             subjectId: string;
             /** @enum {string} */
             reason: "incorrect" | "improvement";
-            suggestion: "add_examples" | null;
+            suggestion: ("add_examples" | "add_diagram" | "add_table") | null;
             message: string | null;
             resolved: boolean;
             resolvedAt: string | null;

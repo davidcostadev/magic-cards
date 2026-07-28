@@ -149,6 +149,17 @@ describe('POST /v1/card_reports', () => {
     });
   });
 
+  it.each(['add_diagram', 'add_table'])('accepts the %s suggestion', async (suggestion) => {
+    const cardId = await addCard(`Q-${suggestion}`);
+    const res = await auth(
+      request(app.getHttpServer())
+        .post('/v1/card_reports')
+        .send({ cardId, reason: 'improvement', suggestion })
+    );
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ reason: 'improvement', suggestion });
+  });
+
   it('rejects an unknown suggestion with 400', async () => {
     const cardId = await addCard('Q1');
     const res = await auth(

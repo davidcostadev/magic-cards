@@ -152,10 +152,11 @@ export type ReportReason = (typeof REPORT_REASONS)[number];
 
 /**
  * A structured, first-class request a learner can attach to an `improvement` report instead of
- * (or alongside) free text — recurring asks promoted to pickable options. `add_examples` is the
- * first: "the explanation should include code examples". Extensible as new patterns emerge.
+ * (or alongside) free text — recurring asks promoted to pickable options: "add code examples",
+ * "a diagram would explain this better", "this belongs in a table". Stored as plain text (no DB
+ * enum), so new options are additive and need no migration. Extensible as new patterns emerge.
  */
-export const REPORT_SUGGESTIONS = ['add_examples'] as const;
+export const REPORT_SUGGESTIONS = ['add_examples', 'add_diagram', 'add_table'] as const;
 export type ReportSuggestion = (typeof REPORT_SUGGESTIONS)[number];
 
 /**

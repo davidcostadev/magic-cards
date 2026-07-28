@@ -165,7 +165,7 @@
     "hintCount_one": "{{count}} hint",
     "hintCount_other": "{{count}} hints",
     "hintNumber": "Hint {{n}}",
-    "markdownPlaceholder": "Supports **Markdown** and ```code blocks```",
+    "markdownPlaceholder": "Supports **Markdown**, tables, ```code``` and ```mermaid``` diagrams",
     "tagPlaceholder": "Type and press Enter",
     "search": "Search cards...",
     "noResults": "No cards match your search.",
@@ -203,10 +203,13 @@
     "reportedBadge": "Reported",
     "resolvedBadge": "Resolved",
     "suggestionsLabel": "Suggestion (optional)",
-    "suggestionAddExamples": "Add code examples"
+    "suggestionAddExamples": "Add code examples",
+    "suggestionAddDiagram": "A diagram would help",
+    "suggestionAddTable": "Better as a table"
   },
   "learn": {
     "title": "Learning Session",
+    "diagramFailed": "Could not render this diagram",
     "showHint": "Show Hint",
     "revealAnswer": "Reveal Answer",
     "nextCard": "Next Card",

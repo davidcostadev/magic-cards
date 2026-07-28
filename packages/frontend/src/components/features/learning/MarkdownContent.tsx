@@ -1,20 +1,43 @@
+import { Children, isValidElement, type ReactNode } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 import { Card } from '@/components/ui/card';
+import { MermaidDiagram } from './MermaidDiagram';
 
 interface MarkdownContentProps {
   text: string;
 }
 
-// GFM tables are wider than a phone. Wrap each one so it scrolls on its own instead of
-// pushing the whole card sideways; `.learn-markdown` styles the table itself.
+/** Flattens a rendered code block back to its plain source text. */
+function textOf(node: ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join('');
+  if (isValidElement<{ children?: ReactNode }>(node)) return textOf(node.props.children);
+  return '';
+}
+
+/** The body of a ```mermaid fence, or null when this `<pre>` is an ordinary code block. */
+function mermaidSource(children: ReactNode): string | null {
+  const code = Children.toArray(children)[0];
+  if (!isValidElement<{ className?: string; children?: ReactNode }>(code)) return null;
+  if (!/\blanguage-mermaid\b/.test(code.props.className ?? '')) return null;
+  return textOf(code.props.children).trim() || null;
+}
+
 const BODY_COMPONENTS: Components = {
+  // GFM tables are wider than a phone. Wrap each one so it scrolls on its own instead of
+  // pushing the whole card sideways; `.learn-markdown` styles the table itself.
   table: ({ children }) => (
     <div className="md-table-scroll overflow-x-auto">
       <table>{children}</table>
     </div>
   ),
+  // A ```mermaid fence becomes a diagram (as in VS Code / GitHub); every other fence stays code.
+  pre: ({ children }) => {
+    const chart = mermaidSource(children);
+    return chart ? <MermaidDiagram chart={chart} /> : <pre>{children}</pre>;
+  },
 };
 
 function splitTitleBody(text: string): { title: string; body: string } {
