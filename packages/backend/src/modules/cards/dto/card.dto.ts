@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { listResponseSchema, paginationQuerySchema } from '../../../common/pagination';
 import { CARD_LANGUAGES, CARD_TYPES } from '../../../db/schema';
+import { findMermaidFenceError } from '../mermaid-fence';
 
 const choiceInputSchema = z.object({
   id: z.string().min(1),
@@ -51,16 +52,33 @@ const cardInputShape = {
 function refineCardByType(
   data: {
     type: string;
+    question?: string;
     answer?: string;
     choices?: unknown[];
     shortAnswer?: string;
     matchPairs?: unknown[];
+    translations?: Record<string, { question?: string; answer?: string } | undefined>;
   },
   ctx: z.RefinementCtx
 ): void {
   const fail = (path: string, message: string) =>
     ctx.addIssue({ code: 'custom', path: [path], message });
   const hasText = (v?: string) => typeof v === 'string' && v.trim().length > 0;
+
+  // A ```mermaid fence whose diagram type is missing or misspelled renders as a fallback source
+  // block, so catch it at author time instead of letting a learner find it. See mermaid-fence.ts
+  // for exactly how shallow this check is.
+  const checkDiagrams = (path: string, markdown?: string) => {
+    if (!hasText(markdown)) return;
+    const error = findMermaidFenceError(markdown as string);
+    if (error) fail(path, error);
+  };
+  checkDiagrams('question', data.question);
+  checkDiagrams('answer', data.answer);
+  for (const [lang, t] of Object.entries(data.translations ?? {})) {
+    checkDiagrams(`translations.${lang}.question`, t?.question);
+    checkDiagrams(`translations.${lang}.answer`, t?.answer);
+  }
 
   if (data.type === 'open' || data.type === 'quiz' || data.type === 'type-answer') {
     if (!hasText(data.answer)) fail('answer', 'cards.answerRequired');

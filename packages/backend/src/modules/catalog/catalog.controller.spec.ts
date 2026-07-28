@@ -808,6 +808,27 @@ describe('POST /v1/catalog/import + GET /v1/catalog/export (API key)', () => {
     expect(res.body.errors[1].error).toBe('subjects.notFound');
   });
 
+  it('rejects a card whose mermaid diagram has no valid type, and keeps the good one', async () => {
+    const good = 'Flow:\n\n```mermaid\ngraph TD\n  A-->B\n```';
+    const bad = 'Flow:\n\n```mermaid\ngraphh TD\n  A-->B\n```';
+    const res = await withKey(
+      request(app.getHttpServer())
+        .post('/v1/catalog/import')
+        .send({
+          subjects: [{ id: 'io-mmd', title: 'Diagrams' }],
+          cards: [
+            { id: 'mmd-ok', subjectId: 'io-mmd', question: 'Q', answer: good },
+            { id: 'mmd-bad', subjectId: 'io-mmd', question: 'Q', answer: bad },
+          ],
+        })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.cards.created).toBe(1);
+    expect(res.body.errors).toHaveLength(1);
+    expect(res.body.errors[0].id).toBe('mmd-bad');
+    expect(res.body.errors[0].error).toContain('answer');
+  });
+
   it('requires the API key for import and export (401)', async () => {
     const imp = await request(app.getHttpServer()).post('/v1/catalog/import').send(sample());
     expect(imp.status).toBe(401);
