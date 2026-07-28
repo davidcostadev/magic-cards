@@ -47,6 +47,7 @@ export const subjectProgressSchema = z.object({
   mastered: z.number(), // cards whose SM-2 state reached "mastered"
   totalReviews: z.number(), // every review the user has done in this subject
   accuracy: z.number(), // 0-100 (reviews graded >= 3), 0 before any study
+  avgEaseFactor: z.number().nullable(), // mean SM-2 ease across studied cards; null before any study
 });
 
 /**

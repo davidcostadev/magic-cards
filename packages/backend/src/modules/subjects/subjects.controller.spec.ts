@@ -169,6 +169,7 @@ describe('Subjects CRUD', () => {
       mastered: 0,
       totalReviews: 1,
       accuracy: 100,
+      avgEaseFactor: expect.any(Number),
     });
   });
 

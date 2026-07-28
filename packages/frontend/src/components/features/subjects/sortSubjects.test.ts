@@ -27,6 +27,7 @@ function progress(subjectId: string, values: Partial<SubjectProgress>): SubjectP
     mastered: 0,
     totalReviews: 0,
     accuracy: 0,
+    avgEaseFactor: null,
     ...values,
   };
 }

@@ -578,6 +578,7 @@ export interface components {
                 mastered: number;
                 totalReviews: number;
                 accuracy: number;
+                avgEaseFactor: number | null;
             }[];
         };
         UpdateSubjectDto: {

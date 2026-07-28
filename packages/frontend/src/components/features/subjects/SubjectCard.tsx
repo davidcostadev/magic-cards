@@ -159,8 +159,10 @@ export function SubjectCard({ subject, cardCount, progress, onEdit, onDelete }: 
                 )
               )}
             </div>
-            {/* How well it's going, not just how far: mastery and answer accuracy so far. */}
-            {progress.totalReviews > 0 && (
+            {/* How well it's going, not just how far: mastery and the SM-2 ease of the deck.
+                Ease beats accuracy here — it's the number that decides how often the deck
+                comes back, and it keeps moving after the accuracy has settled. */}
+            {progress.avgEaseFactor != null && (
               <div className="mt-1 flex items-center justify-between text-xs">
                 <span className="text-muted-foreground tabular-nums">
                   {t('subjects.progressMastered', {
@@ -169,7 +171,7 @@ export function SubjectCard({ subject, cardCount, progress, onEdit, onDelete }: 
                   })}
                 </span>
                 <span className="font-medium tabular-nums">
-                  {t('subjects.progressAccuracy', { value: progress.accuracy })}
+                  {t('subjects.progressEase', { value: progress.avgEaseFactor.toFixed(2) })}
                 </span>
               </div>
             )}

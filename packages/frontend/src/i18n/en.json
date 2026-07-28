@@ -114,7 +114,6 @@
     "statReviews": "Reviews",
     "statEase": "Avg ease",
     "progressMastered": "{{mastered}}/{{total}} mastered",
-    "progressAccuracy": "{{value}}% accuracy",
     "sort": {
       "recent": "Recently added",
       "title": "A-Z",
@@ -123,7 +122,10 @@
       "mastered": "Most mastered",
       "accuracy": "Best accuracy",
       "weakest": "Weakest first"
-    }
+    },
+    "progressEase": "ease {{value}}",
+    "easeTooltipLabel": "What is the ease factor?",
+    "easeTooltip": "Ease factor: how far SM-2 stretches the gap between reviews (next gap = current gap x ease). Every card starts at 2.50 and never drops below 1.30 - the lower it is, the more often the deck comes back."
   },
   "cards": {
     "title": "Cards",

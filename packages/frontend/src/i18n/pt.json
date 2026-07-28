@@ -114,7 +114,6 @@
     "statReviews": "Revisões",
     "statEase": "Facilidade média",
     "progressMastered": "{{mastered}}/{{total}} dominados",
-    "progressAccuracy": "{{value}}% de acertos",
     "sort": {
       "recent": "Mais recentes",
       "title": "A-Z",
@@ -123,7 +122,10 @@
       "mastered": "Mais dominados",
       "accuracy": "Melhor desempenho",
       "weakest": "Piores primeiro"
-    }
+    },
+    "progressEase": "facilidade {{value}}",
+    "easeTooltipLabel": "O que é o fator de facilidade?",
+    "easeTooltip": "Fator de facilidade: o quanto o SM-2 estica o intervalo entre as revisões (próximo intervalo = intervalo atual x facilidade). Todo card começa em 2,50 e nunca cai abaixo de 1,30 - quanto menor, mais o assunto volta pra você."
   },
   "cards": {
     "title": "Cartões",

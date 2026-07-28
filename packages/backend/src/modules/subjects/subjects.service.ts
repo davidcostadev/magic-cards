@@ -248,6 +248,8 @@ export class SubjectsService {
         reviewed: sql<number>`count(*)::int`,
         dueSeen: sql<number>`coalesce(sum(case when ${cardProgress.nextReviewDate} <= ${now} then 1 else 0 end), 0)::int`,
         mastered: sql<number>`coalesce(sum(case when ${cardProgress.status} = 'mastered' then 1 else 0 end), 0)::int`,
+        // Null while the subject has no progress rows — an unstudied deck has no ease yet.
+        avgEaseFactor: sql<number | null>`avg(${cardProgress.easeFactor})::real`,
       })
       .from(cardProgress)
       .innerJoin(cards, eq(cardProgress.cardId, cards.id))
@@ -280,6 +282,7 @@ export class SubjectsService {
         mastered: s?.mastered ?? 0,
         totalReviews: g?.total ?? 0,
         accuracy: toAccuracy(g?.passed ?? 0, g?.total ?? 0),
+        avgEaseFactor: s?.avgEaseFactor ?? null,
       };
     });
   }

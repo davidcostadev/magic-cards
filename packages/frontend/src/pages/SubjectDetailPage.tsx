@@ -30,6 +30,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { CardContent, CardHeader, CardTitle, Card as UiCard } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { InfoTooltip } from '@/components/ui/tooltip';
 import { cn } from '@/utils/cn';
 
 const PAGE_SIZE = 20;
@@ -199,7 +200,12 @@ export function SubjectDetailPage() {
                 <p className="text-3xl font-bold tabular-nums">
                   {stats?.avgEaseFactor != null ? stats.avgEaseFactor.toFixed(2) : '—'}
                 </p>
-                <p className="text-sm text-muted-foreground">{t('subjects.statEase')}</p>
+                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  {t('subjects.statEase')}
+                  <InfoTooltip label={t('subjects.easeTooltipLabel')}>
+                    {t('subjects.easeTooltip')}
+                  </InfoTooltip>
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-5 border-t pt-5 sm:grid-cols-4">

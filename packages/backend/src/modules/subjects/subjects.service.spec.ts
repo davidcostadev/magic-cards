@@ -149,11 +149,11 @@ describe('SubjectsService.stats', () => {
 });
 
 describe('SubjectsService.progressBySubject', () => {
-  it('reports mastered count and accuracy per subject', async () => {
+  it('reports mastered count, accuracy and average ease per subject', async () => {
     await addReview('c1', 5);
     await addReview('c2', 2);
-    await addProgress('c1', { status: 'mastered' });
-    await addProgress('c2', { status: 'learning' });
+    await addProgress('c1', { status: 'mastered', easeFactor: 2.6 });
+    await addProgress('c2', { status: 'learning', easeFactor: 2.0 });
 
     const [row] = await service().progressBySubject('u1');
 
@@ -165,5 +165,12 @@ describe('SubjectsService.progressBySubject', () => {
       totalReviews: 2,
       accuracy: 50,
     });
+    expect(row.avgEaseFactor).toBeCloseTo(2.3, 5);
+  });
+
+  it('leaves the average ease null for a subject that was never studied', async () => {
+    const [row] = await service().progressBySubject('u1');
+
+    expect(row).toMatchObject({ subjectId: 's1', reviewed: 0, avgEaseFactor: null });
   });
 });

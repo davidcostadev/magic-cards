@@ -2080,6 +2080,16 @@
                 },
                 "accuracy": {
                   "type": "number"
+                },
+                "avgEaseFactor": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               },
               "required": [
@@ -2089,7 +2099,8 @@
                 "due",
                 "mastered",
                 "totalReviews",
-                "accuracy"
+                "accuracy",
+                "avgEaseFactor"
               ]
             }
           }
