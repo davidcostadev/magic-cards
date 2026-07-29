@@ -22,68 +22,28 @@
       "id": "ccaf2-open-002",
       "subjectId": "ccaf-2-claude-code",
       "type": "open",
-      "question": "A rule in CLAUDE.md is being ignored some of the time. Why, and what is the architecturally correct fix?",
-      "answer": "Because **CLAUDE.md is context, not configuration**. It is delivered as a message that shapes the model's behavior; it is not an enforcement layer, so compliance is likely but never guaranteed - especially for vague or conflicting instructions.\n\nPick the layer by what you need:\n\n| Need | Use |\n|---|---|\n| Guidance and conventions | CLAUDE.md |\n| Must run at a fixed point in the lifecycle (format after every edit, check before every commit) | a **hook** |\n| Must be blocked no matter what the model decides | `permissions.deny` in settings, or a **PreToolUse hook** returning deny / exiting 2 |\n\nSecondary fixes on the CLAUDE.md side: run `/context` to confirm the file actually loaded, make the instruction concrete and verifiable (\"use 2-space indentation\", not \"format properly\"), and remove contradictions between files - when two rules conflict, Claude may pick either.",
-      "tags": ["claude-md", "hooks", "permissions", "enforcement"],
-      "hints": ["It is context, not configuration. Which layer is actually enforced?"]
+      "question": "A CLAUDE.md rule is being applied inconsistently. How do you diagnose and fix it?",
+      "answer": "Work down four layers, in order:\n\n1. **Is it even loaded?** Run **`/memory`** to see which memory files actually loaded this session. The most common cause is a rule sitting in **user-level** `~/.claude/CLAUDE.md` - which is not shared through version control, so a new teammate never receives it - when it belongs at **project level**.\n\n2. **Is it drowning?** A large monolithic CLAUDE.md dilutes every instruction in it. Split it into topic-specific files under **`.claude/rules/`** (`testing.md`, `api-conventions.md`, `deployment.md`), or use **`@import`** to pull in only the standards each package needs.\n\n3. **Is it relevant everywhere?** If it only applies to some files, path-scope it: a `.claude/rules/` file with YAML frontmatter `paths: [\"**/*.test.tsx\"]` loads **only** when matching files are edited. Always-loaded universal standards stay in CLAUDE.md; everything else is on-demand.\n\n4. **Does it need a guarantee?** Then it was never a memory file. Instructions have a non-zero failure rate; **programmatic enforcement** - a prerequisite gate, or a hook that intercepts the tool call - is what makes compliance deterministic.",
+      "tags": ["claude-md", "rules", "memory", "enforcement"],
+      "hints": ["Start by proving it loaded at all. There is a command for exactly that."]
     },
     {
       "id": "ccaf2-open-003",
       "subjectId": "ccaf-2-claude-code",
       "type": "open",
-      "question": "How do you create a custom slash command in Claude Code, and how does it receive arguments?",
-      "answer": "Drop a markdown file in a commands directory; the **filename becomes the command name**.\n\n- `.claude/commands/review.md` -> `/review` (project-scoped, committed, shared with the team)\n- `~/.claude/commands/review.md` -> `/review` (personal, every project)\n- Subdirectories namespace it: `.claude/commands/git/sync.md` -> `/git:sync`\n\nThe file body is the prompt. Arguments:\n- **`$ARGUMENTS`** - everything the user typed after the command name.\n- **`$1`, `$2`, ...** - individual positional arguments.\n\nOptional YAML frontmatter tunes it: `description` (shown in `/help`), `argument-hint`, `allowed-tools`, `model`.\n\n```markdown\n---\ndescription: Review a PR against our checklist\nargument-hint: <pr-number>\nallowed-tools: Bash(gh pr view:*), Read, Grep\n---\nReview PR #$1. Check error handling, tests, and naming.\n```",
-      "tags": ["slash-commands", "configuration"],
-      "hints": ["The filename becomes the command name. Then think about how arguments get inside."]
-    },
-    {
-      "id": "ccaf2-open-004",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "open",
-      "question": "Explain the permission rule types and their precedence.",
-      "answer": "Three rule lists in `permissions` inside a settings file:\n\n- **`deny`** - block the call outright.\n- **`ask`** - always prompt, even for something otherwise allowed.\n- **`allow`** - run without prompting.\n\nPrecedence is **deny > ask > allow**, and it is evaluated per matching rule, not by specificity. A broad `Bash(aws *)` deny blocks `Bash(aws s3 ls)` even though a narrower allow rule matches it - **deny rules cannot carry allowlist exceptions**. Likewise a matching `ask` rule prompts even when a more specific allow rule also matches.\n\nRule syntax is `Tool` or `Tool(specifier)`: `Bash` matches every Bash call; `Bash(npm run test:*)` matches a command pattern; `Read(./secrets/**)` matches paths; `mcp__github__create_issue` matches one MCP tool, `mcp__github` the whole server.\n\nA bare tool name in `deny` (e.g. `\"Bash\"`) removes the tool from Claude's context entirely - it never sees it. A scoped deny (`Bash(rm *)`) leaves the tool available and blocks matching calls.\n\nThese rules are enforced by **Claude Code, not by the model**: nothing in a prompt or CLAUDE.md can widen them.",
-      "tags": ["permissions", "security"],
-      "hints": ["Three lists - and the precedence between them is not decided by specificity."]
-    },
-    {
-      "id": "ccaf2-open-005",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "open",
-      "question": "What are the settings files and in what order do they take precedence?",
-      "answer": "Highest to lowest:\n\n1. **Managed / policy settings** - `/etc/claude-code/managed-settings.json` (Linux/WSL), `/Library/Application Support/ClaudeCode/managed-settings.json` (macOS), `C:\\Program Files\\ClaudeCode\\managed-settings.json` (Windows), or via MDM/registry. Cannot be overridden.\n2. **Command line arguments** - session-only overrides.\n3. **Local project settings** - `.claude/settings.local.json` (gitignored, personal).\n4. **Project settings** - `.claude/settings.json` (committed, team-shared).\n5. **User settings** - `~/.claude/settings.json` (all your projects).\n\nNote the inversion versus CLAUDE.md: **settings override** by precedence, while **CLAUDE.md files concatenate**. And permission rules are the exception inside settings - they **merge across scopes** rather than replace, which is why an enterprise `deny` survives a project `allow`.",
-      "tags": ["settings", "configuration", "hierarchy"],
-      "hints": ["Five layers, and exactly one of them cannot be overridden by anybody."]
+      "question": "How do you create a custom slash command, and what does its frontmatter control?",
+      "answer": "A markdown file whose **filename becomes the command name**, in one of two scopes:\n\n- **`.claude/commands/review.md`** -> `/review`, **project-scoped**: shared with the team through version control.\n- **`~/.claude/commands/review.md`** -> `/review`, **user-scoped**: personal, available in every project.\n\nSubdirectories namespace it: `.claude/commands/git/sync.md` -> `/git:sync`.\n\nThe body is the prompt; `$ARGUMENTS` receives everything typed after the command name and `$1`, `$2` the positional arguments. Frontmatter tunes the rest:\n\n```markdown\n---\ndescription: Review a PR against our checklist\nargument-hint: <pr-number>\nallowed-tools: Bash(gh pr view:*), Read, Grep\n---\nReview PR #$1. Check error handling, tests, and naming.\n```\n\n- **`argument-hint`** prompts the developer for the parameter when they invoke it bare.\n- **`allowed-tools`** restricts tool access during execution - least privilege for this command only.\n\nThe same frontmatter options apply to **skills** in `.claude/skills/`, which also support `context: fork`.",
+      "tags": ["slash-commands", "skills", "configuration"],
+      "hints": ["The filename names it. The frontmatter decides what it may touch."]
     },
     {
       "id": "ccaf2-open-006",
       "subjectId": "ccaf-2-claude-code",
       "type": "open",
-      "question": "What are Claude Code hooks and why would you use one instead of a CLAUDE.md instruction?",
-      "answer": "Hooks are **shell commands registered against lifecycle events** in a settings file. They run deterministically, outside the model's judgement.\n\n```json\n{\n  \"hooks\": {\n    \"PostToolUse\": [{\n      \"matcher\": \"Edit|Write\",\n      \"hooks\": [{ \"type\": \"command\", \"command\": \"prettier --write \\\"$CLAUDE_FILE_PATHS\\\"\" }]\n    }]\n  }\n}\n```\n\nThe reason to prefer a hook: a CLAUDE.md line like \"always format after editing\" is guidance the model *usually* follows; a `PostToolUse` hook formats **every time**, including the run where the model forgets. Anything that must happen at a fixed point - format on edit, lint before commit, block writes to protected paths, log every tool call for audit - is a hook.\n\nHooks receive JSON on stdin (session id, tool name, tool input) and communicate back through the exit code or a JSON object on stdout.",
-      "tags": ["hooks", "automation"],
-      "hints": [
-        "Shell commands bound to lifecycle events - the opposite of \"the model usually remembers\"."
-      ]
-    },
-    {
-      "id": "ccaf2-open-007",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "open",
-      "question": "What do hook exit codes mean, and how does a `PreToolUse` hook block a tool call?",
-      "answer": "**Exit codes** (all events):\n- **0** - success. Stdout is parsed as the hook's JSON output.\n- **2** - **blocking error**. Stderr is fed back to Claude, and on blocking events the action is prevented.\n- **anything else** - non-blocking error; shown in the transcript, execution continues.\n\nSo the shortest way to block a tool call is a `PreToolUse` hook that writes a reason to stderr and exits `2`.\n\nThe structured way is exit `0` with JSON on stdout:\n\n```json\n{ \"hookSpecificOutput\": {\n    \"hookEventName\": \"PreToolUse\",\n    \"permissionDecision\": \"deny\",\n    \"permissionDecisionReason\": \"Writes to prod config are not allowed\" }}\n```\n\n`permissionDecision` accepts `allow`, `deny`, or `ask`. Important limit: a hook returning `allow` **does not bypass permission rules** - a matching `deny` rule still blocks and a matching `ask` rule still prompts. But a hook that exits `2` runs *before* rules are evaluated, so it blocks even something on the allow list.",
-      "hints": ["One exit code is special, and it means the same thing on every blocking event."],
-      "tags": ["hooks", "permissions"]
-    },
-    {
-      "id": "ccaf2-open-008",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "open",
-      "question": "Name the core hook events and when each fires.",
-      "answer": "- **`SessionStart`** - a session begins or resumes. Matchers: `startup`, `resume`, `clear`, `compact`. Used to inject context.\n- **`UserPromptSubmit`** - after you submit a prompt, before Claude processes it. Can block (exit 2) or add context.\n- **`PreToolUse`** - before a tool executes. Matcher is the tool name (`Bash`, `Edit|Write`, `mcp__.*`). The only place you can **prevent** a call.\n- **`PostToolUse`** - after a tool succeeds. The place for format-on-edit, lint, tests.\n- **`Notification`** - Claude Code sends a notification (permission prompt, idle). Used for desktop alerts.\n- **`Stop`** - Claude finished responding. Exit 2 prevents stopping and sends it back to work.\n- **`SubagentStop`** - a subagent finished.\n- **`PreCompact`** / **`PostCompact`** - around context compaction.\n- **`SessionEnd`** - the session terminates.\n\nMatchers are regex-matched against the event's subject (usually the tool name), and events that have no natural subject always fire.",
-      "tags": ["hooks", "lifecycle"],
-      "hints": [
-        "Around the tool call, around the prompt, around the session, and around compaction."
-      ]
+      "question": "What do Agent SDK hooks do, and when do you choose one over a prompt instruction?",
+      "answer": "Hooks intercept the tool-call cycle and run **your** code, outside the model's judgement. Two patterns the exam names:\n\n- **`PostToolUse`** - intercept tool **results** and transform them **before the model processes them**. The canonical use is normalizing heterogeneous formats: one MCP tool returns Unix timestamps, another ISO 8601, a third numeric status codes. Normalize at the hook and the agent never has to reason about the difference.\n- **Outgoing tool-call interception** - block a policy-violating action and redirect. Refund above $500? The hook blocks the call and routes it to the human escalation workflow.\n\nWhen to choose a hook: **when the rule must hold every time**. A prompt instruction gives you probabilistic compliance - usually followed, with a non-zero failure rate. A hook gives you a deterministic guarantee, because the model is not in the enforcement path at all.\n\nSo: business rules, compliance limits, and data normalization are hooks. Style, tone, and preference are prompts.",
+      "tags": ["hooks", "enforcement", "agent-sdk"],
+      "hints": ["One pattern rewrites what comes back; the other blocks what goes out."]
     },
     {
       "id": "ccaf2-open-009",
@@ -97,33 +57,22 @@
       ]
     },
     {
-      "id": "ccaf2-open-010",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "open",
-      "question": "How does Claude Code integrate with GitHub Actions, and what does the CI configuration need?",
-      "answer": "Install the GitHub app (`/install-github-app` from a session, or manually) and add the Claude Code action to a workflow. Then **`@claude` mentions in issues, PR comments, and reviews** trigger a run: Claude reads the thread and the diff, and can implement changes and push a branch or open a PR.\n\nThe workflow needs:\n- `ANTHROPIC_API_KEY` in **repository secrets** (never inline in the YAML).\n- Job `permissions` for what it must touch: `contents`, `pull-requests`, `issues`, and `id-token: write` when using OIDC.\n- `actions/checkout` with enough history for the diff (`fetch-depth` matters for branch comparisons).\n\nFor a pipeline that should run on **every** PR without a mention - automated review, changelog generation, test triage - use **headless mode** (`claude -p ... --output-format json`) in an ordinary step instead of the mention trigger.\n\nA repository `CLAUDE.md` is what makes CI runs consistent: it is the only way the CI agent learns your conventions, since there is no human in the loop to correct it.",
-      "tags": ["cicd", "github-actions", "automation"],
-      "hints": [
-        "Two ways to trigger it - a mention, or an ordinary step - plus where the key has to live."
-      ]
-    },
-    {
       "id": "ccaf2-open-011",
       "subjectId": "ccaf-2-claude-code",
       "type": "open",
-      "question": "How are MCP servers configured in Claude Code, and what are the scopes?",
-      "answer": "Add them with `claude mcp add`, or write the config directly. Three scopes:\n\n- **local** (default) - only you, only this project. Stored in your user config.\n- **project** - **`.mcp.json` at the repo root**, committed and shared with the team. Claude Code asks for approval before using servers from a project file, since it is checked-in code from other people.\n- **user** - available to you across every project.\n\n```json\n{\n  \"mcpServers\": {\n    \"github\": {\n      \"command\": \"npx\",\n      \"args\": [\"-y\", \"@modelcontextprotocol/server-github\"],\n      \"env\": { \"GITHUB_TOKEN\": \"${GITHUB_TOKEN}\" }\n    }\n  }\n}\n```\n\nTools from a server appear as **`mcp__<server>__<tool>`**, which is also the shape you use in permission rules: `mcp__github` for the whole server, `mcp__github__create_issue` for one tool. Manage servers at runtime with `/mcp`.",
-      "tags": ["mcp", "configuration"],
-      "hints": ["Three scopes, and one of them is a committed file sitting at the repo root."]
+      "question": "How are MCP servers scoped in Claude Code, and how do credentials stay out of git?",
+      "answer": "Two scopes, two files:\n\n- **Project**: **`.mcp.json`** at the repo root - committed, shared team tooling.\n- **User**: **`~/.claude.json`** - your personal or experimental servers, across projects.\n\nBoth are active at once: tools from **all** configured servers are discovered at connection time and available to the agent simultaneously.\n\nCredentials use **environment variable expansion**, so the secret is referenced, never committed:\n\n```json\n{\n  \"mcpServers\": {\n    \"github\": {\n      \"command\": \"npx\",\n      \"args\": [\"-y\", \"@modelcontextprotocol/server-github\"],\n      \"env\": { \"GITHUB_TOKEN\": \"${GITHUB_TOKEN}\" }\n    }\n  }\n}\n```\n\nTwo judgement calls that follow:\n- Prefer an **existing community server** for a standard integration (Jira, GitHub); reserve custom servers for team-specific workflows.\n- **Write real descriptions.** A thin MCP tool description loses to a built-in like `Grep`, and the agent will keep reaching for the built-in even when your server is the better source.",
+      "tags": ["mcp", "configuration", "scoping"],
+      "hints": ["One file is committed, one is yours. Both load at the same time."]
     },
     {
       "id": "ccaf2-open-012",
       "subjectId": "ccaf-2-claude-code",
       "type": "open",
-      "question": "What lives in the `.claude/` directory of a project?",
-      "answer": "It is the project's Claude Code configuration root, and it is **committed** (except the `.local.json` files):\n\n```text\n.claude/\n├── settings.json          # team-shared: permissions, hooks, env\n├── settings.local.json    # personal overrides, gitignored\n├── CLAUDE.md              # alternative location for project instructions\n├── commands/              # custom slash commands (*.md)\n├── agents/                # custom subagent definitions (*.md)\n├── rules/                 # topic-scoped instructions, optionally path-scoped\n└── skills/                # packaged workflows loaded on demand\n```\n\nPlus `.mcp.json` at the **repo root** for shared MCP servers.\n\nThe design point: everything a teammate needs to get the same Claude Code behavior is in version control, so the agent's environment is reproducible rather than per-developer folklore.",
-      "tags": ["configuration", "project-structure"],
-      "hints": ["Everything a teammate would need to reproduce your Claude Code setup exactly."]
+      "question": "What lives in the `.claude/` directory, and what decides which file a given instruction goes in?",
+      "answer": "```text\n.claude/\n├── CLAUDE.md      # always-loaded universal standards (or root CLAUDE.md)\n├── rules/         # topic files; YAML `paths` globs load them conditionally\n├── commands/      # slash commands, project-scoped via version control\n├── skills/        # SKILL.md + assets, loaded on demand\n└── agents/        # subagent definitions: description, prompt, tool limits\n```\n\nPlus **`.mcp.json`** at the repo root for shared servers, and **`~/.claude.json`** outside the repo for your personal ones.\n\nThe routing question is **how often the instruction is relevant**:\n\n| Relevance | Home |\n|---|---|\n| Every session, universal | `CLAUDE.md` |\n| Only when editing matching files | `rules/` with a `paths` glob |\n| Only when a specific task comes up | `skills/` |\n| Only when a developer asks for it by name | `commands/` |\n\nPath-scoped rules beat a subdirectory `CLAUDE.md` when the convention follows a **file type** rather than a directory - test files spread across the whole tree are the standard example.",
+      "tags": ["configuration", "project-structure", "rules"],
+      "hints": ["Sort the whole directory by one question: how often does this matter?"]
     },
     {
       "id": "ccaf2-open-013",
@@ -157,99 +106,35 @@
       "hints": ["Imports will not help. What actually loads on demand instead of at launch?"]
     },
     {
-      "id": "ccaf2-quiz-001",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "quiz",
-      "question": "A project `.claude/settings.json` has `\"allow\": [\"Bash(aws s3 ls)\"]` and enterprise managed settings have `\"deny\": [\"Bash(aws *)\"]`. What happens when Claude runs `aws s3 ls`?",
-      "answer": "It is blocked. Precedence is deny > ask > allow, and a broad deny cannot carry allowlist exceptions. Managed settings also sit above project settings, so the deny survives regardless.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Blocked - deny takes precedence over allow, regardless of specificity",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "Allowed - the more specific allow rule wins",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Allowed - project settings override managed settings",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "The user is prompted to choose",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["permissions", "settings"],
-      "hints": [
-        "Two things stack here - rule precedence and settings precedence - and both point the same way."
-      ]
-    },
-    {
       "id": "ccaf2-quiz-002",
       "subjectId": "ccaf-2-claude-code",
       "type": "quiz",
-      "question": "Prettier must run on every file Claude edits, without exception. What is the correct mechanism?",
-      "answer": "A `PostToolUse` hook matching `Edit|Write`. Hooks execute deterministically at the lifecycle event; a CLAUDE.md instruction is context the model usually - but not always - follows.",
+      "question": "Three MCP tools return dates as Unix timestamps, ISO 8601 strings, and numeric codes, and the agent keeps comparing them wrongly. What is the cleanest fix?",
+      "answer": "PostToolUse hooks intercept tool results for transformation before the model sees them, which is exactly the named use case for normalizing heterogeneous formats. Rewriting third-party servers is often not available to you; prompting makes the model do arithmetic it should never have been handed.",
       "choices": [
         {
           "id": "a",
-          "text": "A `PostToolUse` hook with matcher `Edit|Write` that runs prettier",
+          "text": "A `PostToolUse` hook that normalizes each tool's result before the model processes it",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "A line in CLAUDE.md saying to always run prettier after editing",
+          "text": "A system prompt section explaining each tool's date format and how to convert between them",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "A `PreToolUse` hook with matcher `Edit|Write`",
+          "text": "Few-shot examples showing correct date comparisons across all three of the tool formats",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "A custom slash command the developer runs afterwards",
+          "text": "A rewrite of the three MCP servers so every one of them emits ISO 8601 timestamps",
           "isCorrect": false
         }
       ],
-      "tags": ["hooks", "automation"],
-      "hints": ["\"Without exception\" rules out anything the model has to remember to do."]
-    },
-    {
-      "id": "ccaf2-quiz-003",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "quiz",
-      "question": "What exit code must a `PreToolUse` hook use to block the tool call and send its reason back to Claude?",
-      "answer": "Exit code 2 is the blocking error across every hook event: stderr is fed to Claude and the action is prevented. Any other non-zero code is a non-blocking error and execution continues.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "2",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "1",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "0 with empty stdout",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Any non-zero code",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["hooks"],
-      "hints": ["Not just any non-zero code."]
+      "tags": ["hooks", "agent-sdk", "normalization"],
+      "hints": ["Fix it once on the way in, or explain it forever in the prompt?"]
     },
     {
       "id": "ccaf2-quiz-004",
@@ -347,37 +232,6 @@
       ]
     },
     {
-      "id": "ccaf2-quiz-007",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "quiz",
-      "question": "Which permission mode lets Claude explore and read but never edit your source files?",
-      "answer": "`plan` mode. `acceptEdits` auto-accepts edits, `bypassPermissions` skips prompts entirely, and `default` prompts per tool on first use.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "`plan`",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "`acceptEdits`",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "`default`",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "`bypassPermissions`",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["permissions", "modes"],
-      "hints": ["The mode is named after what Claude does instead of editing."]
-    },
-    {
       "id": "ccaf2-quiz-008",
       "subjectId": "ccaf-2-claude-code",
       "type": "quiz",
@@ -412,125 +266,32 @@
       "id": "ccaf2-quiz-009",
       "subjectId": "ccaf-2-claude-code",
       "type": "quiz",
-      "question": "Inside a custom slash command file, which placeholder receives everything the user typed after the command name?",
-      "answer": "`$ARGUMENTS` holds the entire argument string; `$1`, `$2` give you individual positional arguments.",
+      "question": "Which skill frontmatter field prompts the developer for a parameter when the skill is invoked bare?",
+      "answer": "`argument-hint` supplies the expected-parameter hint shown when a developer invokes the skill without arguments. `allowed-tools` restricts tools, `context: fork` runs it in an isolated subagent, and `description` drives when Claude loads it.",
       "choices": [
         {
           "id": "a",
-          "text": "`$ARGUMENTS`",
+          "text": "`argument-hint`",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "`$INPUT`",
+          "text": "`allowed-tools`",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "`{{args}}`",
+          "text": "`context: fork`",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "`$PROMPT`",
+          "text": "`description`",
           "isCorrect": false
         }
       ],
-      "tags": ["slash-commands"],
-      "hints": ["All caps, and it starts with a dollar sign."]
-    },
-    {
-      "id": "ccaf2-quiz-010",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "quiz",
-      "question": "Security requires that Claude Code can never read `.env` files, and no developer may override it. Where does the rule go?",
-      "answer": "Managed settings sit at the top of the precedence chain and cannot be overridden by project, local, or user settings. A project `.claude/settings.json` deny would be effective but editable by anyone with repo access.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "`permissions.deny` in managed settings (`/etc/claude-code/managed-settings.json` or the OS policy equivalent)",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "`permissions.deny` in the project `.claude/settings.json`",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "A rule in the project CLAUDE.md",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "`.gitignore`",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["permissions", "security", "settings"],
-      "hints": ["\"No developer may override it\" eliminates three of the four."]
-    },
-    {
-      "id": "ccaf2-quiz-011",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "quiz",
-      "question": "Which hook event fires after you submit a prompt but before Claude processes it, and can block it?",
-      "answer": "`UserPromptSubmit`. It can add context or block the prompt (exit 2 or `decision: \"block\"`), which makes it the place for prompt-level policy checks such as secret scanning.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "`UserPromptSubmit`",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "`PreToolUse`",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "`SessionStart`",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "`Notification`",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["hooks", "lifecycle"],
-      "hints": ["The event name describes exactly what just happened."]
-    },
-    {
-      "id": "ccaf2-quiz-012",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "quiz",
-      "question": "In a permission rule, how do you refer to the `create_issue` tool from an MCP server named `github`?",
-      "answer": "MCP tools are namespaced `mcp__<server>__<tool>`. Using just `mcp__github` matches every tool on that server.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "`mcp__github__create_issue`",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "`github.create_issue`",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "`mcp:github/create_issue`",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "`MCP(github, create_issue)`",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["mcp", "permissions"],
-      "hints": ["Double underscores, twice."]
+      "tags": ["skills", "frontmatter"],
+      "hints": ["The name says what it hints at."]
     },
     {
       "id": "ccaf2-quiz-013",
@@ -564,68 +325,6 @@
       "hints": [
         "Which option actually loads less at startup, rather than just reorganizing the files?"
       ]
-    },
-    {
-      "id": "ccaf2-quiz-014",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "quiz",
-      "question": "What is the biggest risk of running Claude Code with `--dangerously-skip-permissions` in a CI pipeline on a repo with deploy credentials?",
-      "answer": "It removes the enforcement layer entirely, so a prompt-injected instruction found in a file, issue, or dependency can drive real tool calls with the runner's credentials. This mode is only appropriate in a throwaway, isolated container.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Any instruction the agent reads - including injected text in files or issues - can execute with the runner's credentials",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "It makes the run slower because every tool is re-validated",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "It disables CLAUDE.md loading",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "It forces the run into plan mode",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["security", "cicd", "permissions"],
-      "hints": ["What does the agent read in CI that other people wrote?"]
-    },
-    {
-      "id": "ccaf2-quiz-015",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "quiz",
-      "question": "In a Claude Code GitHub Actions workflow, where does the Anthropic API key belong?",
-      "answer": "In repository (or organization) secrets, referenced as `${{ secrets.ANTHROPIC_API_KEY }}`. Anything committed to the workflow file is exposed to everyone with read access and to forks.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "In GitHub repository secrets, referenced from the workflow",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "As a plain `env:` value in the workflow YAML",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "In the project `CLAUDE.md`",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "In `.claude/settings.json` so the team shares it",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["cicd", "github-actions", "security"],
-      "hints": ["Anything sitting in the workflow YAML is readable by everyone with repo access."]
     },
     {
       "id": "ccaf2-quiz-016",
@@ -669,16 +368,6 @@
       "hints": ["All caps, dot md - it sits at the repo root or inside .claude/."]
     },
     {
-      "id": "ccaf2-type-002",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "type-answer",
-      "question": "Which hook event is the only one that can prevent a tool call from executing?",
-      "answer": "`PreToolUse` - via `permissionDecision: \"deny\"` in its JSON output, or by exiting with code 2.",
-      "shortAnswer": "PreToolUse",
-      "tags": ["hooks"],
-      "hints": ["The prefix tells you it runs before something."]
-    },
-    {
       "id": "ccaf2-type-003",
       "subjectId": "ccaf-2-claude-code",
       "type": "type-answer",
@@ -707,16 +396,6 @@
       "shortAnswer": "commands",
       "tags": ["slash-commands"],
       "hints": ["Plural, and it is what you type after a leading slash."]
-    },
-    {
-      "id": "ccaf2-type-006",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "type-answer",
-      "question": "Which slash command generates a starting CLAUDE.md by analyzing the codebase?",
-      "answer": "`/init`. If a CLAUDE.md already exists it suggests improvements rather than overwriting.",
-      "shortAnswer": "/init",
-      "tags": ["claude-md", "commands"],
-      "hints": ["Four letters - the same word you use to start a git repo."]
     },
     {
       "id": "ccaf2-type-007",
@@ -758,95 +437,35 @@
       ]
     },
     {
-      "id": "ccaf2-match-002",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "match",
-      "question": "Match each hook event to when it fires.",
-      "answer": "`PreToolUse` is the only one that can stop a tool call; `PostToolUse` is where deterministic follow-up work belongs.",
-      "matchPairs": [
-        {
-          "left": "PreToolUse",
-          "right": "Before a tool executes - can deny it"
-        },
-        {
-          "left": "PostToolUse",
-          "right": "After a tool succeeds - format, lint, test"
-        },
-        {
-          "left": "UserPromptSubmit",
-          "right": "After you submit a prompt, before Claude sees it"
-        },
-        {
-          "left": "SessionStart",
-          "right": "A session begins or resumes - inject context"
-        },
-        {
-          "left": "Stop",
-          "right": "Claude finished responding"
-        }
-      ],
-      "tags": ["hooks", "lifecycle"],
-      "hints": ["Two of them bracket the tool call; one brackets the prompt."]
-    },
-    {
       "id": "ccaf2-match-003",
       "subjectId": "ccaf-2-claude-code",
       "type": "match",
-      "question": "Match each requirement to the Claude Code mechanism that enforces or provides it.",
-      "answer": "The recurring exam distinction: CLAUDE.md is guidance, settings and hooks are enforcement, skills and rules are on-demand context.",
+      "question": "Match each requirement to the Claude Code mechanism that satisfies it.",
+      "answer": "The recurring split: `CLAUDE.md` is always-loaded context, `rules/` is conditionally-loaded context, skills are on-demand workflows, and tool restrictions are the only thing that actually prevents an action.",
       "matchPairs": [
         {
-          "left": "Block a tool no matter what the model decides",
-          "right": "permissions.deny in settings"
+          "left": "Conventions for test files spread across the tree",
+          "right": "A `.claude/rules/` file with a `paths` glob"
         },
         {
-          "left": "Run a command at a fixed lifecycle point",
-          "right": "A hook"
+          "left": "A verbose analysis that must not pollute the session",
+          "right": "A skill with `context: fork`"
         },
         {
-          "left": "Coding conventions the team shares",
-          "right": "Project CLAUDE.md"
+          "left": "Universal standards needed in every session",
+          "right": "Project-level `CLAUDE.md`"
         },
         {
-          "left": "Instructions that load only for src/api files",
-          "right": "Path-scoped rule in .claude/rules/"
+          "left": "Diagnosing why an instruction never applied",
+          "right": "The `/memory` command"
         },
         {
-          "left": "A reusable prompt a developer invokes by name",
-          "right": "Custom slash command"
+          "left": "Stopping a subagent from editing any file",
+          "right": "`allowed-tools` in its definition"
         }
       ],
-      "tags": ["configuration", "enforcement"],
-      "hints": ["Split the list into guidance, enforcement, and on-demand context."]
-    },
-    {
-      "id": "ccaf2-match-004",
-      "subjectId": "ccaf-2-claude-code",
-      "type": "match",
-      "question": "Match each settings file to its precedence position.",
-      "answer": "Unlike CLAUDE.md files, settings override by precedence. The one exception is permission rules, which merge across scopes so an enterprise deny always survives.",
-      "matchPairs": [
-        {
-          "left": "managed-settings.json",
-          "right": "Highest - cannot be overridden"
-        },
-        {
-          "left": ".claude/settings.local.json",
-          "right": "Personal project overrides, gitignored"
-        },
-        {
-          "left": ".claude/settings.json",
-          "right": "Committed team project settings"
-        },
-        {
-          "left": "~/.claude/settings.json",
-          "right": "Lowest - your defaults across all projects"
-        }
-      ],
-      "tags": ["settings", "hierarchy"],
-      "hints": [
-        "One cannot be overridden, one is gitignored, one is committed, one is your global default."
-      ]
+      "tags": ["configuration", "rules", "skills"],
+      "hints": ["Sort into always loaded, conditionally loaded, on demand, and actually enforced."]
     }
   ]
 }

@@ -54,28 +54,6 @@
       ]
     },
     {
-      "id": "ccaf6-open-005",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "Scenario 5 - Enterprise Content Management with compliance requirements. Sketch the architecture.",
-      "answer": "**Shape**: workflow with hard policy gates in code, plus auditability by design.\n\n- **Ingestion**: classify content, detect PII/PHI, and tag sensitivity **before** anything reaches the model. Redact what must not leave your boundary.\n- **Access control lives in your systems, not the prompt**: tools filter by the caller's entitlements server-side. \"Only show documents the user may see\" as a prompt instruction is not access control.\n- **Parallelization (sectioning)**: one call drafts/summarizes while another screens for policy violations, so the compliance check is not competing with the main task inside one prompt.\n- **Voting** on the high-stakes classification: run the policy check several times with different framings and flag if **any** run says violation - false negatives are the expensive error.\n- **Human-in-the-loop**: anything flagged, anything above a sensitivity tier, and any publish action goes to an approver.\n- **Untrusted content**: documents are wrapped in XML tags and declared to be data, never instructions - ingested content is an injection surface.\n- **Audit**: log every request, tool call, decision, and approval, with the model/prompt version, so a decision can be reconstructed later. Consider zero-retention settings where required.\n- **Enforcement layer**: managed settings / `permissions.deny` for anything that must be impossible, not a CLAUDE.md line.",
-      "tags": ["scenario-content", "compliance", "security", "architecture"],
-      "hints": [
-        "Policy gates in code, untrusted documents in tags, and everything logged for audit."
-      ]
-    },
-    {
-      "id": "ccaf6-open-006",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "Scenario 6 - Real-time Monitoring and Alerting. Sketch the architecture.",
-      "answer": "**Shape**: deterministic detection, LLM triage, gated remediation.\n\n- **Do not put the model in the detection path.** Thresholds and anomaly detection stay deterministic - cheap, fast, and testable. The model enters **after** an alert fires.\n- **Routing by severity**: low-severity alerts get a small, fast model or a template; a page-worthy incident gets the full agentic loop.\n- **Triage agent** with **read-only** tools: query metrics, fetch logs, read recent deploys, search runbooks and past incidents. It correlates signals and produces a hypothesis with evidence.\n- **Structured output**: a `submit_triage` tool returning `severity`, `probable_cause`, `evidence[]`, `recommended_action`, `confidence` - so downstream routing is typed, not parsed from prose.\n- **Remediation is gated**: irreversible actions (restart, rollback, scale, failover) go through an approval gate or a strictly bounded, validated action set. Autonomy on diagnosis, control on writes.\n- **Latency and cost**: cache the system prompt, runbooks, and tool definitions; trim log output at the source - dumping 10k log lines exhausts context and buries the signal in the middle.\n- **Reliability**: alerting must not depend on a single provider. Retry with backoff; if the model is unavailable, fall back to the deterministic runbook and page a human - **degrade to a human, never to silence**.\n- **Noise control**: deduplicate correlated alerts before invoking the model; one incident should be one run, not forty.",
-      "tags": ["scenario-monitoring", "reliability", "architecture"],
-      "hints": [
-        "Keep the model out of the detection path. Autonomy on diagnosis, control on writes."
-      ]
-    },
-    {
       "id": "ccaf6-quiz-001",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
@@ -324,99 +302,6 @@
       "hints": ["No single layer is enough - look for the option that stacks several."]
     },
     {
-      "id": "ccaf6-quiz-009",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "quiz",
-      "question": "Content management scenario: users must only see documents they are entitled to. Where is that enforced?",
-      "answer": "Inside the tool, server-side, against the authenticated caller's entitlements. Filtering by prompt instruction is not access control - the model is not an authorization layer.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "In the retrieval tool, filtering server-side by the caller's identity",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "In the system prompt, listing which roles may see what",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "By post-filtering the model's answer for restricted titles",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "By giving each user a separate CLAUDE.md",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["scenario-content", "security", "compliance"],
-      "hints": ["The model is not an authorization layer."]
-    },
-    {
-      "id": "ccaf6-quiz-010",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "quiz",
-      "question": "Content management scenario: a false negative on the policy check is far more expensive than a false positive. Which pattern fits?",
-      "answer": "Parallelization with voting: run the same check several times with different framings and flag if any run says violation. It buys confidence, which is exactly what an asymmetric-cost check needs.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Parallelization with voting - flag if any run reports a violation",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "Prompt chaining with a single final check",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Routing to a smaller model for cost",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Evaluator-optimizer refining the wording of the content",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["scenario-content", "patterns", "compliance"],
-      "hints": ["Asymmetric cost means you want confidence, not coverage."]
-    },
-    {
-      "id": "ccaf6-quiz-011",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "quiz",
-      "question": "Monitoring scenario: where should the LLM sit relative to alert detection?",
-      "answer": "Detection stays deterministic - thresholds and anomaly detection are cheap, fast, and testable. The model adds value at triage: correlating signals, forming a hypothesis, and drafting the response.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "After detection - deterministic rules fire the alert, the model triages it",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "In the detection path, evaluating every metric sample",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Only at the end, writing the post-incident report",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Replacing the alerting system entirely",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["scenario-monitoring", "architecture"],
-      "hints": ["Detection should be cheap, fast, and testable. Is that a model?"]
-    },
-    {
       "id": "ccaf6-quiz-012",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
@@ -448,37 +333,6 @@
       "hints": [
         "Two problems at once: the window fills, and the signal lands in the worst position."
       ]
-    },
-    {
-      "id": "ccaf6-quiz-013",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "quiz",
-      "question": "Monitoring scenario: the Claude API is unavailable during an incident. What must the system do?",
-      "answer": "Fall back to the deterministic runbook and page a human. An alerting system may degrade in quality but must never degrade into silence - a missed page is the failure mode that matters.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Fall back to the deterministic runbook and page a human",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "Queue the alerts and process them when the API recovers",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Retry indefinitely until a response arrives",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Suppress the alert to avoid noise",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["scenario-monitoring", "degradation", "reliability"],
-      "hints": ["An alerting system may degrade in quality, but never into one particular thing."]
     },
     {
       "id": "ccaf6-quiz-014",

@@ -62,37 +62,28 @@
       "id": "ccaf1-open-006",
       "subjectId": "ccaf-1-agentic",
       "type": "open",
-      "question": "What is the difference between a workflow and an agent, in Anthropic's terminology?",
-      "answer": "- **Workflow**: LLMs and tools orchestrated through **predefined code paths**. Your code decides the sequence; the model fills in the steps. Predictable, cheap, easy to test and trace.\n- **Agent**: a system where the LLM **dynamically directs its own process and tool usage**, running in a loop with feedback from the environment. Flexible, handles open-ended work, but less predictable and harder to bound in cost.\n\nThe guidance is to find the **simplest thing that works**: a single well-prompted call, then a workflow, and only then an agent. Agents earn their extra cost and latency when the number of steps cannot be predicted in advance and the environment gives real feedback the model can act on.",
-      "tags": ["patterns", "workflow-vs-agent"],
-      "hints": ["Ask who owns the control flow: your code, or the model?"]
+      "question": "When should control flow be model-driven, and when should it be a pre-configured sequence?",
+      "answer": "The distinction the exam draws is **who decides the next step**:\n\n- **Model-driven**: Claude reasons about which tool to call next based on context. Right when the number and order of steps depend on what is discovered while working.\n- **Pre-configured**: a decision tree or a fixed tool sequence written by you. Right when the steps are known in advance - it is cheaper, testable, and traceable.\n\nThe same choice appears one level up, in **task decomposition**:\n\n| Shape | Use when |\n|---|---|\n| **Fixed sequential pipeline** (prompt chaining) | predictable multi-aspect work, e.g. analyze each file, then run a cross-file integration pass |\n| **Dynamic adaptive decomposition** | open-ended investigation, where each step's findings generate the next subtasks |\n\nExample of the second: \"add comprehensive tests to a legacy codebase\" - you first map structure, then identify high-impact areas, then build a prioritized plan that adapts as dependencies are discovered.",
+      "tags": ["agentic-loop", "task-decomposition"],
+      "hints": ["Ask who picks the next step - and whether the steps are knowable up front."]
     },
     {
       "id": "ccaf1-open-007",
       "subjectId": "ccaf-1-agentic",
       "type": "open",
-      "question": "Describe the orchestrator-workers pattern and when it is the right choice.",
-      "answer": "A **central orchestrator LLM decomposes a task at runtime**, dispatches subtasks to worker LLMs (often in parallel), and synthesizes their outputs into one result.\n\nUse it when **the subtasks cannot be predetermined** - they depend on the input. Canonical examples: a code change that touches an unknown set of files; a research question that needs an unknown set of sources.\n\nContrast with **parallelization/sectioning**, where *your code* splits the work along a fixed, known decomposition. The distinguishing question: *who decides how the work is divided?* If it is the model at runtime, that is orchestrator-workers. If it is a hardcoded split, it is parallelization.\n\nIn Claude Code terms, the orchestrator spawns subagents; each worker gets its own clean context window and returns a compact result, which also keeps the orchestrator's context small.\n\nThe model decides the split at runtime:\n\n```mermaid\ngraph TD\n  I[\"Task\"] --> O[\"Orchestrator LLM decomposes at runtime\"]\n  O --> W1[\"Worker LLM\"]\n  O --> W2[\"Worker LLM\"]\n  O --> W3[\"Worker LLM\"]\n  W1 --> S[\"Orchestrator synthesizes\"]\n  W2 --> S\n  W3 --> S\n  S --> R[\"One result\"]\n```",
-      "tags": ["patterns", "multi-agent", "orchestrator"],
-      "hints": ["The giveaway is *who* decides how the work gets divided, and *when*."]
+      "question": "Describe the coordinator-subagent (hub-and-spoke) architecture and what the coordinator owns.",
+      "answer": "One **coordinator** agent sits at the hub and manages **all** inter-subagent communication, error handling, and information routing. Subagents talk only to the coordinator.\n\nThe coordinator owns:\n- **Task decomposition** and delegation\n- **Deciding which subagents to invoke** based on query complexity, rather than always running the full pipeline\n- **Result aggregation** and synthesis\n- **Scope partitioning** across subagents to minimize duplication (distinct subtopics or source types per agent)\n\nSubagents run with **isolated context** - they do not inherit the coordinator's conversation history, so everything they need must be passed explicitly in their prompt.\n\nWhy route everything through the hub: **observability**, consistent error handling, and controlled information flow. The failure mode to watch is the opposite of complexity - **overly narrow decomposition**, which leaves a broad research topic only partly covered.\n\n```mermaid\ngraph TD\n  Q[\"Query\"] --> C[\"Coordinator: decompose, select, route\"]\n  C --> S1[\"Search subagent\"]\n  C --> S2[\"Analysis subagent\"]\n  C --> S3[\"Synthesis subagent\"]\n  S1 --> C\n  S2 --> C\n  S3 --> C\n  C --> R[\"Report\"]\n```",
+      "tags": ["multi-agent", "coordinator", "hub-and-spoke"],
+      "hints": ["Everything crosses the hub. Ask what that buys you when something fails."]
     },
     {
       "id": "ccaf1-open-008",
       "subjectId": "ccaf-1-agentic",
       "type": "open",
-      "question": "Describe the evaluator-optimizer pattern.",
-      "answer": "Two roles in a loop: one LLM call **generates** a candidate, a second LLM call **evaluates** it against explicit criteria and returns actionable feedback, and the generator revises. Repeat until the evaluator accepts or a budget is reached.\n\nUse it when **both** conditions hold:\n1. You can state clear evaluation criteria.\n2. Iterative refinement measurably improves the output - that is, a human reviewer would also give useful feedback on a first draft.\n\nGood fits: literary translation, complex search where results must be judged and the query refined, writing that must satisfy a rubric. Bad fit: tasks with no verifiable criteria, where the evaluator just produces confident noise and the loop never converges.\n\nTwo roles in a loop:\n\n```mermaid\ngraph LR\n  I[\"Task\"] --> G[\"Generator LLM\"]\n  G --> E{\"Evaluator LLM: meets the criteria?\"}\n  E -->|\"no - actionable feedback\"| G\n  E -->|\"yes, or budget reached\"| R[\"Accepted output\"]\n```",
-      "tags": ["patterns", "evaluator-optimizer"],
-      "hints": ["Two roles in a loop. It only works when one of them can judge reliably."]
-    },
-    {
-      "id": "ccaf1-open-009",
-      "subjectId": "ccaf-1-agentic",
-      "type": "open",
-      "question": "Parallelization has two variants - sectioning and voting. What is the difference?",
-      "answer": "Both run LLM calls **concurrently**, but for opposite reasons:\n\n- **Sectioning**: split the work into **independent subtasks** and run each on a different slice. The results are combined because each covers a different part. Example: one call screens a request for policy violations while another drafts the answer; a long document split into chunks, each summarized.\n- **Voting**: run **the same task several times** (different prompts, temperatures, or framings) to get diverse attempts, then aggregate - majority vote, best-of-n, or \"flag if any run says unsafe\". Buys **confidence**, not coverage.\n\nMnemonic: sectioning divides *the work*; voting duplicates *the work* and divides *the risk*. Voting is the standard answer for high-stakes checks where a single false negative is expensive.",
-      "tags": ["patterns", "parallelization"],
-      "hints": ["One divides the work; the other duplicates it. Ask what each one is buying."]
+      "question": "The coordinator's synthesis comes back with gaps in coverage. What loop does it run?",
+      "answer": "An **iterative refinement loop**, driven by the coordinator:\n\n1. Evaluate the synthesis output **for gaps** - which subtopics are thin or unsupported.\n2. **Re-delegate** to the search and analysis subagents with **targeted** queries aimed at those specific gaps.\n3. **Re-invoke synthesis** with the new findings.\n4. Repeat until coverage is sufficient.\n\nThe point is that the coordinator is the only participant that can see the whole picture, so gap detection has to live there - a subagent cannot know what the others missed.\n\nNote what this is not: it is not one generator arguing with one judge in the abstract. The evaluation criterion is concrete - **coverage of the original research question** - and the loop terminates on that, not on a subjective quality verdict.",
+      "tags": ["multi-agent", "iterative-refinement", "coordinator"],
+      "hints": ["Only one participant can see what everybody else missed."]
     },
     {
       "id": "ccaf1-open-010",
@@ -109,23 +100,10 @@
       "id": "ccaf1-open-011",
       "subjectId": "ccaf-1-agentic",
       "type": "open",
-      "question": "What is the routing pattern and what problem does it solve?",
-      "answer": "A first step **classifies** the input, then dispatches it to a **specialized** downstream prompt, model, or tool chain.\n\nIt solves the problem that optimizing one prompt for several distinct input categories degrades all of them - fixing refund handling breaks technical troubleshooting. Routing gives each category its own separation of concerns.\n\nSecond benefit: **cost/latency tiering**. Route easy, high-volume queries to a smaller, faster model and reserve the largest model for hard ones. This is the standard answer when a support scenario asks how to cut cost without hurting quality on complex tickets.\n\nClassify first, then dispatch:\n\n```mermaid\ngraph TD\n  I[\"Input\"] --> C[\"Classifier call\"]\n  C -->|refunds| A[\"Refund prompt\"]\n  C -->|technical| B[\"Troubleshooting prompt\"]\n  C -->|\"easy, high volume\"| S[\"Smaller, faster model\"]\n  C -->|hard| L[\"Largest model\"]\n```",
-      "tags": ["patterns", "routing"],
-      "hints": [
-        "Think about what happens to one prompt forced to serve three very different kinds of input."
-      ]
-    },
-    {
-      "id": "ccaf1-open-012",
-      "subjectId": "ccaf-1-agentic",
-      "type": "open",
-      "question": "What is the agent-computer interface (ACI) and why does Anthropic emphasize it?",
-      "answer": "The ACI is the surface **between the model and its tools** - tool names, descriptions, input schemas, and the shape of the results you return. It is the agent equivalent of a human-computer interface.\n\nAnthropic's guidance is that teams spend most of their effort on the prompt and almost none on the ACI, when in practice **most agent failures are ACI failures**: an ambiguous description, an argument the model must compute instead of copy, a result that is 40 KB of raw JSON.\n\nPractical rules: write the tool description as if for a new engineer with no context; use formats the model already writes well; remove arguments the model can get wrong (absolute over relative paths); poka-yoke the schema so the mistake is impossible; and test on real inputs, reading the model's failures as bug reports about your interface.",
-      "tags": ["aci", "tool-design", "best-practices"],
-      "hints": [
-        "It is the surface between the model and its tools - and the place teams under-invest."
-      ]
+      "question": "Why should a coordinator not always route every query through the full subagent pipeline?",
+      "answer": "Because pipeline depth should follow **query complexity**. The skill the exam names is designing coordinators that **analyze query requirements and dynamically select which subagents to invoke**, instead of always running search -> analysis -> synthesis -> report.\n\nA simple factual lookup that goes through four subagents pays four delegations, four context transfers, and a synthesis pass to answer something one search would have settled.\n\nThe paired skill is **scope partitioning**: when you do fan out, assign each subagent a distinct subtopic or source type so they do not duplicate each other's work.\n\nAnd the counterweight: decompose too narrowly and a broad topic ends up only partly covered. Selection is a judgement about the query, not a fixed rule.",
+      "tags": ["multi-agent", "coordinator", "cost"],
+      "hints": ["The pipeline has a fixed cost. Does every query deserve all of it?"]
     },
     {
       "id": "ccaf1-open-013",
@@ -140,10 +118,10 @@
       "id": "ccaf1-open-014",
       "subjectId": "ccaf-1-agentic",
       "type": "open",
-      "question": "The Messages API is stateless. How do you manage session state across turns in a production agent?",
-      "answer": "Every request must carry the **entire** `messages` array; the API stores nothing between calls. So the session lives in your infrastructure:\n\n- **Persist the message list** per conversation (Redis, Postgres, a document store) keyed by session id, and reload it on the next turn.\n- **Persist it as structured blocks**, not rendered text - `tool_use`/`tool_result` pairs must survive the round trip intact or the next request is invalid.\n- **Never drop a `tool_use` without its `tool_result`.** When trimming history, remove complete pairs.\n- **Compact when it grows**: summarize old turns into a compact block and keep recent turns verbatim.\n- **Keep application state out of the transcript.** Order status, cart, and auth belong in your database, reachable through tools; the transcript is the conversation, not the system of record.\n- Put a stable prefix (system prompt + tools) first so **prompt caching** can absorb the re-sent history.",
-      "tags": ["state", "sessions", "context"],
-      "hints": ["The API remembers nothing. So who remembers - and what must never be split apart?"]
+      "question": "How do you carry state across turns and across work sessions in an agent workflow?",
+      "answer": "**Within a conversation**: every request carries the **complete conversation history** - the API keeps nothing between calls, and dropping history breaks conversational coherence. Keep `tool_use`/`tool_result` pairs intact.\n\n**Across sessions**, three named mechanisms:\n\n- **`--resume <session-name>`** - continue a specific named prior conversation.\n- **`fork_session`** - branch from a shared analysis baseline to explore divergent approaches (e.g. comparing two refactoring strategies without re-analyzing the codebase).\n- **A fresh session with an injected summary** - the more reliable choice when the prior session's **tool results are stale**.\n\nThat last trade-off is the exam's point: resume when prior context is **mostly still valid**; start fresh with a structured summary when it is not. And when you do resume after code changed, **tell the agent which files changed** so it re-analyzes those instead of everything.\n\nFor long explorations, **scratchpad files** persist key findings across context boundaries, and structured state exports (**manifests**) let a coordinator recover after a crash.",
+      "tags": ["sessions", "state", "context"],
+      "hints": ["Two flags and one deliberate decision to throw the old session away."]
     },
     {
       "id": "ccaf1-open-015",
@@ -166,26 +144,6 @@
       ]
     },
     {
-      "id": "ccaf1-open-017",
-      "subjectId": "ccaf-1-agentic",
-      "type": "open",
-      "question": "How should an agent loop handle `stop_reason: \"max_tokens\"` when it happens in the middle of a tool call?",
-      "answer": "Treat the turn as **truncated and unusable as-is**. A `tool_use` block cut off mid-JSON has incomplete `input`, so executing it would act on partial arguments - the worst outcome.\n\nHandling:\n1. Detect `stop_reason == \"max_tokens\"` explicitly, before you scan for `tool_use` blocks.\n2. Do **not** execute a truncated tool call.\n3. Retry with a higher `max_tokens`, or continue the assistant turn by appending it and asking the model to resume.\n4. If it recurs, the real fix is upstream: the model is being asked to emit too much in one turn. Split the work, or trim the tool outputs feeding the context.\n\nRelated: `model_context_window_exceeded` means the response filled the **model's** context window rather than your `max_tokens` - also truncated, but raising `max_tokens` will not help; you must shrink the input.\n\nWhere the check has to sit:\n\n```mermaid\ngraph TD\n  R[\"Response arrives\"] --> S{\"stop_reason is max_tokens?\"}\n  S -->|no| N[\"Scan for tool_use as usual\"]\n  S -->|yes| T[\"Truncated: do NOT execute the tool_use\"]\n  T --> F[\"Retry with a higher max_tokens, or resume the turn\"]\n  F --> K{\"Happens again?\"}\n  K -->|yes| U[\"Fix upstream: split the work, trim tool outputs\"]\n```",
-      "tags": ["stop-reason", "error-handling", "agentic-loop"],
-      "hints": [
-        "The tool call may have been cut off mid-JSON. What must you absolutely not do with it?"
-      ]
-    },
-    {
-      "id": "ccaf1-open-018",
-      "subjectId": "ccaf-1-agentic",
-      "type": "open",
-      "question": "What does `stop_reason: \"pause_turn\"` mean and how do you handle it?",
-      "answer": "It appears with **server-side tools** (for example web search), where Anthropic runs its own sampling loop for you. `pause_turn` means that internal loop hit its iteration limit while the turn was still in progress - it is a **checkpoint, not a completion**.\n\nHandling: append the assistant `content` you received to `messages` and call the API again with the same tools. The model resumes where it paused. You do **not** execute anything yourself, unlike `tool_use`.\n\nTreating `pause_turn` as `end_turn` is the classic bug: you return a half-finished answer to the user and never learn that the search was still running.\n\nThree branches, and only one of them is yours to execute:\n\n```mermaid\ngraph TD\n  R{\"stop_reason?\"} -->|end_turn| D[\"Turn is complete\"]\n  R -->|tool_use| X[\"You execute the tool\"]\n  R -->|pause_turn| P[\"Server-side loop hit its iteration limit\"]\n  P --> A[\"Append the assistant content, call again with the same tools\"]\n  A --> R\n```",
-      "tags": ["stop-reason", "server-tools", "agentic-loop"],
-      "hints": ["It comes from server-side tools. It is a checkpoint, not a finish line."]
-    },
-    {
       "id": "ccaf1-open-019",
       "subjectId": "ccaf-1-agentic",
       "type": "open",
@@ -198,10 +156,10 @@
       "id": "ccaf1-open-020",
       "subjectId": "ccaf-1-agentic",
       "type": "open",
-      "question": "A tool throws an exception. What do you send back to the model?",
-      "answer": "A `tool_result` block for that `tool_use_id` with **`is_error: true`** and a short, actionable message:\n\n```json\n{ \"type\": \"tool_result\", \"tool_use_id\": \"toolu_01A\",\n  \"is_error\": true,\n  \"content\": \"Order not found. order_id must be the 8-digit number from the receipt; got 'ABC'.\" }\n```\n\nWhy this and not the alternatives:\n- **Do not crash the loop** - the model can often recover (fix the argument, try another tool, or tell the user).\n- **Do not silently return an empty result** - the model reads that as \"no data exists\" and confidently reports a wrong conclusion.\n- **Do not dump a raw stack trace** - it burns context and tells the model nothing it can act on.\n- **Do not omit the block** - every `tool_use` needs a matching `tool_result`, or the next request is malformed.\n\nDistinguish **recoverable** errors (bad argument, not found) from **fatal** ones (auth failure, service down); the second kind should break out to your error path, not be handed to the model to retry forever.\n\nRecoverable and fatal errors leave the loop by different doors:\n\n```mermaid\ngraph TD\n  T[\"Tool throws\"] --> C{\"Recoverable?\"}\n  C -->|\"bad argument, not found\"| M[\"tool_result with is_error true and an actionable message\"]\n  M --> L[\"Model fixes the argument, tries another tool, or tells the user\"]\n  C -->|\"auth failure, service down\"| E[\"Break out to your own error path\"]\n```",
-      "tags": ["error-handling", "tool-use", "is-error"],
-      "hints": ["There is a boolean for exactly this, and four tempting wrong ways to skip it."]
+      "question": "A tool call fails. What should the tool return so the agent can recover well?",
+      "answer": "Not a generic failure. Return the MCP **`isError`** flag plus **structured error metadata**:\n\n```json\n{ \"isError\": true,\n  \"errorCategory\": \"transient\",\n  \"isRetryable\": true,\n  \"description\": \"Inventory service timed out after 5s.\" }\n```\n\nCategorize, because the right recovery differs:\n\n| Category | Example | Agent's move |\n|---|---|---|\n| **transient** | timeout, service unavailable | retry, possibly after a delay |\n| **validation** | invalid input | fix the argument and call again |\n| **business** | policy violation | explain it to the user; `retriable: false` |\n| **permission** | caller not authorized | stop and escalate |\n\nWhy uniform responses hurt: a generic \"Operation failed\" leaves the agent unable to make an appropriate recovery decision, so it retries what will never succeed and gives up on what would.\n\nAlso distinguish an **access failure** (needs a retry decision) from a **valid empty result** (a successful query with no matches) - collapsing those two is a classic bug. In a multi-agent system, subagents should attempt **local recovery** for transient failures and propagate only what they cannot resolve, **with partial results and what was attempted**.",
+      "tags": ["error-handling", "tool-design", "error-category"],
+      "hints": ["Four categories, one boolean. Generic failure messages are the anti-pattern."]
     },
     {
       "id": "ccaf1-quiz-001",
@@ -299,99 +257,66 @@
       "hints": ["Who decided on the sub-questions - your code in advance, or the model at runtime?"]
     },
     {
-      "id": "ccaf1-quiz-004",
-      "subjectId": "ccaf-1-agentic",
-      "type": "quiz",
-      "question": "A compliance check must almost never miss a violation. You run the same classification three times with different prompts and flag the content if any run says unsafe. Which pattern is this?",
-      "answer": "Parallelization - voting variant. The same task is run several times to get diverse looks at it, and the results are aggregated. Sectioning would be splitting different subtasks across calls, not repeating one task.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Parallelization (voting)",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "Parallelization (sectioning)",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Routing",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Orchestrator-workers",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["patterns", "parallelization"],
-      "hints": ["Same task repeated, results aggregated. Is that buying coverage or confidence?"]
-    },
-    {
       "id": "ccaf1-quiz-005",
       "subjectId": "ccaf-1-agentic",
       "type": "quiz",
-      "question": "Support tickets fall into billing, technical, and account categories, and one prompt handling all three performs badly on each. What is the best first change?",
-      "answer": "Routing: classify the ticket, then send it to a prompt specialized for that category. This restores separation of concerns and also lets you send easy categories to a cheaper, faster model.",
+      "question": "A research coordinator runs search, analysis, synthesis, and report subagents on every query, including simple factual lookups. What is the best change?",
+      "answer": "Pipeline depth should follow query complexity. The named skill is a coordinator that analyzes the query and dynamically selects which subagents to invoke, rather than always routing through the full pipeline.",
       "choices": [
         {
           "id": "a",
-          "text": "Add a routing step that classifies the ticket and dispatches to a specialized prompt",
+          "text": "Have the coordinator analyze query requirements and select only the subagents that query needs",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Give the single prompt more few-shot examples of all three categories",
+          "text": "Run the four subagents in parallel so the total latency stops being additive",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Replace the prompt with a fully autonomous agent and let it decide",
+          "text": "Give every subagent the full tool set so any of them can finish the query alone",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Raise the temperature so the model considers more options",
+          "text": "Raise the coordinator's turn limit so it can re-delegate whenever output looks thin",
           "isCorrect": false
         }
       ],
-      "tags": ["patterns", "routing"],
-      "hints": ["Distinct categories, each one degrading the others inside a single shared prompt."]
+      "tags": ["multi-agent", "coordinator"],
+      "hints": ["A factual lookup does not need a synthesis pass over one document."]
     },
     {
       "id": "ccaf1-quiz-006",
       "subjectId": "ccaf-1-agentic",
       "type": "quiz",
-      "question": "Which situation most justifies an autonomous agent over a predefined workflow?",
-      "answer": "Agents earn their unpredictability when the number and order of steps genuinely cannot be known in advance and the environment gives feedback the model can act on. A fixed, well-understood sequence should stay a workflow - it is cheaper, faster, and easier to test.",
+      "question": "Which task calls for dynamic adaptive decomposition rather than a fixed prompt-chaining pipeline?",
+      "answer": "Fixed sequential pipelines fit predictable multi-aspect work. Dynamic adaptive decomposition fits open-ended investigation, where the subtasks are generated by what earlier steps discover - map structure, find high-impact areas, then build a plan that adapts.",
       "choices": [
         {
           "id": "a",
-          "text": "The number and order of steps depend on what the agent discovers while working",
+          "text": "Adding comprehensive tests to a legacy codebase, where findings reveal the next dependency",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "The task always follows the same three steps but each step is complex",
+          "text": "Reviewing a pull request for security, correctness, style, and test coverage in turn",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "The team wants lower latency and more predictable cost",
+          "text": "Extracting the same twelve fields from every invoice arriving in the nightly batch",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "The output must conform to a strict JSON schema",
+          "text": "Analyzing each changed file, then running one cross-file integration pass at the end",
           "isCorrect": false
         }
       ],
-      "tags": ["patterns", "workflow-vs-agent"],
-      "hints": [
-        "Agents earn their unpredictability only when the steps are genuinely unknowable up front."
-      ]
+      "tags": ["task-decomposition"],
+      "hints": ["Three of these you could write the steps for before starting."]
     },
     {
       "id": "ccaf1-quiz-007",
@@ -428,96 +353,34 @@
       "id": "ccaf1-quiz-008",
       "subjectId": "ccaf-1-agentic",
       "type": "quiz",
-      "question": "A `get_inventory` tool raises a timeout. What should the agent loop send back?",
-      "answer": "Return a `tool_result` with `is_error: true` and a short actionable message. This keeps the conversation valid (every `tool_use` gets a result) and lets the model retry, choose another path, or tell the user - instead of hallucinating on an empty result.",
+      "question": "A `get_inventory` tool times out. What should it return to the agent?",
+      "answer": "Structured metadata lets the agent decide correctly: a transient, retryable failure should be retried. An empty result reads as \"no inventory exists\" and produces a confident wrong answer; a generic string tells the agent nothing it can act on; terminating the workflow throws away every other subagent's work.",
       "choices": [
         {
           "id": "a",
-          "text": "A `tool_result` block with `is_error: true` and a brief description of the failure",
+          "text": "A structured error with `errorCategory: transient`, `isRetryable: true`, and a readable description",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "No `tool_result` at all, so the model knows nothing came back",
+          "text": "An empty result set, so the agent treats the lookup as complete and moves on",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "A `tool_result` with empty content",
+          "text": "A generic `\"Operation failed\"` string, keeping the internal failure detail private",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "A raw stack trace as the `tool_result` content",
+          "text": "Nothing at all, letting the coordinator's timeout handler terminate the whole workflow",
           "isCorrect": false
         }
       ],
-      "tags": ["error-handling", "tool-use"],
+      "tags": ["error-handling", "error-category"],
       "hints": [
-        "Every tool_use needs a matching result. The question is what that result should say."
+        "The agent has to choose between retrying and giving up. What does it need to choose well?"
       ]
-    },
-    {
-      "id": "ccaf1-quiz-009",
-      "subjectId": "ccaf-1-agentic",
-      "type": "quiz",
-      "question": "Which `stop_reason` tells you the model produced a safety refusal?",
-      "answer": "`refusal`. Inspect `stop_details` for the category; a common handling strategy is to surface a friendly message and optionally retry on a fallback model.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "`refusal`",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "`end_turn` with empty content",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "`stop_sequence`",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "`pause_turn`",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["stop-reason"],
-      "hints": ["The value is named after exactly what the model did."]
-    },
-    {
-      "id": "ccaf1-quiz-010",
-      "subjectId": "ccaf-1-agentic",
-      "type": "quiz",
-      "question": "Your agent uses a server-side tool and you receive `stop_reason: \"pause_turn\"`. What do you do?",
-      "answer": "Append the assistant content you received and call the API again with the same tools; the model resumes its server-side loop. Nothing needs to be executed on your side - unlike `tool_use`.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Append the assistant response and re-invoke the API to continue the turn",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "Treat it as completion and return the content to the user",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Execute the paused tool yourself and return a `tool_result`",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Restart the conversation with a fresh `messages` array",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["stop-reason", "server-tools"],
-      "hints": ["Do you execute anything yourself here?"]
     },
     {
       "id": "ccaf1-quiz-011",
@@ -678,125 +541,127 @@
       "id": "ccaf1-quiz-016",
       "subjectId": "ccaf-1-agentic",
       "type": "quiz",
-      "question": "A drafting step is followed by a critique step that returns feedback, and the draft is regenerated until the critique passes. Which pattern is this?",
-      "answer": "Evaluator-optimizer. Two roles - generator and evaluator - in a refinement loop with explicit criteria.",
+      "question": "A research report reads as complete, but two of the five subtopics were never actually covered. What should the coordinator do?",
+      "answer": "This is the iterative refinement loop: the coordinator is the only participant that can see the whole picture, so it evaluates coverage, re-delegates targeted queries for the gaps, and re-invokes synthesis until coverage is sufficient.",
       "choices": [
         {
           "id": "a",
-          "text": "Evaluator-optimizer",
+          "text": "Evaluate the synthesis for gaps, re-delegate targeted queries for those subtopics, then re-synthesize",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Prompt chaining",
+          "text": "Instruct the synthesis subagent to state its confidence in each section of the report",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Routing",
+          "text": "Increase the number of parallel search subagents so more sources get covered per run",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Orchestrator-workers",
+          "text": "Have the report subagent flag any section shorter than the others as likely incomplete",
           "isCorrect": false
         }
       ],
-      "tags": ["patterns", "evaluator-optimizer"],
-      "hints": ["A generator and a judge, looping until the judge is satisfied."]
+      "tags": ["multi-agent", "iterative-refinement"],
+      "hints": ["Length and self-reported confidence are not coverage."]
     },
     {
       "id": "ccaf1-quiz-017",
       "subjectId": "ccaf-1-agentic",
       "type": "quiz",
-      "question": "Which is the strongest sign that your agent needs a better agent-computer interface rather than a better prompt?",
-      "answer": "Repeated malformed or mistaken tool arguments point at the tool contract - description, schema, argument design - not at the system prompt. Anthropic's guidance is to treat the model's tool mistakes as bug reports about the interface.",
+      "question": "The agent picks the right tool but keeps passing malformed arguments. What does the guide point at?",
+      "answer": "Tool descriptions are the primary mechanism the model uses, and they should carry input formats, example queries, edge cases, and boundary explanations. Right tool with wrong arguments is a description problem, not a prompt or model problem.",
       "choices": [
         {
           "id": "a",
-          "text": "The model keeps calling the right tool with wrong or malformed arguments",
+          "text": "The tool description, which should state input formats, example queries, and edge cases",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "The model's tone does not match the brand voice",
+          "text": "The system prompt, which should repeat the argument format for each available tool",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "The agent's answers are too long",
+          "text": "The model tier, which should be raised so argument construction becomes more reliable",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "The conversation exceeds the context window after 30 turns",
+          "text": "The retry logic, which should re-issue the call with the arguments normalized in code",
           "isCorrect": false
         }
       ],
-      "tags": ["aci", "tool-design"],
-      "hints": ["Right tool, wrong arguments. What does that combination point at?"]
+      "tags": ["tool-design"],
+      "hints": [
+        "Right tool, wrong arguments. Which artifact was supposed to explain the arguments?"
+      ]
     },
     {
       "id": "ccaf1-quiz-018",
       "subjectId": "ccaf-1-agentic",
       "type": "quiz",
-      "question": "You must add a new capability to an agent and are choosing between a workflow and an agent loop. What does Anthropic's guidance recommend as the starting point?",
-      "answer": "Start with the simplest thing that works and add complexity only when it demonstrably improves outcomes - often a single well-crafted call with retrieval and good examples is enough. Agentic complexity costs latency, money, and predictability.",
+      "question": "Your coordinator's prompt tells it to delegate research to subagents, but it never spawns one. What is most likely missing?",
+      "answer": "The Task tool is the mechanism for spawning subagents, and a coordinator can only invoke them if `allowedTools` includes `\"Task\"`. No amount of prompting substitutes for the missing permission.",
       "choices": [
         {
           "id": "a",
-          "text": "Start with the simplest composition that works and add agentic complexity only if it measurably helps",
+          "text": "`\"Task\"` is absent from the coordinator's `allowedTools`, so it cannot spawn subagents",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Always start with a multi-agent design so it scales later",
+          "text": "The subagent definitions lack `description` fields, so the coordinator cannot match them",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Always use a framework so the orchestration is standardized",
+          "text": "The coordinator is emitting its Task calls across separate turns instead of one response",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Start with the maximum number of tools so the model is never blocked",
+          "text": "The subagents inherit no parent context, so they return nothing for the coordinator to use",
           "isCorrect": false
         }
       ],
-      "tags": ["best-practices", "workflow-vs-agent"],
-      "hints": ["The word Anthropic keeps repeating is simplicity."]
+      "tags": ["multi-agent", "task-tool", "allowed-tools"],
+      "hints": ["Delegation is a tool call. Is that tool allowed?"]
     },
     {
       "id": "ccaf1-quiz-019",
       "subjectId": "ccaf-1-agentic",
       "type": "quiz",
-      "question": "A monitoring agent must react to alerts continuously and every action it takes is irreversible. Which design is safest?",
-      "answer": "Let the agent do the open-ended diagnosis, but put the irreversible actions behind an approval gate or a strictly bounded, validated action set. Autonomy on read/diagnose, control on write.",
+      "question": "A support agent must never issue a refund before the customer's identity is verified. What design guarantees that?",
+      "answer": "When deterministic compliance is required - identity verification before a financial operation - prompt instructions have a non-zero failure rate. The prerequisite gate blocks the downstream tool call until the prerequisite step has completed.",
       "choices": [
         {
           "id": "a",
-          "text": "Autonomous diagnosis, with irreversible remediation behind an approval gate",
+          "text": "A programmatic prerequisite that blocks `process_refund` until `get_customer` returned a verified id",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Full autonomy including remediation, with a high iteration cap",
+          "text": "A system prompt rule stating that `get_customer` must always be called before any refund",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "A human writes every diagnosis and the agent only executes",
+          "text": "A tool description on `process_refund` explaining that verification is required beforehand",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "A single stateless prompt per alert with no tools at all",
+          "text": "A few-shot example showing the correct call order for a refund on a verified account",
           "isCorrect": false
         }
       ],
-      "tags": ["guardrails", "human-in-the-loop", "scenario-monitoring"],
-      "hints": ["Split diagnosis from remediation, then ask which half needs a human."]
+      "tags": ["enforcement", "human-in-the-loop", "scenario-support"],
+      "hints": ["Three of these are ways of asking. One is a way of preventing."]
     },
     {
       "id": "ccaf1-quiz-020",
@@ -883,94 +748,76 @@
       "id": "ccaf1-type-006",
       "subjectId": "ccaf-1-agentic",
       "type": "type-answer",
-      "question": "Name the multi-agent pattern where a central LLM decomposes the task at runtime and delegates subtasks it decided on.",
-      "answer": "Orchestrator-workers. The runtime, model-decided decomposition is what separates it from parallelization/sectioning.",
-      "shortAnswer": "orchestrator-workers",
-      "tags": ["patterns"],
-      "hints": ["A hyphenated pair: the one in charge, and the ones doing the work."]
-    },
-    {
-      "id": "ccaf1-type-007",
-      "subjectId": "ccaf-1-agentic",
-      "type": "type-answer",
-      "question": "What is the three-letter acronym for the model-facing surface of tool names, descriptions, schemas, and result formats?",
-      "answer": "ACI - agent-computer interface. Anthropic argues teams under-invest in it relative to prompt engineering.",
-      "shortAnswer": "ACI",
-      "tags": ["aci"],
-      "hints": ["Agent-computer-something."]
-    },
-    {
-      "id": "ccaf1-type-008",
-      "subjectId": "ccaf-1-agentic",
-      "type": "type-answer",
-      "question": "Which `stop_reason` indicates the response filled the model's own context window rather than your `max_tokens` limit?",
-      "answer": "`model_context_window_exceeded`. Raising `max_tokens` will not help; you must reduce the input.",
-      "shortAnswer": "model_context_window_exceeded",
-      "tags": ["stop-reason", "context"],
-      "hints": ["Long and literal - it names the exact limit that was hit."]
+      "question": "What is the name of the topology where one coordinator manages all inter-subagent communication?",
+      "answer": "Hub-and-spoke. The coordinator is the hub; subagents are spokes and never talk to each other, which is what gives you observability, consistent error handling, and controlled information flow.",
+      "shortAnswer": "hub-and-spoke",
+      "tags": ["multi-agent", "hub-and-spoke"],
+      "hints": ["A wheel: one centre, many spokes, no rim between them."]
     },
     {
       "id": "ccaf1-match-001",
       "subjectId": "ccaf-1-agentic",
       "type": "match",
-      "question": "Match each `stop_reason` to what it means.",
-      "answer": "These five cover almost every branch an agent loop needs. `tool_use` and `pause_turn` both continue the loop, but only `tool_use` requires you to execute something.",
+      "question": "Match each agent-loop signal to the role it should play.",
+      "answer": "The loop's control flow rests on `stop_reason`, and the guide names exactly two values for it: `tool_use` continues, `end_turn` terminates. The other three rows are the three anti-patterns the exam calls out by name.",
       "matchPairs": [
         {
-          "left": "end_turn",
-          "right": "Model finished naturally - use the response"
+          "left": "stop_reason is \"tool_use\"",
+          "right": "Execute the tools and continue the loop"
         },
         {
-          "left": "tool_use",
-          "right": "Model wants a tool executed - return tool_result"
+          "left": "stop_reason is \"end_turn\"",
+          "right": "Terminate the loop and present the response"
         },
         {
-          "left": "max_tokens",
-          "right": "Truncated at your output limit - do not trust partial content"
+          "left": "An iteration cap",
+          "right": "Emergency backstop - never the primary stopping mechanism"
         },
         {
-          "left": "pause_turn",
-          "right": "Server-tool loop checkpoint - resend to continue"
+          "left": "The response contains a text block",
+          "right": "Not a completion indicator - checking it is an anti-pattern"
         },
         {
-          "left": "refusal",
-          "right": "Safety classifier declined the request"
+          "left": "The model wrote a sentinel word",
+          "right": "Natural-language termination - the classic anti-pattern"
         }
       ],
-      "tags": ["stop-reason"],
-      "hints": ["Two of these mean \"keep going\", but only one asks you to execute something."]
+      "tags": ["agentic-loop", "anti-patterns"],
+      "hints": [
+        "Two of these are the mechanism. Three are mistakes, one of which is still worth having."
+      ]
     },
     {
       "id": "ccaf1-match-002",
       "subjectId": "ccaf-1-agentic",
       "type": "match",
-      "question": "Match each orchestration pattern to the situation it fits best.",
-      "answer": "The key discriminators: is the decomposition fixed (chaining/sectioning) or decided at runtime (orchestrator-workers)? Is the goal coverage (sectioning) or confidence (voting)?",
+      "question": "Match each decomposition strategy to the work it fits.",
+      "answer": "Two axes decide it: are the steps knowable up front, and are the subtasks independent? Parallelism is expressed concretely - the coordinator emits several Task tool calls in a single response rather than across separate turns.",
       "matchPairs": [
         {
-          "left": "Prompt chaining",
-          "right": "Fixed, known sequence of steps with checks between them"
+          "left": "Fixed sequential pipeline",
+          "right": "Predictable multi-aspect review with known steps"
         },
         {
-          "left": "Routing",
-          "right": "Distinct input categories each needing a specialized handler"
+          "left": "Dynamic adaptive decomposition",
+          "right": "Open-ended investigation that reveals its own subtasks"
         },
         {
-          "left": "Parallelization (voting)",
-          "right": "Run the same check several times to raise confidence"
+          "left": "Per-file passes plus an integration pass",
+          "right": "A large multi-file review prone to attention dilution"
         },
         {
-          "left": "Orchestrator-workers",
-          "right": "Subtasks cannot be predicted before seeing the input"
+          "left": "Multiple Task calls in one response",
+          "right": "Independent subtasks that should run in parallel"
         },
         {
-          "left": "Evaluator-optimizer",
-          "right": "Clear criteria plus measurable gain from iterating on a draft"
+          "left": "Coordinator selects a subset",
+          "right": "A simple query that does not need the full pipeline"
         }
       ],
-      "tags": ["patterns"],
+      "tags": ["task-decomposition", "multi-agent"],
       "hints": [
-        "Sort by two questions: is the split fixed or decided at runtime, and is the goal coverage or confidence?"
+        "Sort by two questions: are the steps knowable up front, and are the subtasks independent?"
       ]
     },
     {

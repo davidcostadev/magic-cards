@@ -30,55 +30,13 @@
       ]
     },
     {
-      "id": "ccaf5-open-003",
-      "subjectId": "ccaf-5-context",
-      "type": "open",
-      "question": "How does prompt caching work and where do you place the breakpoints?",
-      "answer": "Mark the end of a stable prefix with `cache_control`:\n\n```json\n{ \"type\": \"text\", \"text\": \"<long system prompt>\",\n  \"cache_control\": { \"type\": \"ephemeral\" } }\n```\n\nMechanics:\n- Only `\"ephemeral\"` is supported. TTL defaults to **5 minutes**, with a **1-hour** option (`\"ttl\": \"1h\"`).\n- Up to **4 explicit breakpoints** per request.\n- The prefix hierarchy is strictly **tools -> system -> messages**. A change at one level invalidates that level **and everything after it** - which is why changing a tool definition kills the entire cache.\n- Minimum cacheable prefix is model-dependent (commonly 1024 or 2048 tokens); below it, nothing is cached.\n- A cache hit **refreshes** the entry at no extra cost.\n\nPlacement: put the **large stable content first** - tool definitions, system prompt, few-shot examples, a long document - and the volatile per-request content after the last breakpoint. In a multi-turn agent you can also place a breakpoint at the end of the conversation so far, so each turn caches the growing history.",
-      "tags": ["caching", "cost", "latency"],
-      "hints": [
-        "There is a strict prefix order, and a change at one level takes out everything after it."
-      ]
-    },
-    {
-      "id": "ccaf5-open-004",
-      "subjectId": "ccaf-5-context",
-      "type": "open",
-      "question": "What does prompt caching cost, and how do you verify it is working?",
-      "answer": "**Pricing multipliers** (relative to base input tokens):\n- 5-minute cache **write**: **1.25x**\n- 1-hour cache **write**: **2x**\n- Cache **read**: **0.1x**\n\nSo a cached prefix pays a 25% premium the first time and then costs a tenth of normal input. It pays for itself after roughly two hits, which is why it is such a large win for agent loops that resend the same system prompt and tools every turn. It also cuts **latency**, often substantially on large prefixes.\n\n**Verify** with the `usage` object on the response:\n- `cache_creation_input_tokens` - written to cache (a miss, creating the entry).\n- `cache_read_input_tokens` - served from cache (a hit).\n- `input_tokens` - tokens after the last breakpoint, never cacheable.\n\nThe classic failure is seeing `cache_creation_input_tokens` high on **every** request: something in the prefix is changing per call - a timestamp in the system prompt, a reordered tool list, a per-request user id.",
-      "hints": ["Three multipliers and three usage fields. One multiplier is much smaller than 1."],
-      "tags": ["caching", "cost", "monitoring"]
-    },
-    {
-      "id": "ccaf5-open-005",
-      "subjectId": "ccaf-5-context",
-      "type": "open",
-      "question": "Design a retry strategy for the Claude API in production.",
-      "answer": "What to retry, and what never to:\n\n| Response | Retry? | Why |\n|---|---|---|\n| `429` rate limited | **yes** | transient - and it carries `retry-after` |\n| `500` `api_error` | **yes** | transient server fault |\n| `529` `overloaded_error` | **yes** | capacity, back off harder |\n| network timeout | **yes** | no response to trust either way |\n| `400` invalid request | no | the payload is wrong; a retry reproduces it |\n| `401` auth, `403` permission | no | credentials do not change on retry |\n| `404` not found | no | wrong endpoint or model id |\n| `413` request too large | no | shrink the request instead |\n\nThe algorithm:\n1. **Honor `retry-after`** when the response carries it; it is authoritative.\n2. Otherwise **exponential backoff with jitter** - 1s, 2s, 4s, 8s, each multiplied by a random factor. Jitter matters: without it, every client retries in lockstep and re-creates the spike.\n3. **Cap the attempts** (3-5) and the total wait, then fail into your degradation path.\n4. **Idempotency**: in an agent loop, ensure a retried tool-executing turn does not double-charge or double-send. Use idempotency keys.\n5. **Watch the headers** - `anthropic-ratelimit-requests-remaining` and `anthropic-ratelimit-tokens-remaining` let you throttle *before* you get a 429.\n\nNote that official SDKs already retry with backoff by default; the design work is what happens **after** retries are exhausted.",
-      "tags": ["rate-limits", "retries", "reliability"],
-      "hints": [
-        "Split the statuses into \"the request is wrong\" and \"the server is busy\", then add randomness."
-      ]
-    },
-    {
       "id": "ccaf5-open-006",
       "subjectId": "ccaf-5-context",
       "type": "open",
-      "question": "What does graceful degradation look like for an LLM-backed feature?",
-      "answer": "A ladder of fallbacks, so a failure narrows the service instead of removing it:\n\n1. **Retry** the transient error with backoff.\n2. **Fall back to another model** - a smaller/faster one, or the same model in another region/provider. Slightly worse is much better than down.\n3. **Fall back to a simpler path** - a cached previous answer, a template response, a deterministic rules-based route.\n4. **Reduce scope** - drop optional enrichment, shorten the context, disable the non-essential tool.\n5. **Escalate to a human** with the context gathered so far.\n6. **Fail explicitly** - an honest \"I can't complete this right now, a specialist will follow up\" plus a ticket.\n\nTwo rules that matter more than the ladder: **never present a degraded result as a full one** (silent quality loss is worse than a visible failure), and **make each level observable** so you can see how often you are running degraded instead of discovering it in a quarterly review.",
-      "tags": ["reliability", "degradation", "error-handling"],
-      "hints": ["A ladder, not a switch - and one rule about never disguising a degraded answer."]
-    },
-    {
-      "id": "ccaf5-open-007",
-      "subjectId": "ccaf-5-context",
-      "type": "open",
-      "question": "What should you monitor in a production agentic system?",
-      "answer": "**Per request**: latency (p50/p95/p99), `stop_reason` distribution, error rate by type, token usage (`input_tokens`, `output_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens`), and cost.\n\n**Per agent run**: iterations to completion, tool calls per run, tool error rate **by tool**, circuit-breaker trips, escalation rate, and end-to-end wall-clock.\n\n**Quality**: task success rate, human-correction rate, user feedback, and an offline eval suite run against every prompt change.\n\n**Traces**: the whole run - the plan, each `tool_use` with its arguments, each result, and the final output - so any run can be replayed. This is *transparency*, one of the three core principles of building effective agents, and it is the only way to debug a non-deterministic system.\n\nThe leading indicators to alert on: a rising `stop_reason: max_tokens` rate, iterations-per-run creeping up, cache hit rate collapsing, and tool error rate spiking on one specific tool.",
-      "tags": ["monitoring", "observability", "reliability"],
-      "hints": [
-        "Per request, per run, and per outcome - plus the trace that lets you replay a run."
-      ]
+      "question": "One subagent fails mid-run. What does correct degradation look like?",
+      "answer": "Neither of the two tempting extremes. **Terminating the entire workflow** on a single failure throws away every other subagent's work; **silently suppressing** the error - returning empty results as success - produces a report that looks complete and is not. Both are named anti-patterns.\n\nWhat correct looks like:\n\n1. **Local recovery first.** The subagent retries transient failures itself.\n2. **Propagate with structure.** What it cannot resolve goes up as **structured error context**: failure type, what was attempted, **partial results**, and possible alternatives - enough for the coordinator to decide whether to retry with a modified query, try another approach, or proceed.\n3. **Annotate the output.** The synthesis carries **coverage annotations** distinguishing well-supported findings from topic areas with gaps due to unavailable sources.\n\nThe distinction that carries the most weight: an **access failure** (a timeout, needing a retry decision) is not the same as a **valid empty result** (a successful query with no matches). Report them differently or the coordinator cannot act correctly on either.",
+      "tags": ["error-propagation", "multi-agent", "coverage-gaps"],
+      "hints": ["Two extremes are both wrong. The middle has three steps."]
     },
     {
       "id": "ccaf5-open-008",
@@ -97,15 +55,6 @@
       "answer": "**Top and bottom**, because those positions are attended to most reliably.\n\nA layout that works:\n\n```xml\n<key_context>\n  Goal, hard constraints, current state - the summary that must not be missed.\n</key_context>\n\n<documents>...long material, section-headed...</documents>\n\n<instructions>\n  The task, and the constraint that absolutely must hold, restated.\n</instructions>\n```\n\nThe three rules behind it:\n1. **Key summary at the top** - not buried after the data.\n2. **Query at the end** - for long-context prompts this is measurably better.\n3. **Explicit section headers** throughout, so the model navigates by structure instead of scanning.\n\nAnd the operational corollary: if a constraint is genuinely non-negotiable, do not rely on prompt position at all - **validate it in code** after the response.",
       "tags": ["context", "lost-in-the-middle", "prompt-structure"],
       "hints": ["Top and bottom. And if it truly cannot fail, prompt position is not enough."]
-    },
-    {
-      "id": "ccaf5-open-010",
-      "subjectId": "ccaf-5-context",
-      "type": "open",
-      "question": "Which levers reduce the cost of a production Claude workload?",
-      "answer": "In rough order of impact:\n\n1. **Prompt caching** - cache reads cost **0.1x** base input. For an agent resending the same system prompt and tools every turn, this is usually the single biggest win.\n2. **Model routing** - classify first, send easy/high-volume work to a smaller model, reserve the largest for hard cases.\n3. **Trim tool outputs and history** - fewer input tokens on every subsequent turn, compounding across the run.\n4. **Batch processing** for anything not latency-sensitive (bulk classification, nightly extraction), at a substantial discount.\n5. **Right-size `max_tokens`** and the thinking budget - do not pay for reasoning depth a task does not need.\n6. **Cut the tool list** - definitions are re-sent on every request.\n\nMeasure before optimizing: read `usage` per call and attribute cost per feature. The common surprise is that history and tool results, not the prompts anyone wrote, dominate the bill.",
-      "tags": ["cost", "caching", "optimization"],
-      "hints": ["The biggest lever is about something you re-send unchanged on every single turn."]
     },
     {
       "id": "ccaf5-quiz-001",
@@ -137,254 +86,6 @@
       ],
       "tags": ["lost-in-the-middle", "context"],
       "hints": ["Where is attention strongest in a long context?"]
-    },
-    {
-      "id": "ccaf5-quiz-002",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "What is the maximum number of explicit `cache_control` breakpoints in one request?",
-      "answer": "Four. Place them at the ends of stable prefixes - typically tools, system prompt, and the conversation so far.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "4",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "1",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "2",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Unlimited",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["caching"],
-      "hints": ["A small power of two - roughly one per natural prefix boundary."]
-    },
-    {
-      "id": "ccaf5-quiz-003",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "What is the default TTL of a prompt cache entry?",
-      "answer": "5 minutes, refreshed on every hit at no extra cost. A 1-hour TTL is available at a 2x cache-write price.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "5 minutes",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "60 seconds",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "1 hour",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "24 hours",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["caching"],
-      "hints": ["Short enough that it is really designed for a conversation in progress."]
-    },
-    {
-      "id": "ccaf5-quiz-004",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "You add one new tool to the `tools` array. What happens to your cached system prompt and message prefix?",
-      "answer": "Both are invalidated. The prefix order is tools -> system -> messages, and a change at one level invalidates that level and every level after it.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Both are invalidated - tools sit before them in the cache hierarchy",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "Only the tools segment is invalidated",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Nothing is invalidated; tools are cached separately",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Only the messages segment is invalidated",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["caching"],
-      "hints": ["Remember the prefix order: tools, then system, then messages."]
-    },
-    {
-      "id": "ccaf5-quiz-005",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "Which `usage` field tells you a cache hit occurred?",
-      "answer": "`cache_read_input_tokens` counts tokens served from cache. `cache_creation_input_tokens` being high on every request means your prefix is changing and nothing is being reused.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "`cache_read_input_tokens`",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "`cache_creation_input_tokens`",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "`input_tokens`",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "`output_tokens`",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["caching", "monitoring"],
-      "hints": ["One field says \"written\", the other says \"served\". You want served."]
-    },
-    {
-      "id": "ccaf5-quiz-006",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "Roughly what does a cache read cost relative to normal input tokens?",
-      "answer": "About 0.1x - a tenth of base input price. Cache writes cost 1.25x for the 5-minute TTL and 2x for the 1-hour TTL, so the prefix pays for itself after roughly two hits.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "0.1x",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "0.5x",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "1.25x",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Free",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["caching", "cost"],
-      "hints": ["It is an order of magnitude cheaper, not a fraction cheaper."]
-    },
-    {
-      "id": "ccaf5-quiz-007",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "Which HTTP status should you NOT retry?",
-      "answer": "`400 invalid_request_error` means the request itself is malformed - retrying reproduces the same error. Retry `429`, `500`, and `529` with backoff.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "400",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "429",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "529",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "500",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["errors", "retries"],
-      "hints": ["Retrying only helps when the problem is on the other side."]
-    },
-    {
-      "id": "ccaf5-quiz-008",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "Which status code indicates the API is temporarily overloaded?",
-      "answer": "`529 overloaded_error` - a transient server-side condition. Retry it with exponential backoff and jitter, like `429` and `500`.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "529",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "429",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "503",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "413",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["errors"],
-      "hints": ["It is not in the usual 5xx range you would guess."]
-    },
-    {
-      "id": "ccaf5-quiz-009",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "Why does a retry strategy need jitter?",
-      "answer": "Without jitter, every client that was throttled retries at the same moment, re-creating the spike that caused the throttling - the thundering-herd problem. Random variation spreads the load.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Without it, all clients retry simultaneously and re-create the load spike",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "It makes the retries faster on average",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "It is required by the API for 429 responses",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "It prevents the request from being cached",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["retries", "reliability"],
-      "hints": ["Think about what every throttled client does at the exact same instant."]
     },
     {
       "id": "ccaf5-quiz-010",
@@ -449,159 +150,37 @@
       "hints": ["There is one pair you must always remove together or keep together."]
     },
     {
-      "id": "ccaf5-quiz-012",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "Your cache hit rate is near zero: `cache_creation_input_tokens` is high on every request. What is the most likely cause?",
-      "answer": "Something in the cached prefix varies per request - a timestamp, a session id, a reordered tool list. The prefix must be byte-identical for a hit.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Something in the prefix changes per request, so the prefix never matches",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "The TTL is too long",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "You are using too few breakpoints",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Cache reads are disabled by default and need a beta header",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["caching", "troubleshooting"],
-      "hints": ["A cache hit needs the prefix to be byte-identical."]
-    },
-    {
-      "id": "ccaf5-quiz-013",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "The primary model is returning 529s for several minutes. What is the best production behavior?",
-      "answer": "Retry with backoff, then fall back to another model or a simpler deterministic path, and surface that the result is degraded. Silently returning a lower-quality answer as if it were normal is the failure mode to avoid.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Retry with backoff, then fall back to a smaller model or a cached/deterministic path, and mark the result as degraded",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "Retry indefinitely until it succeeds",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Return an empty response so the user retries",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Fall back silently to a smaller model with no signal to the caller",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["degradation", "reliability", "retries"],
-      "hints": ["Degrade, but never disguise the degradation."]
-    },
-    {
-      "id": "ccaf5-quiz-014",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "Which metric is the best early warning that an agent is degrading before users complain?",
-      "answer": "A rising number of iterations per run means the agent is working harder for the same outcome - usually a tool or prompt regression. It moves before success rate does.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Average iterations per run trending upward",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "Total monthly token spend",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Number of deployed prompt versions",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "Number of connected MCP servers",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["monitoring", "observability"],
-      "hints": ["Which one moves *before* the success rate does?"]
-    },
-    {
       "id": "ccaf5-quiz-015",
       "subjectId": "ccaf-5-context",
       "type": "quiz",
-      "question": "A nightly job classifies 200,000 documents with no latency requirement. What is the best cost lever?",
-      "answer": "Batch processing is designed for exactly this - large asynchronous volumes at a substantial discount. Caching helps the shared prefix too, but batching is the structural win when latency does not matter.",
+      "question": "200,000 documents must be classified every night, with results needed by morning. Which approach fits?",
+      "answer": "Batch fits non-blocking, latency-tolerant work - overnight reports, weekly audits - at 50% cost with a processing window of up to 24 hours and no latency SLA. Note the trap: the batch API does not support multi-turn tool calling within a request.",
       "choices": [
         {
           "id": "a",
-          "text": "Batch processing, combined with caching the shared prompt prefix",
+          "text": "The Message Batches API, since the workload is latency-tolerant and gets a 50% discount",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Increase `max_tokens` so fewer calls are needed",
+          "text": "The synchronous API with high concurrency, to keep per-document latency predictable",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Enable extended thinking for better accuracy",
+          "text": "The Message Batches API, with tools called mid-request to enrich each document inline",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Raise the rate limit and run everything in parallel",
+          "text": "The synchronous API on a smaller model, trading some accuracy for a lower unit price",
           "isCorrect": false
         }
       ],
-      "tags": ["cost", "batch"],
-      "hints": ["\"No latency requirement\" is the entire clue."]
-    },
-    {
-      "id": "ccaf5-quiz-016",
-      "subjectId": "ccaf-5-context",
-      "type": "quiz",
-      "question": "How do you know a request's token count before sending it?",
-      "answer": "Use the token counting endpoint (`/v1/messages/count_tokens`) with the same messages, system prompt, and tools. Estimating from character counts is unreliable for structured content.",
-      "choices": [
-        {
-          "id": "a",
-          "text": "Call the token counting endpoint with the same messages, system, and tools",
-          "isCorrect": true
-        },
-        {
-          "id": "b",
-          "text": "Divide the character count by four",
-          "isCorrect": false
-        },
-        {
-          "id": "c",
-          "text": "Send it and read `usage` from the response",
-          "isCorrect": false
-        },
-        {
-          "id": "d",
-          "text": "There is no way to know before sending",
-          "isCorrect": false
-        }
-      ],
-      "tags": ["token-counting", "context"],
-      "hints": ["There is an endpoint for exactly this."]
+      "tags": ["batch-api", "cost"],
+      "hints": [
+        "Nobody is waiting at a screen. And one option asks batch to do something it cannot."
+      ]
     },
     {
       "id": "ccaf5-type-001",
@@ -612,106 +191,6 @@
       "shortAnswer": "lost in the middle",
       "tags": ["context"],
       "hints": ["Four words describing where the content sits."]
-    },
-    {
-      "id": "ccaf5-type-002",
-      "subjectId": "ccaf-5-context",
-      "type": "type-answer",
-      "question": "Which request field marks the end of a cacheable prefix?",
-      "answer": "`cache_control` - with `{\"type\": \"ephemeral\"}`, optionally `\"ttl\": \"1h\"`.",
-      "shortAnswer": "cache_control",
-      "tags": ["caching"],
-      "hints": ["Two words with an underscore; the second one is what it does to the cache."]
-    },
-    {
-      "id": "ccaf5-type-003",
-      "subjectId": "ccaf-5-context",
-      "type": "type-answer",
-      "question": "Which HTTP status code means you have been rate limited?",
-      "answer": "429 (`rate_limit_error`). Honor the `retry-after` header when present, otherwise use exponential backoff with jitter.",
-      "shortAnswer": "429",
-      "tags": ["rate-limits", "errors"],
-      "hints": ["A 4xx code, but the one that means \"slow down\", not \"you are wrong\"."]
-    },
-    {
-      "id": "ccaf5-type-004",
-      "subjectId": "ccaf-5-context",
-      "type": "type-answer",
-      "question": "Which response header tells you how long to wait before retrying?",
-      "answer": "`retry-after`. It is authoritative - prefer it over your own backoff calculation.",
-      "shortAnswer": "retry-after",
-      "tags": ["rate-limits", "retries"],
-      "hints": ["Two words with a hyphen; it says exactly what it does."]
-    },
-    {
-      "id": "ccaf5-type-005",
-      "subjectId": "ccaf-5-context",
-      "type": "type-answer",
-      "question": "What is the only supported `cache_control` type value?",
-      "answer": "`ephemeral`. The TTL is 5 minutes by default, with a 1-hour option.",
-      "shortAnswer": "ephemeral",
-      "tags": ["caching"],
-      "hints": ["One word meaning short-lived. There is currently no other option."]
-    },
-    {
-      "id": "ccaf5-match-001",
-      "subjectId": "ccaf-5-context",
-      "type": "match",
-      "question": "Match each error status to the correct response.",
-      "answer": "The dividing line: 4xx client errors (except 429) mean the request is wrong, so retrying is pointless. 429 and 5xx are transient.",
-      "matchPairs": [
-        {
-          "left": "400 invalid_request_error",
-          "right": "Fix the request - do not retry"
-        },
-        {
-          "left": "401 authentication_error",
-          "right": "Fix credentials - do not retry"
-        },
-        {
-          "left": "429 rate_limit_error",
-          "right": "Honor retry-after, then backoff with jitter"
-        },
-        {
-          "left": "529 overloaded_error",
-          "right": "Transient - retry with exponential backoff"
-        },
-        {
-          "left": "413 request_too_large",
-          "right": "Shrink the payload - do not retry as-is"
-        }
-      ],
-      "tags": ["errors", "retries"],
-      "hints": ["Split them into \"the request is wrong\" versus \"the server is busy\"."]
-    },
-    {
-      "id": "ccaf5-match-002",
-      "subjectId": "ccaf-5-context",
-      "type": "match",
-      "question": "Match each `usage` field to what it reports.",
-      "answer": "Total input = cache_read + cache_creation + input_tokens. Watching these three is how you confirm caching actually works.",
-      "matchPairs": [
-        {
-          "left": "cache_read_input_tokens",
-          "right": "Served from cache - a hit, billed at ~0.1x"
-        },
-        {
-          "left": "cache_creation_input_tokens",
-          "right": "Written to cache - a miss, billed at 1.25x or 2x"
-        },
-        {
-          "left": "input_tokens",
-          "right": "Tokens after the last breakpoint - never cached"
-        },
-        {
-          "left": "output_tokens",
-          "right": "Generated tokens, including thinking tokens"
-        }
-      ],
-      "tags": ["caching", "monitoring"],
-      "hints": [
-        "Two are about the cache, one is what was never cacheable, one is what you generated."
-      ]
     },
     {
       "id": "ccaf5-match-003",
