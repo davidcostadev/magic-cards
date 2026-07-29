@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CardsModule } from './modules/cards/cards.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ProgressModule } from './modules/progress/progress.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
@@ -36,6 +37,7 @@ import { SubjectsModule } from './modules/subjects/subjects.module';
     DashboardModule,
     CatalogModule,
     ReportsModule,
+    ProgressModule,
   ],
   providers: [
     // Validation first, then the global cross-cutting Stripe concerns.

@@ -1669,6 +1669,42 @@
           "reports"
         ]
       }
+    },
+    "/v1/card_progress/reset": {
+      "post": {
+        "operationId": "ProgressController_reset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetProgressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetProgressResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
     }
   },
   "info": {
@@ -5304,6 +5340,52 @@
           "resolvedAt",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "ResetProgressDto": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "open",
+              "quiz",
+              "type-answer",
+              "match"
+            ]
+          },
+          "cards": {
+            "minItems": 1,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "all": {
+            "type": "boolean",
+            "const": true
+          }
+        }
+      },
+      "ResetProgressResponseDto": {
+        "type": "object",
+        "properties": {
+          "cardsReset": {
+            "type": "number"
+          },
+          "reviewsDeleted": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "cardsReset",
+          "reviewsDeleted"
         ]
       }
     }

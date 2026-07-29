@@ -484,6 +484,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/card_progress/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProgressController_reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1283,6 +1299,18 @@ export interface components {
             resolvedAt: string | null;
             createdAt: string;
             updatedAt: string;
+        };
+        ResetProgressDto: {
+            subject?: string;
+            /** @enum {string} */
+            type?: "open" | "quiz" | "type-answer" | "match";
+            cards?: string[];
+            /** @constant */
+            all?: true;
+        };
+        ResetProgressResponseDto: {
+            cardsReset: number;
+            reviewsDeleted: number;
         };
     };
     responses: never;
@@ -2198,6 +2226,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ProgressController_reset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetProgressDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetProgressResponseDto"];
+                };
             };
         };
     };
