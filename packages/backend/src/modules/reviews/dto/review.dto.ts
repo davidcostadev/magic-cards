@@ -52,8 +52,8 @@ export const reviewQueueQuerySchema = z.object({
   // Review-ahead: relax the due gate so already-seen, not-yet-due cards can be studied.
   // Query strings arrive as text, so coerce the literal "true" (booleans pass through too).
   ahead: z.preprocess((v) => v === 'true' || v === true, z.boolean()).optional(),
-  // Practice-mistakes: serve the learner's wrong, not-yet-mastered cards (most-errored first),
-  // regardless of schedule. Mutually exclusive with `type`/`ahead` (it ignores both).
+  // Practice-mistakes: serve the not-yet-mastered cards whose last answer was wrong (most-errored
+  // first), regardless of schedule. Mutually exclusive with `type`/`ahead` (it ignores both).
   mistakes: z.preprocess((v) => v === 'true' || v === true, z.boolean()).optional(),
 });
 
@@ -124,7 +124,8 @@ export const reviewQueueCountsResponseSchema = z.object({
   // The entire visible pool, regardless of schedule — what review-ahead can draw from.
   reviewableTotal: z.number(),
   reviewableByType: cardTypeCountsSchema,
-  // Distinct non-mastered cards the learner has gotten wrong — drives the "practice mistakes" tile.
+  // Non-mastered cards whose last answer was wrong — drives the "practice mistakes" tile. Clearing
+  // a card (answering it right again) takes it out, so the number falls as the learner practises.
   mistakesTotal: z.number(),
 });
 

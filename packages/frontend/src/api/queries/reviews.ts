@@ -35,7 +35,7 @@ export const reviewKeys = {
  * Fetches the study batch (weakest-first, then capped new cards) for a session.
  * An optional `type` narrows the batch to a single card type. With `ahead`, the due gate is
  * relaxed so already-seen, not-yet-due cards are pulled in (review-ahead). With `mistakes`, the
- * batch is instead the learner's wrong, not-yet-mastered cards (most-errored first), regardless of
+ * batch is instead the cards whose last answer was wrong (most-errored first), regardless of
  * schedule. Pass `enabled: false` to hold off fetching until the learner has chosen a study mode.
  */
 export function useReviewQueue(

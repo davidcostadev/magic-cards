@@ -1,5 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, getTableColumns, isNull, lt, lte, ne, or, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  getTableColumns,
+  isNull,
+  lte,
+  ne,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
 import { ApiError } from '../../common/errors/api-error';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
@@ -60,8 +72,8 @@ export class LearningService {
    *
    * In **review-ahead** mode (`ahead`), the due gate is relaxed: already-seen cards scheduled for
    * the future are pulled in too, so a learner who is all caught up can keep practising. With
-   * `mistakes`, the batch is instead the learner's wrong, not-yet-mastered cards (see
-   * {@link getMistakeCards}), regardless of schedule.
+   * `mistakes`, the batch is instead the learner's pending mistakes (see {@link getMistakeCards}),
+   * regardless of schedule.
    */
   async getSessionCards(
     userId: string,
@@ -125,37 +137,65 @@ export class LearningService {
   }
 
   /**
-   * Builds a "practice my mistakes" session: cards the learner has gotten wrong (≥1 review with
-   * quality < 3) and not yet mastered, **most-errored first** — regardless of the review schedule,
-   * so it stays useful even when nothing is due. Modeled on Duolingo's "practice mistakes". Capped
-   * at {@link SESSION_SIZE}; this mode has no "new" cards (every card here has been seen). The
-   * cards are returned in the `due` bucket so the session builds them like any other batch.
+   * The learner's **pending** mistakes: non-mastered cards whose most recent answer was wrong
+   * (quality < 3), with how many times they've been missed in total. A mistake is a debt, not a
+   * permanent record — answering the card correctly again clears it, and a later slip re-opens it.
+   * (Waiting for `mastered` instead would keep a once-missed card in the pool for weeks, so the
+   * count never visibly went down as the learner practised.) The in-session re-drill of a wrong
+   * card only *checks* the answer without recording a review, so a mistake survives the session it
+   * was made in and is cleared by the next session that gets it right.
+   *
+   * Shared by the practice session and its counter so both read the same rule.
+   */
+  private pendingMistakes(userId: string, subjectFilter?: SQL) {
+    return (
+      this.db
+        .select({
+          cardId: cards.id,
+          errorCount: sql<number>`count(*) filter (where ${reviewHistory.quality} < 3)`.as(
+            'error_count'
+          ),
+        })
+        .from(reviewHistory)
+        .innerJoin(cards, eq(reviewHistory.cardId, cards.id))
+        .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+        // A reviewed card always has a progress row; the join lets us drop mastered cards.
+        .innerJoin(
+          cardProgress,
+          and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
+        )
+        .where(
+          and(
+            eq(reviewHistory.userId, userId),
+            canSeeSubject(userId),
+            ne(cardProgress.status, 'mastered'),
+            subjectFilter
+          )
+        )
+        .groupBy(cards.id)
+        // The latest review's quality. Ids are UUIDv7 (monotonic), so they break same-millisecond ties.
+        .having(
+          sql`(array_agg(${reviewHistory.quality} order by ${reviewHistory.reviewedAt} desc, ${reviewHistory.id} desc))[1] < 3`
+        )
+    );
+  }
+
+  /**
+   * Builds a "practice my mistakes" session from the learner's pending mistakes (see
+   * {@link pendingMistakes}), **most-errored first** — regardless of the review schedule, so it
+   * stays useful even when nothing is due. Modeled on Duolingo's "practice mistakes". Capped at
+   * {@link SESSION_SIZE}; this mode has no "new" cards (every card here has been seen). The cards
+   * are returned in the `due` bucket so the session builds them like any other batch.
    */
   private async getMistakeCards(userId: string, subjectId?: string): Promise<SessionCards> {
     const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
-    const errorCount = sql<number>`count(*) filter (where ${reviewHistory.quality} < 3)`;
+    const pending = this.pendingMistakes(userId, subjectFilter).as('pending');
 
     const rows = await this.db
       .select(getTableColumns(cards))
-      .from(reviewHistory)
-      .innerJoin(cards, eq(reviewHistory.cardId, cards.id))
-      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
-      // A reviewed card always has a progress row; the join lets us drop mastered cards.
-      .innerJoin(
-        cardProgress,
-        and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
-      )
-      .where(
-        and(
-          eq(reviewHistory.userId, userId),
-          canSeeSubject(userId),
-          ne(cardProgress.status, 'mastered'),
-          subjectFilter
-        )
-      )
-      .groupBy(cards.id)
-      .having(sql`count(*) filter (where ${reviewHistory.quality} < 3) > 0`)
-      .orderBy(desc(errorCount), asc(cards.id))
+      .from(pending)
+      .innerJoin(cards, eq(cards.id, pending.cardId))
+      .orderBy(desc(pending.errorCount), asc(cards.id))
       .limit(SESSION_SIZE);
 
     return { due: rows.map((card) => toCardResponse(card, false)), new: [] };
@@ -207,25 +247,10 @@ export class LearningService {
       .where(and(canSeeSubject(userId), subjectFilter))
       .groupBy(cards.type);
 
-    // Distinct non-mastered cards with at least one wrong answer — drives the "practice mistakes" tile.
+    // Pending mistakes — drives the "practice mistakes" tile, and drops as the learner clears them.
     const [mistakeRow] = await this.db
-      .select({ count: sql<number>`count(distinct ${cards.id})::int` })
-      .from(reviewHistory)
-      .innerJoin(cards, eq(reviewHistory.cardId, cards.id))
-      .innerJoin(subjects, eq(cards.subjectId, subjects.id))
-      .innerJoin(
-        cardProgress,
-        and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
-      )
-      .where(
-        and(
-          eq(reviewHistory.userId, userId),
-          canSeeSubject(userId),
-          ne(cardProgress.status, 'mastered'),
-          lt(reviewHistory.quality, 3),
-          subjectFilter
-        )
-      );
+      .select({ count: sql<number>`count(*)::int` })
+      .from(this.pendingMistakes(userId, subjectFilter).as('pending'));
 
     const zero = (): Record<Card['type'], number> => ({
       open: 0,

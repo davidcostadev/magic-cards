@@ -442,6 +442,19 @@ describe('GET /v1/review_queue?mistakes=true (practice mistakes)', () => {
 
     const counts = await auth(request(app.getHttpServer()).get('/v1/review_queue/counts'));
     expect(counts.body.mistakesTotal).toBe(1);
+
+    // Practising it successfully clears the debt: the queue empties and the tile's count drops.
+    await auth(
+      request(app.getHttpServer())
+        .post('/v1/reviews')
+        .send({ cardId: wrongId, quality: 4, timeSpent: 1000, wasHintUsed: false })
+    );
+    const after = await auth(
+      request(app.getHttpServer()).get('/v1/review_queue').query({ mistakes: 'true' })
+    );
+    expect(after.body.due).toHaveLength(0);
+    const countsAfter = await auth(request(app.getHttpServer()).get('/v1/review_queue/counts'));
+    expect(countsAfter.body.mistakesTotal).toBe(0);
   });
 });
 

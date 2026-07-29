@@ -204,13 +204,12 @@ describe('LearningService.getSessionCards — practice mistakes', () => {
     await addProgress('bad');
     await addCard('clean');
     await addProgress('clean');
-    // worst: 3 wrong; bad: 1 wrong; clean: only correct answers.
+    // worst: 3 wrong; bad: 1 wrong; clean: only correct answers. Both pending (last answer wrong).
     await addReview('worst', 1);
     await addReview('worst', 2);
     await addReview('worst', 0);
-    await addReview('worst', 5); // a later success does NOT remove it from the mistakes pool
-    await addReview('bad', 2);
     await addReview('bad', 4);
+    await addReview('bad', 2);
     await addReview('clean', 5);
     await addReview('clean', 4);
 
@@ -223,6 +222,22 @@ describe('LearningService.getSessionCards — practice mistakes', () => {
     );
     expect(due.map((c) => c.id)).toEqual(['worst', 'bad']);
     expect(newCards).toHaveLength(0);
+  });
+
+  it('drops a card once the learner answers it right again, and takes it back on a new slip', async () => {
+    await addCard('fixed');
+    await addProgress('fixed');
+    await addReview('fixed', 1);
+    await addReview('fixed', 4); // debt paid — the mistake is no longer pending
+
+    const service_ = service();
+    expect(
+      (await service_.getSessionCards('u1', undefined, undefined, false, true)).due
+    ).toHaveLength(0);
+
+    await addReview('fixed', 2); // slipped again — back in the pool
+    const { due } = await service_.getSessionCards('u1', undefined, undefined, false, true);
+    expect(due.map((c) => c.id)).toEqual(['fixed']);
   });
 
   it('excludes mastered cards even if they were once wrong', async () => {
@@ -268,8 +283,8 @@ describe('LearningService.getTypeCounts — reviewable pool', () => {
     expect(counts.reviewableTotal).toBe(2);
   });
 
-  it('counts distinct non-mastered cards with at least one wrong answer as mistakesTotal', async () => {
-    for (const id of ['a', 'b', 'c', 'm']) await addCard(id);
+  it('counts distinct non-mastered cards whose last answer was wrong as mistakesTotal', async () => {
+    for (const id of ['a', 'b', 'c', 'm', 'fixed']) await addCard(id);
     const prog = (id: string, status: 'reviewing' | 'mastered' = 'reviewing') =>
       db.insert(cardProgress).values({
         userId: 'u1',
@@ -285,12 +300,15 @@ describe('LearningService.getTypeCounts — reviewable pool', () => {
     await prog('b');
     await prog('c');
     await prog('m', 'mastered');
+    await prog('fixed');
     await db.insert(reviewHistory).values([
       { userId: 'u1', cardId: 'a', subjectId: 's1', quality: 1, timeSpent: 1 },
       { userId: 'u1', cardId: 'a', subjectId: 's1', quality: 2, timeSpent: 1 }, // a counts once
       { userId: 'u1', cardId: 'b', subjectId: 's1', quality: 0, timeSpent: 1 },
       { userId: 'u1', cardId: 'c', subjectId: 's1', quality: 5, timeSpent: 1 }, // c: never wrong
       { userId: 'u1', cardId: 'm', subjectId: 's1', quality: 1, timeSpent: 1 }, // m: wrong but mastered
+      { userId: 'u1', cardId: 'fixed', subjectId: 's1', quality: 1, timeSpent: 1 },
+      { userId: 'u1', cardId: 'fixed', subjectId: 's1', quality: 4, timeSpent: 1 }, // answered right since
     ]);
 
     const counts = await service().getTypeCounts('u1');
