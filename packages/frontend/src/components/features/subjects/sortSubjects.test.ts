@@ -71,6 +71,34 @@ describe('sortSubjects', () => {
     expect(ids(sortSubjects(withUnstudied, PROGRESS, 'weakest'))).toEqual(['b', 'c', 'a', 'd']);
   });
 
+  it('puts a never-studied subject last under "most mastered", not first', () => {
+    // A subject with a progress row but zero reviews: nothing mastered because nothing was tried.
+    // It used to tie at 0% with everyone else and could land first on incoming order alone.
+    const withUntouched = [subject('d', 'Untouched'), ...SUBJECTS];
+    const progressMap = new Map(PROGRESS).set('d', progress('d', {}));
+
+    expect(ids(sortSubjects(withUntouched, progressMap, 'mastered'))).toEqual(['a', 'c', 'b', 'd']);
+    expect(ids(sortSubjects(withUntouched, progressMap, 'progress'))).toEqual(['a', 'c', 'b', 'd']);
+  });
+
+  it('sorts by least mastered and least studied, unstudied subjects still last', () => {
+    const withUntouched = [...SUBJECTS, subject('d', 'Untouched')];
+    const progressMap = new Map(PROGRESS).set('d', progress('d', {}));
+
+    expect(ids(sortSubjects(withUntouched, progressMap, 'leastMastered'))).toEqual([
+      'b',
+      'c',
+      'a',
+      'd',
+    ]);
+    expect(ids(sortSubjects(withUntouched, progressMap, 'leastStudied'))).toEqual([
+      'b',
+      'c',
+      'a',
+      'd',
+    ]);
+  });
+
   it('exposes every sort key it supports', () => {
     expect(SUBJECT_SORTS).toContain('recent');
     expect(SUBJECT_SORTS).toContain('weakest');

@@ -1,10 +1,13 @@
 import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router';
 import { lazy } from 'react';
 import { AppLayout } from './App';
+import { CARD_SORTS } from './components/features/cards/sortCards';
+import { SUBJECT_SORTS } from './components/features/subjects/sortSubjects';
 import { isOnboarded } from './context/PreferencesContext';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SignupPage } from './pages/SignupPage';
+import { validateListSearch } from './utils/listSearch';
 
 // Code-split the authenticated pages so the initial (auth) bundle stays small.
 const DashboardPage = lazy(() =>
@@ -119,6 +122,7 @@ const subjectsRoute = createRoute({
   path: '/subjects',
   beforeLoad: requireAuth,
   component: SubjectsPage,
+  validateSearch: (search: Record<string, unknown>) => validateListSearch(search, SUBJECT_SORTS),
 });
 
 const subjectDetailRoute = createRoute({
@@ -126,6 +130,7 @@ const subjectDetailRoute = createRoute({
   path: '/subjects/$subjectId',
   beforeLoad: requireAuth,
   component: SubjectDetailPage,
+  validateSearch: (search: Record<string, unknown>) => validateListSearch(search, CARD_SORTS),
 });
 
 const learnRoute = createRoute({

@@ -119,7 +119,9 @@
       "title": "A-Z",
       "due": "Most to review",
       "progress": "Most studied",
+      "leastStudied": "Least studied",
       "mastered": "Most mastered",
+      "leastMastered": "Least mastered",
       "accuracy": "Best accuracy",
       "weakest": "Weakest first"
     },

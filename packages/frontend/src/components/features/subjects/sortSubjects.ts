@@ -6,7 +6,9 @@ export const SUBJECT_SORTS = [
   'title',
   'due',
   'progress',
+  'leastStudied',
   'mastered',
+  'leastMastered',
   'accuracy',
   'weakest',
 ] as const;
@@ -22,10 +24,25 @@ function share(part: number, total: number): number {
 }
 
 /**
+ * Orderings scored on study history. A subject the user has never reviewed has a 0 it never
+ * earned — neither a 0% score nor 0 mastered cards says anything about it — so it sorts last in
+ * *both* directions rather than topping "most mastered" on a tie or "least mastered" on a zero.
+ * `due` is deliberately absent: never-reviewed cards are legitimately due.
+ */
+const RANK_UNSTUDIED_LAST: ReadonlySet<SubjectSort> = new Set([
+  'progress',
+  'leastStudied',
+  'mastered',
+  'leastMastered',
+  'accuracy',
+  'weakest',
+]);
+
+/**
  * Sorts the subjects grid by one of `SUBJECT_SORTS`, using the per-subject progress the list
- * already loads. Returns a new array (never mutates). The accuracy orderings put subjects the
- * user hasn't reviewed yet last in both directions — a 0% score they never earned shouldn't
- * top the "weakest first" list. Ties keep the incoming order (stable sort).
+ * already loads. Returns a new array (never mutates). Subjects with no study history sort last
+ * on every history-based ordering (see `RANK_UNSTUDIED_LAST`). Ties keep the incoming order
+ * (stable sort).
  */
 export function sortSubjects(
   subjects: Subject[],
@@ -45,20 +62,28 @@ export function sortSubjects(
     const pa = progress.get(a.id);
     const pb = progress.get(b.id);
     if (!pa || !pb) return pa ? -1 : pb ? 1 : 0;
+
+    if (RANK_UNSTUDIED_LAST.has(sort)) {
+      const studiedA = pa.totalReviews > 0;
+      const studiedB = pb.totalReviews > 0;
+      if (studiedA !== studiedB) return studiedA ? -1 : 1;
+    }
+
     switch (sort) {
       case 'due':
         return pb.due - pa.due;
       case 'progress':
         return share(pb.reviewed, pb.total) - share(pa.reviewed, pa.total);
+      case 'leastStudied':
+        return share(pa.reviewed, pa.total) - share(pb.reviewed, pb.total);
       case 'mastered':
         return share(pb.mastered, pb.total) - share(pa.mastered, pa.total);
-      default: {
-        // Accuracy is only meaningful once the subject has been studied.
-        const studiedA = pa.totalReviews > 0;
-        const studiedB = pb.totalReviews > 0;
-        if (studiedA !== studiedB) return studiedA ? -1 : 1;
-        return sort === 'accuracy' ? pb.accuracy - pa.accuracy : pa.accuracy - pb.accuracy;
-      }
+      case 'leastMastered':
+        return share(pa.mastered, pa.total) - share(pb.mastered, pb.total);
+      case 'accuracy':
+        return pb.accuracy - pa.accuracy;
+      default:
+        return pa.accuracy - pb.accuracy;
     }
   });
 }

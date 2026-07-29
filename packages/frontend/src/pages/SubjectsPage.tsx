@@ -1,3 +1,4 @@
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { BookOpen, Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -34,8 +35,14 @@ export function SubjectsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<SubjectSort>('recent');
+  // Search and ordering live in the URL, so a filtered list is shareable, survives a reload, and
+  // comes back when you return from a subject. `replace` keeps typing out of the history stack.
+  const { q: query = '', sort = 'recent' } = useSearch({ from: '/subjects' });
+  const navigate = useNavigate({ from: '/subjects' });
+  const setQuery = (next: string) =>
+    navigate({ search: (prev) => ({ ...prev, q: next || undefined }), replace: true });
+  const setSort = (next: SubjectSort) =>
+    navigate({ search: (prev) => ({ ...prev, sort: next }), replace: true });
 
   const progressById = useMemo(
     () => new Map((progressList ?? []).map((p) => [p.subjectId, p])),

@@ -1,4 +1,4 @@
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -53,9 +53,15 @@ export function SubjectDetailPage() {
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
-  const [query, setQuery] = useState('');
+  // Search and ordering live in the URL — same reasoning as the subjects grid: a filtered deck is
+  // shareable and survives a reload. `replace` keeps each keystroke out of the history stack.
+  const { q: query = '', sort = 'recent' } = useSearch({ from: '/subjects/$subjectId' });
+  const navigate = useNavigate({ from: '/subjects/$subjectId' });
+  const setQuery = (next: string) =>
+    navigate({ search: (prev) => ({ ...prev, q: next || undefined }), replace: true });
+  const setSort = (next: CardSort) =>
+    navigate({ search: (prev) => ({ ...prev, sort: next }), replace: true });
   const [showReportedOnly, setShowReportedOnly] = useState(false);
-  const [sort, setSort] = useState<CardSort>('recent');
   const [page, setPage] = useState(0);
 
   // The cards the current user has reported in this subject — drives the badge and the filter.
