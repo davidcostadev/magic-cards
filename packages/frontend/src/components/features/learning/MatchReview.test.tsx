@@ -163,3 +163,44 @@ describe('MatchReview regions', () => {
     expect(screen.getByRole('region', { name: 'learn.part.question' })).toBeInTheDocument();
   });
 });
+
+describe('MatchReview grading honesty', () => {
+  it("submits the learner's first attempt per pair, so a wrong try is not laundered away", async () => {
+    const onSubmit = vi.fn().mockResolvedValue({ correct: false, explanation: '' });
+    const user = userEvent.setup();
+    render(
+      <MatchReview
+        card={card}
+        currentIndex={0}
+        totalCards={1}
+        dailyGoalProgress={0}
+        dailyGoal={20}
+        onSubmit={onSubmit}
+        onAdvance={vi.fn()}
+      />
+    );
+
+    // Deliberately wrong first: TS -> Python. The tile stays put and the board locks for the
+    // duration of the red flash, so wait it out before the next tap.
+    await user.click(screen.getByRole('button', { name: 'TS' }));
+    await user.click(screen.getByRole('button', { name: 'Python' }));
+    await new Promise((resolve) => setTimeout(resolve, 700));
+
+    // Now solve everything correctly — the board ends up perfectly matched either way.
+    await user.click(screen.getByRole('button', { name: 'TS' }));
+    await user.click(screen.getByRole('button', { name: 'TypeScript' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'TS' })).not.toBeInTheDocument()
+    );
+    await user.click(screen.getByRole('button', { name: 'PY' }));
+    await user.click(screen.getByRole('button', { name: 'Python' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    const sent = onSubmit.mock.calls.at(-1)?.[0];
+    // The server must see the wrong first attempt, not the tidy final board.
+    expect(sent.response.pairs).toContainEqual({ left: 'TS', right: 'Python' });
+    expect(sent.response.pairs).not.toContainEqual({ left: 'TS', right: 'TypeScript' });
+    // A wrong attempt is a wrong answer, not a hint — match has no hint affordance.
+    expect(sent.wasHintUsed).toBe(false);
+  });
+});

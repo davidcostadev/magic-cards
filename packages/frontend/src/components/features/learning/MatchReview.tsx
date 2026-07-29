@@ -71,7 +71,6 @@ export function MatchReview({
   const [selLeft, setSelLeft] = useState<string | null>(null);
   const [selRight, setSelRight] = useState<string | null>(null);
   const [flash, setFlash] = useState<{ left: string; right: string; ok: boolean } | null>(null);
-  const [mistakes, setMistakes] = useState(0);
   const [grade, setGrade] = useState<Grade | null>(null);
   // Set when the submit fails (network / expired token / server error). The grade lives on the
   // server, so on failure there is nothing to reveal — never fabricate one; offer a retry instead.
@@ -86,8 +85,9 @@ export function MatchReview({
 
   const boardRef = useRef(board);
   boardRef.current = board;
-  const mistakesRef = useRef(0);
   const finalizedRef = useRef(false);
+  // The learner's first guess for each left, in attempt order — what finalize() reports.
+  const firstAttemptsRef = useRef(new Map<string, string>());
 
   const { elapsedMs } = useReviewSession({
     currentIndex,
@@ -99,18 +99,22 @@ export function MatchReview({
     onTimeout: () => finalize(),
   });
 
-  // Submits the matched pairs (all of them on completion, the solved subset on timeout) so the
-  // server records the review and the authoritative SM-2 grade. Runs at most once.
+  // Submits what the learner actually paired, first try per left.
+  //
+  // The board only clears a left once it is paired correctly, so reporting the *final* board would
+  // always describe a perfect solve — a learner could brute-force every combination and still be
+  // graded correct. Sending first attempts instead means one wrong guess grades the card wrong,
+  // which is the same one-shot standard quiz and type-answer are held to. Lefts never attempted
+  // (the timer ran out) are simply absent, and the server treats an incomplete set as wrong.
   async function finalize() {
     if (finalizedRef.current) return;
     finalizedRef.current = true;
     setSubmitError(false);
-    const b = boardRef.current;
-    const remaining = new Set([...b.lefts, ...b.queue.map((p) => p.left)]);
-    const matched = pairs.filter((p) => !remaining.has(p.left));
+    const attempted = [...firstAttemptsRef.current].map(([left, right]) => ({ left, right }));
     const result = await onSubmit({
-      response: { type: 'match', pairs: matched },
-      wasHintUsed: mistakesRef.current > 0,
+      response: { type: 'match', pairs: attempted },
+      // Match has no hint affordance; a wrong attempt is a wrong answer, not a hint.
+      wasHintUsed: false,
       timeSpentMs: Math.round(elapsedMs()),
     });
     // No grade means the submission failed. Don't fabricate a verdict (which would hide the real
@@ -134,11 +138,10 @@ export function MatchReview({
     setSelLeft(null);
     setSelRight(null);
     const correct = solution.get(left) === right;
+    // Record only the first guess for this left: later tries are the learner narrowing down after
+    // being told they were wrong, which shouldn't rewrite what they originally answered.
+    if (!firstAttemptsRef.current.has(left)) firstAttemptsRef.current.set(left, right);
     setFlash({ left, right, ok: correct });
-    if (!correct) {
-      mistakesRef.current += 1;
-      setMistakes(mistakesRef.current);
-    }
     window.setTimeout(
       () => {
         if (correct) {
@@ -232,11 +235,9 @@ export function MatchReview({
               grade.correct ? 'text-success' : 'text-destructive'
             )}
           >
-            {grade.correct
-              ? mistakes === 0
-                ? t('learn.perfectMatch')
-                : t('learn.allMatched')
-              : t('learn.incorrect')}
+            {/* A correct grade now means every first attempt was right, so there is no
+                "matched everything, eventually" state left to describe. */}
+            {grade.correct ? t('learn.perfectMatch') : t('learn.incorrect')}
           </p>
           {!grade.correct && grade.correctPairs && (
             <div className="rounded-2xl border-2 border-success/40 bg-success/10 p-4 space-y-1">
