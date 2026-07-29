@@ -81,22 +81,32 @@ describe('sortSubjects', () => {
     expect(ids(sortSubjects(withUntouched, progressMap, 'progress'))).toEqual(['a', 'c', 'b', 'd']);
   });
 
-  it('sorts by least mastered and least studied, unstudied subjects still last', () => {
+  it('puts a never-studied subject FIRST under the "least" orderings', () => {
+    // Zero cards studied is a true fact about progress, not a missing score: the subject you have
+    // never opened really is the least studied one, so it leads rather than trails.
     const withUntouched = [...SUBJECTS, subject('d', 'Untouched')];
     const progressMap = new Map(PROGRESS).set('d', progress('d', {}));
 
     expect(ids(sortSubjects(withUntouched, progressMap, 'leastMastered'))).toEqual([
+      'd',
       'b',
       'c',
       'a',
-      'd',
     ]);
     expect(ids(sortSubjects(withUntouched, progressMap, 'leastStudied'))).toEqual([
+      'd',
       'b',
       'c',
       'a',
-      'd',
     ]);
+  });
+
+  it('still keeps a never-studied subject last under "weakest first"', () => {
+    // Accuracy is different: 0% with no reviews is an artifact of having no data, not a bad score.
+    const withUntouched = [...SUBJECTS, subject('d', 'Untouched')];
+    const progressMap = new Map(PROGRESS).set('d', progress('d', {}));
+
+    expect(ids(sortSubjects(withUntouched, progressMap, 'weakest'))).toEqual(['b', 'c', 'a', 'd']);
   });
 
   it('exposes every sort key it supports', () => {

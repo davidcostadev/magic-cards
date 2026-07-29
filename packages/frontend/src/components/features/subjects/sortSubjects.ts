@@ -24,19 +24,25 @@ function share(part: number, total: number): number {
 }
 
 /**
- * Orderings scored on study history. A subject the user has never reviewed has a 0 it never
- * earned — neither a 0% score nor 0 mastered cards says anything about it — so it sorts last in
- * *both* directions rather than topping "most mastered" on a tie or "least mastered" on a zero.
- * `due` is deliberately absent: never-reviewed cards are legitimately due.
+ * Where a subject with no study history belongs, per ordering.
+ *
+ * Two kinds of zero are at play. `reviewed` and `mastered` are **counts of progress**: zero of them
+ * is a true fact, so a never-opened subject really is the least studied and least mastered one — it
+ * trails "most X" and leads "least X". `accuracy` is a **score**: 0% with no reviews means "no data
+ * yet", not "answered everything wrong", so it trails in *both* directions rather than topping
+ * "weakest first" with a grade the learner never earned.
+ *
+ * `due` is absent on purpose — never-reviewed cards are legitimately due, so a fresh subject
+ * belongs at the top there and needs no special handling.
  */
-const RANK_UNSTUDIED_LAST: ReadonlySet<SubjectSort> = new Set([
-  'progress',
-  'leastStudied',
-  'mastered',
-  'leastMastered',
-  'accuracy',
-  'weakest',
-]);
+const UNSTUDIED_RANK: Partial<Record<SubjectSort, 'first' | 'last'>> = {
+  progress: 'last',
+  leastStudied: 'first',
+  mastered: 'last',
+  leastMastered: 'first',
+  accuracy: 'last',
+  weakest: 'last',
+};
 
 /**
  * Sorts the subjects grid by one of `SUBJECT_SORTS`, using the per-subject progress the list
@@ -63,10 +69,14 @@ export function sortSubjects(
     const pb = progress.get(b.id);
     if (!pa || !pb) return pa ? -1 : pb ? 1 : 0;
 
-    if (RANK_UNSTUDIED_LAST.has(sort)) {
+    const unstudiedRank = UNSTUDIED_RANK[sort];
+    if (unstudiedRank) {
       const studiedA = pa.totalReviews > 0;
       const studiedB = pb.totalReviews > 0;
-      if (studiedA !== studiedB) return studiedA ? -1 : 1;
+      if (studiedA !== studiedB) {
+        const aFirst = unstudiedRank === 'first' ? !studiedA : studiedA;
+        return aFirst ? -1 : 1;
+      }
     }
 
     switch (sort) {

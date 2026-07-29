@@ -21,9 +21,23 @@ export function useSubjects() {
   return useQuery({
     queryKey: subjectKeys.list(),
     queryFn: async () => {
-      const { data, error } = await apiClient.GET('/v1/subjects');
-      if (error || !data) throw error;
-      return data.data;
+      // Page through the cursor so the whole list is loaded — the grid searches and sorts over the
+      // full set client-side, and the API's default page is 20. Without this, a 21st subject would
+      // silently drop out of both (same reasoning as `useCards`).
+      const all: Subject[] = [];
+      let startingAfter: string | undefined;
+      for (;;) {
+        const { data, error } = await apiClient.GET('/v1/subjects', {
+          params: {
+            query: { limit: 100, ...(startingAfter ? { starting_after: startingAfter } : {}) },
+          },
+        });
+        if (error || !data) throw error;
+        all.push(...data.data);
+        if (!data.has_more || data.data.length === 0) break;
+        startingAfter = data.data[data.data.length - 1].id;
+      }
+      return all;
     },
   });
 }
