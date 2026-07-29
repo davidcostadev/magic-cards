@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Card } from '@/api/queries/cards';
 import { MatchReview } from './MatchReview';
+import type { CardReviewProps } from './reviewTypes';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -202,5 +203,47 @@ describe('MatchReview grading honesty', () => {
     expect(sent.response.pairs).not.toContainEqual({ left: 'TS', right: 'TypeScript' });
     // A wrong attempt is a wrong answer, not a hint — match has no hint affordance.
     expect(sent.wasHintUsed).toBe(false);
+  });
+});
+
+describe('MatchReview result message', () => {
+  const renderCard = (onSubmit: CardReviewProps['onSubmit']) =>
+    render(
+      <MatchReview
+        card={card}
+        currentIndex={0}
+        totalCards={1}
+        dailyGoalProgress={0}
+        dailyGoal={20}
+        onSubmit={onSubmit}
+        onAdvance={vi.fn()}
+      />
+    );
+
+  it('says the board was finished with misses, and does not re-list pairs the learner solved', async () => {
+    const onSubmit = vi.fn().mockResolvedValue({
+      correct: false,
+      explanation: '',
+      correctPairs: card.matchPairs,
+    });
+    const user = userEvent.setup();
+    renderCard(onSubmit);
+
+    await user.click(screen.getByRole('button', { name: 'TS' }));
+    await user.click(screen.getByRole('button', { name: 'Python' }));
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    await user.click(screen.getByRole('button', { name: 'TS' }));
+    await user.click(screen.getByRole('button', { name: 'TypeScript' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'TS' })).not.toBeInTheDocument()
+    );
+    await user.click(screen.getByRole('button', { name: 'PY' }));
+    await user.click(screen.getByRole('button', { name: 'Python' }));
+
+    // Graded wrong, but the wording has to reflect that they did finish the board.
+    expect(await screen.findByText('learn.matchedWithMisses')).toBeInTheDocument();
+    expect(screen.queryByText('learn.incorrect')).not.toBeInTheDocument();
+    // Re-listing the pairing they just solved themselves is noise.
+    expect(screen.queryByText('learn.correctAnswer')).not.toBeInTheDocument();
   });
 });

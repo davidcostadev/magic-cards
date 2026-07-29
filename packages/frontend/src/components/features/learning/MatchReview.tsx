@@ -75,6 +75,11 @@ export function MatchReview({
   // Set when the submit fails (network / expired token / server error). The grade lives on the
   // server, so on failure there is nothing to reveal — never fabricate one; offer a retry instead.
   const [submitError, setSubmitError] = useState(false);
+  // How many lefts the learner got wrong on their first try, and whether they cleared the board.
+  // Together these separate "finished it, but fumbled on the way" from "ran out of time".
+  const [outcome, setOutcome] = useState<{ wrongFirstTries: number; completed: boolean } | null>(
+    null
+  );
 
   const answered = grade !== null;
   // Explanation in the learner's card language (post-answer); falls back to the primary.
@@ -111,6 +116,11 @@ export function MatchReview({
     finalizedRef.current = true;
     setSubmitError(false);
     const attempted = [...firstAttemptsRef.current].map(([left, right]) => ({ left, right }));
+    const b = boardRef.current;
+    setOutcome({
+      wrongFirstTries: attempted.filter((p) => solution.get(p.left) !== p.right).length,
+      completed: b.lefts.length === 0 && b.queue.length === 0,
+    });
     const result = await onSubmit({
       response: { type: 'match', pairs: attempted },
       // Match has no hint affordance; a wrong attempt is a wrong answer, not a hint.
@@ -235,11 +245,15 @@ export function MatchReview({
               grade.correct ? 'text-success' : 'text-destructive'
             )}
           >
-            {/* A correct grade now means every first attempt was right, so there is no
-                "matched everything, eventually" state left to describe. */}
-            {grade.correct ? t('learn.perfectMatch') : t('learn.incorrect')}
+            {grade.correct
+              ? t('learn.perfectMatch')
+              : outcome?.completed
+                ? t('learn.matchedWithMisses', { count: outcome.wrongFirstTries })
+                : t('learn.incorrect')}
           </p>
-          {!grade.correct && grade.correctPairs && (
+          {/* Only worth showing when the learner never got to the pairing themselves — after a
+              completed board it just repeats what they already solved. */}
+          {!grade.correct && !outcome?.completed && grade.correctPairs && (
             <div className="rounded-2xl border-2 border-success/40 bg-success/10 p-4 space-y-1">
               <p className="text-sm font-medium">{t('learn.correctAnswer')}</p>
               {grade.correctPairs.map((p) => (

@@ -259,6 +259,8 @@
     "yourAnswer": "Sua resposta",
     "correctAnswer": "Resposta correta",
     "matchPairsFound": "pares encontrados",
+    "matchedWithMisses_one": "Combinou tudo, mas errou 1 na primeira tentativa",
+    "matchedWithMisses_other": "Combinou tudo, mas errou {{count}} na primeira tentativa",
     "perfectMatch": "Perfeito — sem erros!",
     "exitTitle": "Sair da sessão?",
     "exitMessage": "Seu progresso nesta sessão será perdido.",

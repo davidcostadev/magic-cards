@@ -259,6 +259,8 @@
     "yourAnswer": "Your answer",
     "correctAnswer": "Correct answer",
     "matchPairsFound": "pairs matched",
+    "matchedWithMisses_one": "Matched, but 1 wrong on the first try",
+    "matchedWithMisses_other": "Matched, but {{count}} wrong on the first try",
     "perfectMatch": "Perfect — no mistakes!",
     "exitTitle": "Leave session?",
     "exitMessage": "Your progress in this session will be lost.",
