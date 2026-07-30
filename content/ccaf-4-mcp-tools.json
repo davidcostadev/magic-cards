@@ -254,6 +254,554 @@
       ],
       "tags": ["tool-design", "aci"],
       "hints": ["Every fix here lives in the tool contract, not in the system prompt."]
+    },
+    {
+      "id": "ccaf4-open-101",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "open",
+      "question": "What has to be in a tool description for selection to be reliable?",
+      "answer": "Tool descriptions are **the primary mechanism the model uses to choose a tool**. Minimal\ndescriptions leave it without the context to tell similar tools apart, and it starts guessing.\n\nFour things belong in one:\n\n1. **Purpose** - what this tool does, and **when to use it versus similar alternatives**. The\n   comparison is the part people skip and the part that decides ambiguous cases.\n2. **Input formats** - the exact shape each argument takes. \"The 8-digit order number from the\n   receipt\" prevents the malformed-argument failure that no prompt tuning fixes.\n3. **Example queries** - concrete calls, especially for the ambiguous middle ground.\n4. **Edge cases and boundaries** - what it does *not* cover, and what it returns when there is no\n   match.\n\nThe diagnostic: if the model picks the **right** tool with **wrong** arguments, that is an input\nformat and example problem. If it picks the **wrong tool**, that is a differentiation problem.\n\nTwo failure modes worth naming:\n- **Near-identical descriptions** - `analyze_content` and `analyze_document` described the same\n  way will be misrouted, and no amount of system prompt text fixes it.\n- **A keyword-sensitive system prompt** can override a well-written description. A line like\n  \"always search for the latest information\" creates an unintended pull toward the search tool\n  even when a better one exists, so review the system prompt for accidental tool associations.",
+      "tags": ["tool-design", "descriptions"],
+      "hints": ["Two of the four items are about telling this tool apart from its neighbour."]
+    },
+    {
+      "id": "ccaf4-open-102",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "open",
+      "question": "When should a tool be split into several, and when is renaming enough?",
+      "answer": "**Rename** when the tools are genuinely different jobs whose *names and descriptions*\ncollide. `analyze_content` and `analyze_document` overlap functionally; renaming the first to\n`extract_web_results` with a web-specific description eliminates the overlap without touching\nbehaviour.\n\n**Split** when one tool is doing several jobs behind a generic name, because then no description\ncan be precise. A generic `analyze_document` becomes:\n\n- `extract_data_points` - pull structured values out\n- `summarize_content` - condense\n- `verify_claim_against_source` - check an assertion\n\nEach gets a **defined input/output contract**, which is what makes selection deterministic.\n\n**Constrain** as a third move: replace a wide tool with a narrower one. `fetch_url` will fetch\nanything; `load_document` that validates document URLs removes a class of misuse entirely.\n\nThe counterweight: splitting has a cost. Every new tool adds to the decision space, and too many\ntools degrades selection on its own. Split to remove **ambiguity**, not to be thorough.",
+      "tags": ["tool-design", "tool-splitting"],
+      "hints": [
+        "One of the three moves changes only the label, one changes the surface, one narrows it."
+      ]
+    },
+    {
+      "id": "ccaf4-quiz-101",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "Two tools, `analyze_content` and `analyze_document`, have near-identical descriptions and the agent keeps misrouting between them. What is the fix?",
+      "answer": "Ambiguous or overlapping descriptions cause misrouting, and the named fix is renaming plus a description that eliminates the functional overlap - `analyze_content` becomes `extract_web_results` with a web-specific description. Merging hides the ambiguity inside a tool that is now harder to describe.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Rename one to reflect its actual domain and rewrite its description around that",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Merge them into one tool that branches internally on the input type it receives",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Add a system prompt paragraph explaining which tool to use in which situation",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Remove one of them and let the remaining tool handle both kinds of input",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["tool-design", "descriptions"],
+      "hints": ["The tools do different things. Only their labels say otherwise."]
+    },
+    {
+      "id": "ccaf4-quiz-102",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "Tool descriptions are careful and distinct, but the agent still over-uses the search tool. What should you inspect?",
+      "answer": "System prompt wording affects tool selection: an instruction like \"always look for the latest information\" pulls toward the search tool regardless of how well the other descriptions are written. Reviewing the system prompt for those accidental associations is the named skill.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The system prompt, for keyword-sensitive wording that creates unintended tool associations",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The tool schemas, for optional parameters that make search the cheapest call to make",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "The tool ordering, since tools declared first are more likely to be selected",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The conversation history, for earlier turns where search returned useful results",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["tool-design", "system-prompt"],
+      "hints": ["Something outside the tool definitions is competing with them."]
+    },
+    {
+      "id": "ccaf4-type-101",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "type-answer",
+      "question": "What is the primary mechanism a model uses to decide which tool to call?",
+      "answer": "The tool descriptions. Everything else - system prompt wording, examples, naming - modulates a decision that the descriptions are supposed to determine.",
+      "shortAnswer": "tool descriptions",
+      "tags": ["tool-design"],
+      "hints": ["It is the text you write next to each tool, not the prompt above them."]
+    },
+    {
+      "id": "ccaf4-open-103",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "open",
+      "question": "What are the four error categories an MCP tool should distinguish, and why does the distinction matter?",
+      "answer": "Set the MCP **`isError`** flag, then say **what kind** of error it was:\n\n| Category | Example | What the agent should do |\n|---|---|---|\n| **transient** | timeout, service unavailable | retry - this may work next time |\n| **validation** | invalid input | fix the argument and call again |\n| **business** | policy violation, refund outside window | stop, and explain it to the user |\n| **permission** | caller not authorized for this action | stop, and escalate |\n\nReturn it as structured metadata - `errorCategory`, an **`isRetryable`** boolean, and a\nhuman-readable description. For business rule violations, add `retriable: false` plus a\n**customer-friendly explanation**, so the agent can tell the user something true rather than\ninventing a reason.\n\n**Why uniform responses fail.** A generic \"Operation failed\" is the same string for all four, so\nthe agent cannot make an appropriate recovery decision. It retries the policy violation forever\nand gives up on the timeout that would have succeeded. Structured metadata is what **prevents\nwasted retry attempts**.\n\n**The distinction people miss**: an **access failure** (the query could not run) is not a **valid\nempty result** (the query ran and matched nothing). Collapsing them makes the agent report \"no\norders found\" when the order service was simply down.",
+      "tags": ["error-handling", "error-category", "mcp"],
+      "hints": ["Four categories, and only one of them is worth retrying."]
+    },
+    {
+      "id": "ccaf4-quiz-103",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "A refund request falls outside the return window. What should `process_refund` return?",
+      "answer": "A policy violation is a business error: retrying will never succeed, so `retriable: false` stops the loop, and the customer-friendly explanation gives the agent something accurate to say instead of improvising a reason.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A business error with `retriable: false` and a customer-friendly explanation",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A transient error, so the agent retries in case the policy window was updated",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A validation error, since the date argument fell outside the accepted range",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A successful response with a zero refund amount and an empty reason field",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["error-handling", "error-category"],
+      "hints": ["Nothing about retrying this will change the answer."]
+    },
+    {
+      "id": "ccaf4-quiz-104",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "A search subagent's query runs successfully and matches nothing. How should that be reported?",
+      "answer": "The guide separates access failures - which need a retry decision - from valid empty results, which are successful queries with no matches. Reporting an empty result as a failure triggers pointless retries; reporting a failure as empty makes the report claim nothing exists.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "As a successful result that is empty, distinct from any access failure",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "As a transient error, so the coordinator retries the query against another source",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "As a validation error, since the query as written produced no usable output",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "As a silent no-op, letting the coordinator infer the gap from the missing section",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["error-handling", "multi-agent"],
+      "hints": ["Nothing went wrong. That is the whole point."]
+    },
+    {
+      "id": "ccaf4-quiz-105",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "A subagent hits a transient timeout on one of its sources. What should it do before telling the coordinator?",
+      "answer": "Subagents implement local recovery for transient failures and propagate only what they cannot resolve - along with partial results and what was attempted. Routing every hiccup to the coordinator wastes the hub's attention; returning partial work as success hides the gap.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Attempt local recovery, and propagate only if it cannot resolve the failure itself",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Propagate immediately, since the coordinator owns all error handling in hub-and-spoke",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Retry indefinitely with backoff, because a transient failure resolves on its own",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Return its partial results as a success, so the coordinator's synthesis is not blocked",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["error-handling", "multi-agent"],
+      "hints": ["The coordinator should hear about what could not be fixed, not about everything."]
+    },
+    {
+      "id": "ccaf4-type-102",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "type-answer",
+      "question": "Which MCP response flag tells the agent that a tool call failed?",
+      "answer": "The `isError` flag. It marks the failure; `errorCategory` and `isRetryable` are what make the failure actionable.",
+      "shortAnswer": "isError",
+      "tags": ["error-handling", "mcp"],
+      "hints": ["Two words jammed together, camelCase, and it is a boolean."]
+    },
+    {
+      "id": "ccaf4-match-101",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "match",
+      "question": "Match each error category to the recovery it should trigger.",
+      "answer": "The categories exist so the agent can pick a recovery. The fifth row is the one that is not an error at all, and confusing it with a transient failure is a classic bug.",
+      "matchPairs": [
+        {
+          "left": "transient",
+          "right": "Retry - the same call may succeed shortly"
+        },
+        {
+          "left": "validation",
+          "right": "Correct the argument and call again"
+        },
+        {
+          "left": "business",
+          "right": "Stop and explain the policy to the user"
+        },
+        {
+          "left": "permission",
+          "right": "Stop and escalate - the caller lacks authority"
+        },
+        {
+          "left": "Valid empty result",
+          "right": "Report honestly that nothing matched"
+        }
+      ],
+      "tags": ["error-handling", "error-category"],
+      "hints": ["Four errors and one impostor."]
+    },
+    {
+      "id": "ccaf4-open-104",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "open",
+      "question": "How many tools should an agent hold, and what goes wrong past that?",
+      "answer": "The guide gives a number: **18 tools instead of 4-5 degrades tool selection reliability** by\nincreasing decision complexity. More candidates means more near-neighbours to confuse.\n\nA second, independent effect: agents holding tools **outside their specialization** tend to\n**misuse** them. A synthesis agent that happens to have web search will search instead of\nsynthesizing - not because the prompt told it to, but because the tool was there.\n\nSo the principle is **scoped tool access**: each agent gets only the tools its role requires.\n\nThe exception, and the shape it takes: where one cross-role need is genuinely **high-frequency**,\nexpose a **narrow** tool for exactly that need rather than the whole capability. The synthesis\nagent gets `verify_fact`, not the full search tool; anything more complex routes back through the\ncoordinator.\n\nNote this interacts with MCP: tools from **all** configured servers are discovered at connection\ntime and are available simultaneously. Connecting four servers \"in case they are useful\" is how\nan agent quietly ends up with 18 tools.",
+      "tags": ["tool-design", "scoping", "multi-agent"],
+      "hints": ["There is a specific number in the guide, and a specific reason more is worse."]
+    },
+    {
+      "id": "ccaf4-quiz-106",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "The synthesis subagent has been given the web-search tool for convenience, and it now runs searches instead of synthesizing. What is the principle being violated?",
+      "answer": "Agents with tools outside their specialization tend to misuse them - this exact example is named. The fix is restricting each subagent's tool set to its role, with a narrow cross-role tool like `verify_fact` where the need is genuinely frequent.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Scoped tool access - agents misuse tools outside their specialization",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Least privilege, since search can reach hosts the synthesis role should never contact",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Context isolation, since search results enter a window meant to hold findings only",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Hub-and-spoke routing, since the subagent is now reaching outside the coordinator",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["tool-design", "scoping"],
+      "hints": ["It is not doing anything forbidden. It is doing someone else's job."]
+    },
+    {
+      "id": "ccaf4-quiz-107",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "Document type is unknown and several extraction schemas exist. You need a tool call rather than prose. Which `tool_choice`?",
+      "answer": "`\"any\"` guarantees the model calls a tool while leaving the choice open, which is exactly the case where the document type is unknown. `\"auto\"` permits a text answer; forcing one specific tool defeats the purpose when you cannot know which schema applies.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "`\"any\"`, which forces a tool call but lets the model choose which",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "`\"auto\"`, which lets the model call a tool or answer with text as it sees fit",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Forced selection, naming the extraction tool that fits most document types",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "`\"auto\"` plus a prompt line instructing the model never to answer in prose",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["tool-choice", "structured-output"],
+      "hints": ["You want to fix that it calls something, not which thing."]
+    },
+    {
+      "id": "ccaf4-quiz-108",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "An agent needs to load documents, but its `fetch_url` tool will retrieve anything on the web. What is the recommended change?",
+      "answer": "Replacing a generic tool with a constrained alternative is the named skill - the restriction lives in the tool, so misuse becomes impossible rather than discouraged. A prompt rule is a request; post-hoc validation happens after the fetch already occurred.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Replace it with a `load_document` tool that validates document URLs",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Keep `fetch_url` and add a system prompt rule restricting it to document URLs only",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Keep `fetch_url` and validate the retrieved content type after the call returns",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Remove `fetch_url` and route every document load through the coordinator instead",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["tool-design", "scoping"],
+      "hints": ["Make the wrong call impossible rather than asking for it not to happen."]
+    },
+    {
+      "id": "ccaf4-type-103",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "type-answer",
+      "question": "Which `tool_choice` value forces a tool call while letting the model pick which tool?",
+      "answer": "`tool_choice: \"any\"`. `\"auto\"` lets the model answer in prose instead, and `{\"type\": \"tool\", \"name\": \"...\"}` removes the choice entirely.",
+      "shortAnswer": "any",
+      "tags": ["tool-choice"],
+      "hints": ["Three letters, and it means exactly what it says."]
+    },
+    {
+      "id": "ccaf4-match-102",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "match",
+      "question": "Match each `tool_choice` configuration to what it guarantees.",
+      "answer": "Forced selection is how you run a specific step first - `extract_metadata` before the enrichment tools - and then handle the following steps in later turns.",
+      "matchPairs": [
+        {
+          "left": "\"auto\"",
+          "right": "The model may call a tool or reply with text"
+        },
+        {
+          "left": "\"any\"",
+          "right": "A tool call is guaranteed; the model picks which"
+        },
+        {
+          "left": "Forced tool selection",
+          "right": "One named tool is guaranteed to be called"
+        },
+        {
+          "left": "No tool_choice, no tools",
+          "right": "Text only - nothing to call"
+        }
+      ],
+      "tags": ["tool-choice"],
+      "hints": ["Sort by how much freedom the model keeps."]
+    },
+    {
+      "id": "ccaf4-quiz-109",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "A shared MCP server needs a `GITHUB_TOKEN` and the config must be committed. How?",
+      "answer": "Environment variable expansion in `.mcp.json` is the named mechanism for credential management without committing secrets. Per-developer personal config would work for the secret but loses the shared team tooling that project scope exists to provide.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Project `.mcp.json` with `${GITHUB_TOKEN}` expanded from the environment",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Project `.mcp.json` with the token value, since the repository is private anyway",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Personal `~/.claude.json` per developer, each holding that developer's own token",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Project `.mcp.json` with the token supplied as a command-line argument at launch",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["mcp", "configuration", "secrets"],
+      "hints": ["The config is shared. The secret is not."]
+    },
+    {
+      "id": "ccaf4-quiz-110",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "Your MCP server exposes a powerful code-search tool, but the agent keeps using the built-in `Grep` instead. What is the fix?",
+      "answer": "A thin description loses tool selection to a familiar built-in. Enhancing it to explain capabilities and outputs is the named fix. Removing `Grep` might force the behaviour, but it strips a genuinely useful tool to compensate for documentation you could just write.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Enhance the MCP tool description to explain its capabilities and outputs in detail",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Remove `Grep` from the agent's allowed tools so the MCP tool is the only option",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Rename the MCP tool to something closer to the vocabulary the prompt already uses",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Move the server from user scope to project scope so it loads earlier in the session",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["mcp", "descriptions"],
+      "hints": ["The built-in is not better. It is better explained."]
+    },
+    {
+      "id": "ccaf4-type-104",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "type-answer",
+      "question": "Which file holds a developer's personal or experimental MCP servers?",
+      "answer": "`~/.claude.json` is user scope. Project scope - shared team tooling - is `.mcp.json` at the repository root, and both are active at once.",
+      "shortAnswer": "~/.claude.json",
+      "tags": ["mcp", "configuration"],
+      "hints": ["It lives in your home directory, not in the repo."]
+    },
+    {
+      "id": "ccaf4-open-105",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "open",
+      "question": "What are the built-in tools for, and how do you pick between them?",
+      "answer": "| Tool | For |\n|---|---|\n| **Grep** | Searching file **contents** - function names, error messages, import statements |\n| **Glob** | Matching file **paths** by pattern - `**/*.test.tsx` |\n| **Read** | Loading a full file |\n| **Write** | Writing a full file |\n| **Edit** | A targeted modification, anchored on **unique** text |\n| **Bash** | Running commands |\n\n**The one failure with a named fallback**: `Edit` locates its target by unique text match. When\nthe anchor appears more than once, the edit fails - and the sanctioned recovery is **`Read` the\nwhole file, then `Write` it back** with the change applied.\n\n**The exploration strategy matters as much as the tool list.** Build understanding\n**incrementally**: `Grep` to find entry points, then `Read` to follow imports and trace flows -\nrather than reading every file up front, which fills the context window with material you did not\nneed.\n\nFor tracing a function across wrapper modules, the sequence is: identify all **exported names**\nfirst, then search for each name across the codebase. Wrappers rename things, so a single grep\nfor the original name misses every indirect caller.",
+      "tags": ["built-in-tools", "codebase-exploration"],
+      "hints": ["One of the six fails in a specific way, and the recovery uses two of the others."]
+    },
+    {
+      "id": "ccaf4-quiz-111",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "The agent needs every test file in the repository, wherever it sits. Which built-in tool?",
+      "answer": "Glob is for file path pattern matching - finding files by name or extension. Grep searches contents, which would also match files that merely mention the test library.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "`Glob`, matching paths against `**/*.test.tsx`",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "`Grep`, searching file contents for imports of the testing library",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "`Bash`, running `find` with a name filter over the repository root",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "`Read`, loading each directory listing and filtering the names in turn",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["built-in-tools"],
+      "hints": ["You know the shape of the filename, not what is inside it."]
+    },
+    {
+      "id": "ccaf4-quiz-112",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "quiz",
+      "question": "An agent must understand an unfamiliar service before changing it. What is the recommended approach?",
+      "answer": "Building codebase understanding incrementally is the named skill: start with Grep to find entry points, then Read to follow imports and trace flows, rather than reading everything upfront and exhausting the context on material you did not need.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Grep for entry points, then Read to follow imports and trace the flows that matter",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Read every file in the service directory so nothing important is missed early",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Glob the directory tree first, then Read the files with the largest line counts",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Ask Bash for a dependency graph, then Read only the most depended-upon modules",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["built-in-tools", "codebase-exploration"],
+      "hints": ["Reading everything is thorough and is still the wrong answer."]
+    },
+    {
+      "id": "ccaf4-match-103",
+      "subjectId": "ccaf-4-mcp-tools",
+      "type": "match",
+      "question": "Match each built-in tool to the job it is for.",
+      "answer": "The split people get wrong is Grep versus Glob: contents versus paths. The last row is the recovery path for the one tool here that can fail on a well-formed request.",
+      "matchPairs": [
+        {
+          "left": "Grep",
+          "right": "Search file contents for a pattern"
+        },
+        {
+          "left": "Glob",
+          "right": "Match file paths by name or extension"
+        },
+        {
+          "left": "Read",
+          "right": "Load a whole file"
+        },
+        {
+          "left": "Edit",
+          "right": "Targeted change anchored on unique text"
+        },
+        {
+          "left": "Read + Write",
+          "right": "Fallback when the edit anchor is not unique"
+        }
+      ],
+      "tags": ["built-in-tools"],
+      "hints": ["Two of these search. They search different things."]
     }
   ]
 }

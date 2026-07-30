@@ -224,6 +224,426 @@
       "hints": [
         "Almost every answer here fixes the problem at its source rather than enlarging the window."
       ]
+    },
+    {
+      "id": "ccaf5-open-101",
+      "subjectId": "ccaf-5-context",
+      "type": "open",
+      "question": "What does progressive summarization destroy, and what protects it?",
+      "answer": "**What it destroys**: precisely the things a transaction depends on - **numerical values,\npercentages, dates, and customer-stated expectations**. Summarization is lossy in a specific\ndirection: it keeps the gist and blurs the specifics. \"The customer wants a refund of R$ 1.250 on\norder 88213 by Friday\" becomes \"the customer is asking about a refund\", and the agent then\nnegotiates against a number it no longer knows.\n\n**What protects it**: extract the **transactional facts** - amounts, dates, order numbers,\nstatuses - into a persistent **case facts** block that is included in **each prompt** and lives\n**outside** the summarized history. The summary can compress the conversation; the facts block is\nnever summarized.\n\nFor a session handling several issues at once, do the same thing per issue: extract and persist\nstructured issue data - order ids, amounts, statuses - into a **separate context layer**.\n\nThe related discipline is upstream: **trim verbose tool outputs to the relevant fields before they\naccumulate**. An order lookup returning 40+ fields when 5 matter is not just waste in this turn -\nit is waste re-sent for the rest of the conversation, crowding out the facts you actually needed to\nkeep.",
+      "tags": ["context", "case-facts", "summarization"],
+      "hints": [
+        "Summaries lose one particular kind of information, and it is the kind that has digits."
+      ]
+    },
+    {
+      "id": "ccaf5-quiz-101",
+      "subjectId": "ccaf-5-context",
+      "type": "quiz",
+      "question": "Where should a key findings summary sit inside a long aggregated input?",
+      "answer": "Placing key findings summaries at the beginning and organizing detailed results with explicit section headers is the named mitigation for position effects. Models process the beginning and end reliably, and the middle is where findings get omitted.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "At the beginning, with detailed results organized under explicit section headers",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "At the end, so it is the last thing read before the model responds",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "In the middle, adjacent to the detailed results it is summarizing",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Repeated at both ends, so its position cannot affect the outcome",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["context", "lost-in-the-middle"],
+      "hints": ["The middle is the one place it must not be."]
+    },
+    {
+      "id": "ccaf5-open-102",
+      "subjectId": "ccaf-5-context",
+      "type": "open",
+      "question": "What are the legitimate escalation triggers, and which popular ones are unreliable?",
+      "answer": "**Legitimate**, and there are three:\n\n1. **The customer asks for a human.** Honor it **immediately**, without first attempting an\n   investigation. Trying one more time before transferring reads as stalling.\n2. **A policy exception or gap** - not merely a complex case. If the policy is silent or ambiguous\n   on what the customer is asking, the agent cannot decide it. The guide's example: the policy\n   covers price adjustments on your own site and the customer wants a competitor price match.\n3. **Inability to make meaningful progress.** Not \"this is hard\", but \"nothing I do advances this\".\n\n**Explicitly unreliable as proxies for complexity:**\n\n- **Sentiment.** An angry customer with a simple problem does not need a human; they need the\n  problem solved.\n- **Self-reported confidence.** The model's own confidence score is not calibrated against actual\n  case difficulty.\n\n**The nuance that gets tested**: when a customer is frustrated but the issue is **within the\nagent's capability**, acknowledge the frustration and **offer resolution** - escalating only if\nthey reiterate the preference. Escalating on sentiment alone burns a human on something that was\nalready solvable.\n\n**And the adjacent case**: when a tool returns **multiple matches**, that is not an escalation. Ask\nfor an **additional identifier**. Selecting by heuristic - the most recent order, the closest name -\nis the anti-pattern.",
+      "tags": ["escalation", "ambiguity", "scenario-support"],
+      "hints": ["Three good triggers. The two most tempting ones are on the other list."]
+    },
+    {
+      "id": "ccaf5-quiz-102",
+      "subjectId": "ccaf-5-context",
+      "type": "quiz",
+      "question": "The customer is clearly angry, and their issue is a straightforward address change the agent can do. What is right?",
+      "answer": "Sentiment is an unreliable proxy for case complexity. The named skill is acknowledging frustration while offering resolution when the issue is within capability, escalating only if the customer reiterates the preference.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Acknowledge the frustration, offer the fix, escalate only if they insist",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Escalate immediately, since an angry customer is a retention risk for the business",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Complete the address change first, then apologize for the inconvenience caused",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Ask whether they would prefer a human before doing anything about the address",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["escalation", "scenario-support"],
+      "hints": ["The anger is real. The complexity is not."]
+    },
+    {
+      "id": "ccaf5-quiz-103",
+      "subjectId": "ccaf-5-context",
+      "type": "quiz",
+      "question": "The return policy covers your own site's price drops. A customer wants a competitor's lower price matched. What should the agent do?",
+      "answer": "Escalation triggers include policy exceptions and gaps - not just complex cases. A policy that is silent or ambiguous on the specific request is a gap, and deciding it either way is the agent inventing policy.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Escalate, because the policy is silent on this request",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Decline, since the policy does not authorize matching a competitor's price",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Approve it, treating a competitor price as equivalent to an own-site price drop",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Ask the customer for the competitor's listing and then apply the standard discount",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["escalation", "policy-gap"],
+      "hints": ["The policy does not say no. It does not say anything."]
+    },
+    {
+      "id": "ccaf5-type-101",
+      "subjectId": "ccaf-5-context",
+      "type": "type-answer",
+      "question": "When a lookup returns several matching customers, what should the agent request?",
+      "answer": "An additional identifier, rather than selecting by heuristic. Multiple matches require clarification - picking the most recent or closest match is the anti-pattern.",
+      "shortAnswer": "an additional identifier",
+      "tags": ["ambiguity", "escalation"],
+      "hints": ["One more piece of information from the customer, not a guess."]
+    },
+    {
+      "id": "ccaf5-match-101",
+      "subjectId": "ccaf-5-context",
+      "type": "match",
+      "question": "Match each situation to whether it justifies escalation.",
+      "answer": "Three genuine triggers, one nuanced case, and one signal the guide names as unreliable. Sentiment and self-reported confidence are both poor proxies for actual complexity.",
+      "matchPairs": [
+        {
+          "left": "The customer asks for a human",
+          "right": "Escalate immediately, without investigating first"
+        },
+        {
+          "left": "The policy is silent on the request",
+          "right": "Escalate - this is a policy gap"
+        },
+        {
+          "left": "Nothing the agent tries advances the case",
+          "right": "Escalate - no meaningful progress"
+        },
+        {
+          "left": "The customer is angry but the fix is simple",
+          "right": "Offer the fix; escalate only if they insist"
+        },
+        {
+          "left": "The model reports low confidence",
+          "right": "Not a reliable signal on its own"
+        }
+      ],
+      "tags": ["escalation"],
+      "hints": ["Two rows on this list are not escalation triggers at all."]
+    },
+    {
+      "id": "ccaf5-quiz-104",
+      "subjectId": "ccaf-5-context",
+      "type": "quiz",
+      "question": "A subagent's search times out. Which error report lets the coordinator recover intelligently?",
+      "answer": "Structured error context - failure type, what was attempted, partial results, alternatives - is what enables the coordinator to decide whether to retry with a modified query, try another approach, or proceed with a declared gap. Generic statuses hide exactly that.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Failure type, the query attempted, partial results, and possible alternatives",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A message stating that the search service is currently unavailable",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "The raw exception and stack trace from the underlying HTTP client",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "An empty result set flagged as successful, so synthesis can continue",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["error-propagation", "multi-agent"],
+      "hints": ["The coordinator has a decision to make. What does it need to make it?"]
+    },
+    {
+      "id": "ccaf5-quiz-105",
+      "subjectId": "ccaf-5-context",
+      "type": "quiz",
+      "question": "Two of six research areas had no available sources. How should the synthesis output handle that?",
+      "answer": "Structuring synthesis output with coverage annotations - well-supported versus gaps from unavailable sources - is the named skill. Silent omission produces a report that reads as complete, and filling gaps from general knowledge fabricates.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Annotate coverage, marking which findings are well-supported and which areas have gaps",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Omit those two areas entirely, so the report contains only supported findings",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Include the two areas with the model's best general knowledge as a placeholder",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Return an error, since a report covering four of six areas is incomplete",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["error-propagation", "coverage-gaps"],
+      "hints": ["The reader has to be able to see what is missing."]
+    },
+    {
+      "id": "ccaf5-open-103",
+      "subjectId": "ccaf-5-context",
+      "type": "open",
+      "question": "How do you keep a long codebase exploration from degrading, and how do you survive a crash?",
+      "answer": "**The degradation symptom is specific**: in extended sessions the agent starts giving\ninconsistent answers and referencing **\"typical patterns\"** instead of the specific classes it\ndiscovered earlier. Generic language replacing specific findings is the tell.\n\n**Four counters:**\n\n1. **Scratchpad files.** Have the agent record key findings to a file and reference it for\n   subsequent questions. The findings then survive a context boundary instead of being remembered\n   badly.\n2. **Subagent delegation.** Spawn subagents for specific questions - \"find all test files\", \"trace\n   the refund flow dependencies\" - while the main agent keeps the high-level coordination. The\n   verbose exploration happens in a window you are willing to throw away.\n3. **Phase summaries.** Summarize key findings from one exploration phase **before** spawning\n   subagents for the next, and inject the summary into their initial context.\n4. **`/compact`** when the window fills with verbose discovery output.\n\n**Crash recovery** is a design, not a hope: each agent **exports its state to a known location**,\nand the coordinator loads a **manifest** on resume and injects it into the agent prompts. Without\nthat, an interrupted multi-hour exploration restarts from nothing.\n\nThe through-line: treat context as **storage you will lose**. Anything that matters gets written\nsomewhere it survives.",
+      "tags": ["context-degradation", "scratchpad", "manifest"],
+      "hints": [
+        "The tell is a word the agent starts using when it has stopped remembering specifics."
+      ]
+    },
+    {
+      "id": "ccaf5-quiz-106",
+      "subjectId": "ccaf-5-context",
+      "type": "quiz",
+      "question": "How should a multi-agent exploration be designed to survive an interruption?",
+      "answer": "Designing crash recovery using structured agent state exports - manifests the coordinator loads on resume and injects into agent prompts - is the named skill. Holding everything in the coordinator's context means the crash takes all of it.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Each agent exports state to a known location; the coordinator loads a manifest on resume",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The coordinator keeps every subagent result in its own context until completion",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Each agent writes a scratchpad file that the next agent reads at its own discretion",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The session is resumed by name, since Claude Code persists conversation state itself",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["manifest", "crash-recovery", "multi-agent"],
+      "hints": ["There is a specific word for the file the coordinator reads on the way back."]
+    },
+    {
+      "id": "ccaf5-type-102",
+      "subjectId": "ccaf-5-context",
+      "type": "type-answer",
+      "question": "Which command reduces context usage during an extended exploration session?",
+      "answer": "`/compact`. It reclaims room when the window has filled with verbose discovery output - though scratchpad files and subagent delegation prevent the problem rather than recovering from it.",
+      "shortAnswer": "/compact",
+      "tags": ["context", "compact"],
+      "hints": ["A slash command, and it names what it does to the transcript."]
+    },
+    {
+      "id": "ccaf5-open-104",
+      "subjectId": "ccaf-5-context",
+      "type": "open",
+      "question": "How do you design a human review workflow you can safely shrink?",
+      "answer": "**Start from the risk**: an aggregate accuracy figure - 97% overall - can **mask poor\nperformance on specific document types or fields**. The average is made of segments, and one\nsegment can be failing badly while the headline looks fine.\n\n**So before reducing review**, analyze accuracy **by document type and by field** and verify\nperformance is consistent **across all segments**. That is the precondition, not a follow-up.\n\n**Then build the routing:**\n\n- Have the model output **field-level confidence scores**.\n- **Calibrate the thresholds using a labeled validation set** - raw self-reported confidence is not\n  a probability, and treating it as one is how a \"95% confidence\" bucket ends up at 70% accuracy.\n- Route **low-confidence** extractions, and any with ambiguous or contradictory source documents,\n  to human review - prioritizing limited reviewer capacity where it changes outcomes.\n\n**And keep measuring the part you stopped looking at.** **Stratified random sampling** of the\n**high-confidence** extractions is what detects both the ongoing error rate and **novel error\npatterns** - failure modes that did not exist when you calibrated. Without it, the automated path\nis unmonitored by construction: you only see the errors in the bucket you were already\nreviewing.",
+      "tags": ["confidence", "human-review", "stratified-sampling"],
+      "hints": ["The headline number is not wrong. It is an average, and that is the problem."]
+    },
+    {
+      "id": "ccaf5-quiz-107",
+      "subjectId": "ccaf-5-context",
+      "type": "quiz",
+      "question": "You automated the high-confidence extraction path. What keeps you informed about its error rate?",
+      "answer": "Stratified random sampling of high-confidence extractions is the named mechanism for ongoing error rate measurement and novel pattern detection. A fixed validation set only measures the failure modes it already contains.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Stratified random sampling of high-confidence extractions, reviewed on an ongoing basis",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The confidence scores themselves, monitored for any drop in their average value",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Downstream complaints, which surface the errors that actually affect a consumer",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A re-run of the labeled validation set on a fixed schedule every quarter",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["confidence", "stratified-sampling"],
+      "hints": ["You stopped looking at that bucket. Something has to keep looking."]
+    },
+    {
+      "id": "ccaf5-quiz-108",
+      "subjectId": "ccaf-5-context",
+      "type": "quiz",
+      "question": "Field-level confidence scores come back from the model. What makes them usable for routing?",
+      "answer": "Field-level confidence scores are calibrated using labeled validation sets for routing review attention. Uncalibrated self-reported confidence is not a probability, so a threshold picked on the raw numbers means nothing.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Calibrating the review thresholds against a labeled validation set",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Averaging them per document, so one weak field does not divert the whole record",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Requiring the model to justify each score with the source text it relied on",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Setting the threshold at a round number and adjusting it as reviewers complain",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["confidence", "calibration"],
+      "hints": ["The number the model gives you is not yet a probability."]
+    },
+    {
+      "id": "ccaf5-match-102",
+      "subjectId": "ccaf-5-context",
+      "type": "match",
+      "question": "Match each review-workflow concern to its mechanism.",
+      "answer": "The through-line: every row is about not trusting an aggregate. Confidence, accuracy, and source consistency all need to be examined per segment rather than in total.",
+      "matchPairs": [
+        {
+          "left": "Deciding which extractions a human sees",
+          "right": "Field-level confidence with calibrated thresholds"
+        },
+        {
+          "left": "Trusting the confidence numbers at all",
+          "right": "Calibration against a labeled validation set"
+        },
+        {
+          "left": "Watching the automated path for new failures",
+          "right": "Stratified sampling of high-confidence output"
+        },
+        {
+          "left": "Checking a 97% average is not hiding a bad case",
+          "right": "Accuracy analysis by document type and field"
+        },
+        {
+          "left": "Catching a self-contradicting source document",
+          "right": "A conflict_detected flag in the schema"
+        }
+      ],
+      "tags": ["confidence", "human-review"],
+      "hints": ["Every row is a defence against one seductive number."]
+    },
+    {
+      "id": "ccaf5-open-105",
+      "subjectId": "ccaf-5-context",
+      "type": "open",
+      "question": "How is provenance preserved through a multi-source synthesis, and how are conflicts handled?",
+      "answer": "**Where it gets lost**: in the **summarization steps**. Findings are compressed and the\nclaim-source link is not part of what gets carried forward, so the final report has assertions\nnobody can trace. And it is unrecoverable - the subagent's window is closed, the source material is\ngone.\n\n**The mechanism**: subagents output structured **claim-source mappings** - source URLs, document\nnames, **relevant excerpts** - and every downstream agent **preserves and merges** them through\nsynthesis. Provenance is a field that travels, not a formatting convention applied at the end.\n\n**Conflicting values from credible sources**: annotate the conflict **with source attribution**\nrather than arbitrarily selecting one. The document analysis agent completes its work with **both\nvalues included and explicitly annotated**, and the coordinator decides how to reconcile before\nsynthesis. A subagent silently picking a winner destroys the information needed to reconcile\nproperly.\n\n**Temporal data** is the subtle one: require **publication or collection dates** in structured\noutputs. Two figures that differ because they were measured a year apart are not a contradiction,\nand without dates they look like one.\n\n**Report structure follows from this**: explicit sections distinguishing **well-established**\nfindings from **contested** ones, preserving each source's original characterization and\nmethodological context.\n\nAnd a formatting note the guide makes: render content types **appropriately** - financial data as\ntables, news as prose, technical findings as structured lists - rather than flattening everything\ninto one uniform shape.",
+      "tags": ["provenance", "conflict", "synthesis"],
+      "hints": ["It is lost at one specific step, and after that step it cannot be recovered."]
+    },
+    {
+      "id": "ccaf5-quiz-109",
+      "subjectId": "ccaf-5-context",
+      "type": "quiz",
+      "question": "Two credible sources give figures a year apart, and the report calls them contradictory. What was missing?",
+      "answer": "Requiring publication or data collection dates in structured outputs is what prevents temporal differences being misinterpreted as contradictions. A conflict annotation would have recorded the disagreement without explaining that there was none.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Publication or collection dates in the subagents' structured output",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A conflict annotation, which would have flagged the two values as inconsistent",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A source reliability score, which would have let synthesis prefer one figure",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A unit normalization step, since the two figures may use different scales",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["provenance", "temporal-data"],
+      "hints": ["They do not disagree. They describe different moments."]
+    },
+    {
+      "id": "ccaf5-type-103",
+      "subjectId": "ccaf-5-context",
+      "type": "type-answer",
+      "question": "What must subagents output so attribution survives the synthesis step?",
+      "answer": "Structured claim-source mappings - source URLs, document names, relevant excerpts - which every downstream agent preserves and merges. Attribution is lost in summarization otherwise, and the original material is gone by then.",
+      "shortAnswer": "claim-source mappings",
+      "tags": ["provenance", "synthesis"],
+      "hints": ["Two nouns joined by a hyphen: what was said, and where it came from."]
     }
   ]
 }

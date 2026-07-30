@@ -906,6 +906,373 @@
       "hints": [
         "The model proposes, something else disposes - and termination is owned by neither."
       ]
+    },
+    {
+      "id": "ccaf1-open-101",
+      "subjectId": "ccaf-1-agentic",
+      "type": "open",
+      "question": "How does a coordinator spawn subagents, and what does a subagent start with?",
+      "answer": "**The mechanism** is the **Task tool**, and the prerequisite catches people: the\ncoordinator's **`allowedTools` must include `\"Task\"`** or it cannot invoke a subagent at all. No\namount of prompting substitutes for the missing permission - the agent will describe delegating\nand then do the work itself.\n\n**What a subagent starts with: nothing.** It does not inherit the coordinator's conversation\nhistory, and there is no shared memory between invocations. Everything it needs goes **explicitly\ninto its prompt** - the synthesis subagent gets the web search results and the document analysis\noutput handed to it, or it synthesizes from thin air.\n\nPass that context as **structured data separating content from metadata** - source URLs, document\nnames, page numbers - so attribution survives the hop. Prose summaries lose the provenance at\nexactly the point where the original material stops existing.\n\n**Parallelism has a specific shape**: emit **multiple Task calls in a single coordinator\nresponse**, not one per turn across several turns. Sequential turns serialize work that had no\ndependency between the branches.\n\n**AgentDefinition** carries each subagent type's configuration: `description`, system prompt, and\n**tool restrictions**. The description is what gets a subagent selected for the right work; the\ntool restrictions are what stop it from wandering into another's specialization.",
+      "tags": ["multi-agent", "task-tool", "context-passing"],
+      "hints": ["One permission, one prompt payload, and one detail about how parallel is spelled."]
+    },
+    {
+      "id": "ccaf1-quiz-101",
+      "subjectId": "ccaf-1-agentic",
+      "type": "quiz",
+      "question": "The synthesis subagent produces vague conclusions that ignore what the search subagent found. What is the likely cause?",
+      "answer": "Subagent context must be explicitly provided in the prompt - subagents do not automatically inherit parent context or share memory between invocations. Complete findings from prior agents go directly into the prompt of the one that needs them.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Its prompt never carried the search findings, since subagents inherit no parent context",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The coordinator invoked it before the search subagent had finished its own work",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Its context window is too small to hold the volume the search subagent returned",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Its system prompt lacks synthesis instructions specific to the research domain",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["multi-agent", "context-passing"],
+      "hints": ["It is not that it saw too much or too little. It saw nothing."]
+    },
+    {
+      "id": "ccaf1-quiz-102",
+      "subjectId": "ccaf-1-agentic",
+      "type": "quiz",
+      "question": "Five independent research branches run one after another and the query takes far too long. What is the fix?",
+      "answer": "Spawning parallel subagents means emitting multiple Task tool calls in a single coordinator response rather than across separate turns. Dispatching one per turn is what serializes independent work.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Emit all five Task calls in a single coordinator response",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Raise the coordinator's turn limit so it can dispatch the branches more quickly",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Merge the five branches into one subagent that handles every subtopic in sequence",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Give each subagent a faster model so each individual branch finishes sooner",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["multi-agent", "task-tool", "parallelism"],
+      "hints": ["The dispatch pattern is the bug, not the model or the limits."]
+    },
+    {
+      "id": "ccaf1-quiz-103",
+      "subjectId": "ccaf-1-agentic",
+      "type": "quiz",
+      "question": "How should a coordinator prompt be written so subagents handle unexpected material well?",
+      "answer": "Coordinator prompts that specify research goals and quality criteria rather than step-by-step procedural instructions are what enable subagent adaptability. Rigid procedure produces identical behaviour that breaks the moment reality differs from the script.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "State the research goals and quality criteria rather than step-by-step procedure",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Give exact procedural steps, so every subagent behaves identically across runs",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Give the goals plus a fallback procedure for when the goals cannot be met",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Give minimal instruction, since a capable subagent infers the goal from the query",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["multi-agent", "prompting"],
+      "hints": ["Procedure is only identical until something unexpected shows up."]
+    },
+    {
+      "id": "ccaf1-type-101",
+      "subjectId": "ccaf-1-agentic",
+      "type": "type-answer",
+      "question": "Which tool must be in a coordinator's `allowedTools` for it to spawn subagents?",
+      "answer": "The `Task` tool. It is the spawning mechanism, and without it in `allowedTools` the coordinator simply cannot delegate.",
+      "shortAnswer": "Task",
+      "tags": ["multi-agent", "task-tool"],
+      "hints": ["Four letters, capitalized, and it is the name of the thing being handed off."]
+    },
+    {
+      "id": "ccaf1-open-102",
+      "subjectId": "ccaf-1-agentic",
+      "type": "open",
+      "question": "What does a well-designed escalation handoff contain, and why?",
+      "answer": "The constraint that determines the whole design: **the human agent does not have access to\nthe conversation transcript.** Everything they need to act has to be in the handoff itself.\n\nSo the handoff is a **structured summary**, not a pointer:\n\n- **Customer id** - who this is, already verified\n- **Root cause analysis** - what actually went wrong, not just what was reported\n- **The relevant figures** - refund amount, order number, dates\n- **Recommended action** - what the agent would have done, so the human is reviewing a proposal\n  rather than starting an investigation\n\nThe failure this prevents is the one every customer has experienced: being transferred and asked\nto explain the entire problem again. An agent that escalates without context has spent the\ncustomer's time and handed the human a blank page.\n\n**Where this sits in the loop**: escalation is a **tool** the agent calls, not a phrase it writes,\nbecause it has to carry a structured payload and trigger something in your system.\n\nThe related pattern for complex tickets: **decompose a multi-concern request** into distinct\nitems, investigate each **in parallel using shared context**, then synthesize one unified\nresolution - rather than answering the first concern and losing the other two.",
+      "tags": ["escalation", "handoff", "scenario-support"],
+      "hints": ["Ask what the human on the other end can see. The answer is nothing."]
+    },
+    {
+      "id": "ccaf1-quiz-104",
+      "subjectId": "ccaf-1-agentic",
+      "type": "quiz",
+      "question": "A customer message raises three separate issues in one paragraph. What is the recommended handling?",
+      "answer": "Decomposing multi-concern customer requests into distinct items, investigating each in parallel using shared context, then synthesizing a unified resolution is the named skill. Sequential handling is slower with no benefit when the concerns are independent.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Decompose into distinct items, investigate each in parallel with shared context, then unify",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Answer the clearest issue first and ask the customer to resubmit the others",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Escalate to a human, since multi-concern requests exceed the agent's design",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Handle the three sequentially, so each investigation sees the previous outcome",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["scenario-support", "task-decomposition"],
+      "hints": ["Three issues, one customer, and no reason for them to queue."]
+    },
+    {
+      "id": "ccaf1-quiz-105",
+      "subjectId": "ccaf-1-agentic",
+      "type": "quiz",
+      "question": "Which statement about hooks versus prompt instructions is correct?",
+      "answer": "The distinction is between deterministic guarantees and probabilistic compliance. When business rules require guaranteed compliance, the enforcement goes in a hook, because the model is not in the path at all.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Hooks give deterministic guarantees; prompt instructions give probabilistic compliance",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Hooks and prompts are equivalent once the instruction is stated clearly enough",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Hooks are for formatting concerns; business rules belong in the system prompt",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Prompt instructions are deterministic when the model runs at temperature zero",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["hooks", "enforcement"],
+      "hints": ["One of these two has a non-zero failure rate by construction."]
+    },
+    {
+      "id": "ccaf1-type-102",
+      "subjectId": "ccaf-1-agentic",
+      "type": "type-answer",
+      "question": "Which hook pattern intercepts tool results so they can be transformed before the model reads them?",
+      "answer": "`PostToolUse`. The canonical use is normalizing heterogeneous formats - Unix timestamps, ISO 8601, numeric status codes - from different MCP tools before the agent has to reason about them.",
+      "shortAnswer": "PostToolUse",
+      "tags": ["hooks", "agent-sdk"],
+      "hints": ["It runs after the tool, before the model."]
+    },
+    {
+      "id": "ccaf1-quiz-106",
+      "subjectId": "ccaf-1-agentic",
+      "type": "quiz",
+      "question": "A code review over many files produces shallow findings and misses issues that span files. How should the work be decomposed?",
+      "answer": "Splitting large reviews into per-file local passes plus a separate cross-file integration pass avoids attention dilution. The single combined pass is what produced the shallow findings.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Per-file local analysis passes, plus a separate cross-file integration pass",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "One pass per issue category, so each run has a single kind of thing to look for",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "One pass over all files at once, with the prompt asking for cross-file analysis",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "One pass per directory, so related files are always reviewed alongside each other",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["task-decomposition", "multi-pass-review"],
+      "hints": ["Two different searches are being asked of one pass."]
+    },
+    {
+      "id": "ccaf1-match-101",
+      "subjectId": "ccaf-1-agentic",
+      "type": "match",
+      "question": "Match each coordination decision to what it controls.",
+      "answer": "Each row is a concrete configuration choice with a behavioural consequence. Three of the five are things a prompt cannot compensate for once they are wrong.",
+      "matchPairs": [
+        {
+          "left": "allowedTools includes \"Task\"",
+          "right": "Whether the coordinator can delegate at all"
+        },
+        {
+          "left": "Multiple Task calls in one response",
+          "right": "Whether independent branches run in parallel"
+        },
+        {
+          "left": "Findings pasted into the subagent prompt",
+          "right": "Whether the subagent knows anything at all"
+        },
+        {
+          "left": "AgentDefinition tool restrictions",
+          "right": "Whether a subagent can stray from its role"
+        },
+        {
+          "left": "Goals and criteria instead of procedure",
+          "right": "Whether a subagent adapts to the unexpected"
+        }
+      ],
+      "tags": ["multi-agent", "task-tool"],
+      "hints": ["Some of these are permissions, some are payload, one is prompt style."]
+    },
+    {
+      "id": "ccaf1-open-103",
+      "subjectId": "ccaf-1-agentic",
+      "type": "open",
+      "question": "When do you resume a session, when do you fork it, and when do you start fresh?",
+      "answer": "**`--resume <session-name>`** continues a specific named prior conversation. Use it when the\nprior context is **mostly still valid**.\n\n**`fork_session`** branches from a shared baseline into independent explorations. The use case is\ndivergent approaches from common ground: analyze the codebase once, then fork to compare two\ntesting strategies or two refactoring approaches without paying for the analysis twice - and\nwithout either branch contaminating the other.\n\n**Starting fresh with an injected summary** is the one people under-use, and the guide is explicit\nthat it is **more reliable than resuming with stale tool results**. A resumed session carries file\ncontents that may no longer be true; a fresh session with a structured summary of what was learned\ncarries the conclusions without the rot.\n\nSo the decision is about **staleness**, not convenience:\n\n| Prior context | Do |\n|---|---|\n| Mostly valid | `--resume` |\n| Valid, but you want two divergent paths | `fork_session` |\n| Tool results now stale | Fresh session + structured summary |\n\n**When you do resume after code changed**, tell the agent **which files changed**. That triggers\ntargeted re-analysis instead of either full re-exploration - expensive - or silent reliance on a\nstale reading of the file, which is worse.",
+      "tags": ["sessions", "fork-session", "resume"],
+      "hints": ["The deciding question is not what you want to keep. It is what has gone stale."]
+    },
+    {
+      "id": "ccaf1-quiz-107",
+      "subjectId": "ccaf-1-agentic",
+      "type": "quiz",
+      "question": "You analyzed a codebase yesterday, then several of the analyzed files were rewritten. What is the most reliable move?",
+      "answer": "Starting a new session with a structured summary is more reliable than resuming with stale tool results. Resuming carries file contents that are no longer true, and the agent has no way to know which of its recollections have expired.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Start a fresh session with a structured summary of what the analysis concluded",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Resume the session, since its analysis of the unchanged files is still accurate",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Resume the session and ask the agent to re-read every file it looked at before",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Fork the session, keeping the original as a record of the previous analysis",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["sessions", "resume"],
+      "hints": ["The old session is not wrong about everything. That is what makes it dangerous."]
+    },
+    {
+      "id": "ccaf1-quiz-108",
+      "subjectId": "ccaf-1-agentic",
+      "type": "quiz",
+      "question": "You want to compare two refactoring approaches without re-analyzing the codebase for each. What do you use?",
+      "answer": "fork_session creates independent branches from a shared analysis baseline for exploring divergent approaches. Sequential resumption lets the first approach's reasoning bleed into the second; one session holding both invites the same contamination.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "`fork_session`, branching both explorations from the shared analysis",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "`--resume` twice, running the two approaches one after the other in that session",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Two fresh sessions, each given the same structured summary of the analysis",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "One session, asking the agent to hold both approaches and compare them at the end",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["sessions", "fork-session"],
+      "hints": ["You want a common starting point and no cross-talk after it."]
+    },
+    {
+      "id": "ccaf1-type-103",
+      "subjectId": "ccaf-1-agentic",
+      "type": "type-answer",
+      "question": "Which flag continues a specific named prior Claude Code conversation?",
+      "answer": "`--resume <session-name>`. Pair it with telling the agent which files changed since, so it re-analyzes those instead of trusting stale tool results.",
+      "shortAnswer": "--resume",
+      "tags": ["sessions", "resume"],
+      "hints": ["Two dashes and the obvious verb."]
+    },
+    {
+      "id": "ccaf1-match-102",
+      "subjectId": "ccaf-1-agentic",
+      "type": "match",
+      "question": "Match each session situation to the right mechanism.",
+      "answer": "Four of these are about staleness; the fifth is about volume. Mixing them up is how a session gets compacted when it should have been abandoned.",
+      "matchPairs": [
+        {
+          "left": "Prior context is mostly still valid",
+          "right": "--resume with the session name"
+        },
+        {
+          "left": "Two approaches from one shared analysis",
+          "right": "fork_session"
+        },
+        {
+          "left": "Prior tool results have gone stale",
+          "right": "Fresh session with an injected summary"
+        },
+        {
+          "left": "Some analyzed files changed since",
+          "right": "Resume, naming the changed files"
+        },
+        {
+          "left": "Context filled with verbose discovery",
+          "right": "/compact"
+        }
+      ],
+      "tags": ["sessions"],
+      "hints": ["Four rows share one question. The fifth asks something different."]
     }
   ]
 }

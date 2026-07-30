@@ -466,6 +466,456 @@
       ],
       "tags": ["configuration", "rules", "skills"],
       "hints": ["Sort into always loaded, conditionally loaded, on demand, and actually enforced."]
+    },
+    {
+      "id": "ccaf2-quiz-101",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "A new team member does not get the conventions everyone else's Claude follows. Where is the problem?",
+      "answer": "User-level settings apply only to that user - instructions in ~/.claude/CLAUDE.md are not shared with teammates via version control. Diagnosing this is a named skill, and the fix is moving them to project level.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The instructions sit in user-level `~/.claude/CLAUDE.md`, which is not shared through git",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The instructions sit in the project `CLAUDE.md`, which they have not pulled yet",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Their Claude Code version predates the configuration hierarchy the team relies on",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The instructions use `@import`, and the imported files are missing on their machine",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["claude-md", "hierarchy"],
+      "hints": ["Whose machine is that file on?"]
+    },
+    {
+      "id": "ccaf2-quiz-102",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "A monorepo has eight packages with different standards, and one CLAUDE.md is becoming unmanageable. What does the guide suggest?",
+      "answer": "The @import syntax references external files to keep CLAUDE.md modular - selectively including the standards files relevant to each package. Duplication drifts; prefixing keeps everything loaded for everyone.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Use `@import` so each package's CLAUDE.md pulls in only the standards files it needs",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Duplicate the relevant sections into a CLAUDE.md inside each of the eight packages",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Keep one CLAUDE.md and prefix each rule with the package name it applies to",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Move all eight sets of standards into skills, invoked per package on demand",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["claude-md", "imports"],
+      "hints": ["One file per standard, imported where it applies."]
+    },
+    {
+      "id": "ccaf2-type-101",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "type-answer",
+      "question": "Which directory holds topic-specific rule files as an alternative to a monolithic CLAUDE.md?",
+      "answer": "`.claude/rules/` - files like `testing.md`, `api-conventions.md`, `deployment.md`, each of which can be path-scoped with YAML frontmatter so it loads only when relevant.",
+      "shortAnswer": ".claude/rules/",
+      "tags": ["rules", "claude-md"],
+      "hints": ["It sits next to commands/ and skills/."]
+    },
+    {
+      "id": "ccaf2-open-101",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "open",
+      "question": "How do path-specific rules work, and when do they beat a subdirectory CLAUDE.md?",
+      "answer": "A file in **`.claude/rules/`** with **YAML frontmatter containing a `paths` field of glob\npatterns**:\n\n```markdown\n---\npaths: [\"terraform/**/*\"]\n---\nAlways pin provider versions. Never inline a secret; reference the vault data source.\n```\n\nThe rule **loads only when files matching the glob are being edited**. Two consequences: irrelevant\ncontext stays out of the window, and token usage drops for every session that never touches those\nfiles.\n\n**When it beats a subdirectory `CLAUDE.md`**: when the convention follows a **file type** rather\nthan a **location**. The canonical example is test files - `**/*.test.tsx` matches them wherever\nthey live, and they are typically spread across the whole tree. A directory-level CLAUDE.md would\nhave to be created in every directory that contains tests, and maintained as new ones appear.\n\nSo the discriminator is one question: **is this convention about where the file is, or about what\nkind of file it is?**\n\n| Convention scoped by | Mechanism |\n|---|---|\n| A directory (`packages/api/`) | Subdirectory CLAUDE.md, or `paths` glob on that directory |\n| A file type, anywhere | `.claude/rules/` with a `paths` glob |\n| Everything, always | Project CLAUDE.md |",
+      "tags": ["rules", "path-scoping"],
+      "hints": ["Location or file type? That is the whole decision."]
+    },
+    {
+      "id": "ccaf2-quiz-103",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "Terraform conventions should load only when Terraform files are being edited. What do you write?",
+      "answer": "Path-scoped rules with YAML frontmatter glob patterns load only when matching files are edited, which reduces irrelevant context and token usage. A directory CLAUDE.md is a reasonable second choice here, but the glob generalizes to files outside that directory.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A `.claude/rules/` file with frontmatter `paths: [\"terraform/**/*\"]`",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A `CLAUDE.md` inside the terraform directory describing those conventions",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A project `CLAUDE.md` section that opens by naming the files it applies to",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A skill named terraform-conventions that Claude loads when it detects the files",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["rules", "path-scoping"],
+      "hints": ["There is a frontmatter field whose whole job is this."]
+    },
+    {
+      "id": "ccaf2-open-102",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "open",
+      "question": "What do the skill frontmatter options do, and how do you choose between a skill and CLAUDE.md?",
+      "answer": "A skill is a `SKILL.md` in **`.claude/skills/`** (project-scoped, shared through version\ncontrol) or **`~/.claude/skills/`** (personal). Its frontmatter carries three options that matter:\n\n- **`context: fork`** - run the skill in an **isolated sub-agent context**, so its output does not\n  pollute the main conversation. Use it for anything verbose (codebase analysis) or exploratory\n  (brainstorming alternatives) - the noise happens elsewhere and only the conclusion returns.\n- **`allowed-tools`** - restrict tool access **during skill execution**. Least privilege for this\n  one workflow: limit to file writes and a destructive command becomes unavailable regardless of\n  what the skill's prose says.\n- **`argument-hint`** - prompt the developer for required parameters when they invoke the skill\n  without arguments, instead of the skill guessing or failing.\n\n**Skill or CLAUDE.md?** By **how often it is relevant**:\n\n- **CLAUDE.md** - always-loaded **universal standards**. Every session pays for it, so it must earn\n  that.\n- **Skill** - **on-demand invocation for task-specific workflows**. A twenty-step deployment\n  procedure used monthly costs nothing on the sessions that do not deploy.\n\n**Personal customization without disrupting the team**: create a variant in `~/.claude/skills/`\nwith a **different name**. Same name would shadow the shared one and quietly diverge your\nbehaviour from everyone else's.",
+      "tags": ["skills", "frontmatter", "claude-md"],
+      "hints": ["Three frontmatter options: one isolates, one restricts, one asks."]
+    },
+    {
+      "id": "ccaf2-quiz-104",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "A codebase-analysis skill floods the main conversation with file listings before the real work starts. What fixes it?",
+      "answer": "context: fork runs the skill in an isolated sub-agent context, preventing skill outputs from polluting the main conversation. Compacting afterwards recovers space but the main session already spent it, and restricting tools does not make discovery quiet.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Add `context: fork` so the skill runs in an isolated sub-agent context",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Add `allowed-tools` limiting the skill to Read so it produces less output overall",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Move the skill body into a separate file the skill reads only when it needs to",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Run `/compact` after the skill finishes, reclaiming the space its output consumed",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["skills", "frontmatter", "context"],
+      "hints": ["Do not clean it up afterwards - have it happen somewhere else."]
+    },
+    {
+      "id": "ccaf2-quiz-105",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "You want a personal variant of a shared team skill, without affecting teammates. How?",
+      "answer": "Personal skill customization means creating variants in ~/.claude/skills/ with different names, to avoid affecting teammates. Reusing the name shadows the shared skill and silently diverges your behaviour from the team's.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Create it in `~/.claude/skills/` under a different name",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Create it in `~/.claude/skills/` with the same name, so yours takes precedence",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Edit the project skill and add a note that the change is a personal preference",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Copy it into `.claude/skills/` with a suffix, then gitignore that one file",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["skills", "scoping"],
+      "hints": ["Personal scope is half of it. The other half is the name."]
+    },
+    {
+      "id": "ccaf2-type-102",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "type-answer",
+      "question": "Which skill frontmatter option runs the skill in an isolated sub-agent context?",
+      "answer": "`context: fork`. It keeps verbose or exploratory skill output out of the main conversation, returning only what the session needs.",
+      "shortAnswer": "context: fork",
+      "tags": ["skills", "frontmatter"],
+      "hints": ["A key and a value, and the value is a git word."]
+    },
+    {
+      "id": "ccaf2-match-101",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "match",
+      "question": "Match each configuration surface to what belongs in it.",
+      "answer": "The organizing question is frequency and audience: always or sometimes, everyone or just you. Getting the last row wrong is the named cause of a teammate never receiving a convention.",
+      "matchPairs": [
+        {
+          "left": "Project CLAUDE.md",
+          "right": "Always-relevant universal standards"
+        },
+        {
+          "left": ".claude/rules/ with a paths glob",
+          "right": "Conventions for one file type, wherever it lives"
+        },
+        {
+          "left": ".claude/skills/",
+          "right": "A task-specific workflow used occasionally"
+        },
+        {
+          "left": ".claude/commands/",
+          "right": "A prompt a developer invokes by name"
+        },
+        {
+          "left": "~/.claude/CLAUDE.md",
+          "right": "Your own preference, on every project, shared with nobody"
+        }
+      ],
+      "tags": ["configuration", "claude-md", "skills"],
+      "hints": ["Two axes: how often it matters, and who gets it."]
+    },
+    {
+      "id": "ccaf2-open-103",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "open",
+      "question": "When is plan mode the right choice, and what is the Explore subagent for?",
+      "answer": "**Plan mode** is for tasks with **large-scale changes, multiple valid approaches,\narchitectural decisions, and multi-file modifications**. It lets the codebase be explored and the\ndesign settled **before** committing to changes, which is what prevents costly rework.\n\n**Direct execution** is for simple, well-scoped work: a single-file bug fix with a clear stack\ntrace, adding one validation conditional.\n\nConcrete calls from the guide:\n\n| Task | Mode |\n|---|---|\n| Microservice restructuring | Plan |\n| A library migration touching 45+ files | Plan |\n| Choosing between integration approaches with different infrastructure | Plan |\n| Single-file fix with a clear stack trace | Direct |\n| Adding a date validation conditional | Direct |\n\n**They compose.** Plan the library migration, then execute the planned approach directly - the\nquestion is rarely which one for the whole task, but which one for the phase you are in.\n\n**The Explore subagent** solves the adjacent problem: discovery is verbose, and a multi-phase task\ncan exhaust its context window on file listings and greps before reaching the work. Explore\nisolates the discovery phase and **returns summaries**, preserving the main conversation's context\nfor the actual task.",
+      "tags": ["plan-mode", "explore-subagent"],
+      "hints": [
+        "Count the files and count the viable approaches. Either number being high decides it."
+      ]
+    },
+    {
+      "id": "ccaf2-quiz-106",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "A stack trace points at one function and the fix is a missing null check. Plan mode or direct execution?",
+      "answer": "Direct execution is appropriate for simple, well-scoped changes - a single-file bug fix with a clear stack trace is the guide's own example. Plan mode is for large-scale change, multiple valid approaches, and architectural decisions.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Direct execution - the scope is clear and the change is contained",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Plan mode, because any production fix deserves a reviewed plan first",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Plan mode, since the null check may reveal other unguarded call sites",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Direct execution, but only after Explore has mapped the calling code",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["plan-mode"],
+      "hints": ["One file, one line, one clear cause."]
+    },
+    {
+      "id": "ccaf2-quiz-107",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "A multi-phase task keeps running out of context during its discovery phase. What is the mechanism for that?",
+      "answer": "The Explore subagent isolates verbose discovery output and returns summaries, preserving main conversation context - which is exactly what prevents context exhaustion during multi-phase tasks. Compacting is a recovery, not a preventive.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The Explore subagent, which isolates discovery and returns summaries",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Plan mode, which defers all file reading until the plan has been approved",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A skill with `allowed-tools` restricted to Read, keeping the discovery narrow",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Running `/compact` between the discovery phase and the implementation phase",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["explore-subagent", "context"],
+      "hints": ["Have the noisy part happen in someone else's window."]
+    },
+    {
+      "id": "ccaf2-open-104",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "open",
+      "question": "What are the iterative refinement techniques, and when does each apply?",
+      "answer": "Four techniques, each with a trigger:\n\n**1. Concrete input/output examples** - when a prose description is being interpreted\ninconsistently. Two or three examples of the actual transformation communicate what paragraphs of\ndescription cannot. This is the first thing to reach for when \"it keeps doing it slightly\ndifferently\".\n\n**2. Test-driven iteration** - write the test suite **first**, covering expected behaviour, edge\ncases, and performance requirements; then iterate by **sharing the failures**. The failing test is\na precise, machine-generated description of the gap.\n\n**3. The interview pattern** - have Claude **ask questions** to surface considerations you have not\nthought of, **before** implementing. The value is highest in unfamiliar domains: it raises cache\ninvalidation strategies and failure modes while they are still cheap to address.\n\n**4. Batched versus sequential fixes** - and this one has a real rule:\n\n- **Interacting** problems go in **one detailed message**, because fixing them separately means\n  each fix invalidates the last.\n- **Independent** problems go **sequentially**, one at a time, so each change is verifiable.\n\nGetting that backwards is a common waste: batching independent issues makes it unclear which change\ncaused what, and sequencing interacting issues sends you round in circles.",
+      "tags": ["iterative-refinement", "interview-pattern"],
+      "hints": ["Four techniques, and the last one is a rule about grouping, not about wording."]
+    },
+    {
+      "id": "ccaf2-quiz-108",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "A prose description of a data transformation keeps being implemented slightly differently. What is the most effective fix?",
+      "answer": "Concrete input/output examples are named as the most effective way to communicate expected transformations when prose descriptions are interpreted inconsistently. More prose - even better organized prose - is still prose.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Provide two or three concrete input/output examples of the transformation",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Rewrite the description as a numbered procedure with one action per step",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Add the edge cases to the description, since those are where it diverges",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Ask for the implementation plan first, then correct it before any code",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["iterative-refinement"],
+      "hints": ["Stop describing it and show it."]
+    },
+    {
+      "id": "ccaf2-quiz-109",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "You have five review findings, and fixing any one of them changes how the others should be fixed. How do you send them?",
+      "answer": "Interacting problems go in one message; independent problems are better fixed sequentially. Sequential iteration on interacting fixes means each one invalidates the previous.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "All five in a single detailed message, since the fixes interact",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "One at a time, verifying each fix before moving on to the next finding",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Grouped by file, so each message keeps its changes locally consistent",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Highest severity first, alone, then the remaining four together afterwards",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["iterative-refinement"],
+      "hints": ["They interact. What does fixing one in isolation do to the others?"]
+    },
+    {
+      "id": "ccaf2-type-103",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "type-answer",
+      "question": "What is the name of the technique where Claude asks questions to surface considerations before implementing?",
+      "answer": "The interview pattern. Most valuable in unfamiliar domains, where it raises things like cache invalidation strategy and failure modes before they are expensive.",
+      "shortAnswer": "the interview pattern",
+      "tags": ["iterative-refinement", "interview-pattern"],
+      "hints": ["It is named after a conversation where one side asks all the questions."]
+    },
+    {
+      "id": "ccaf2-quiz-110",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "A CI review re-runs after each new commit and the PR is filling with duplicate comments. What fixes it?",
+      "answer": "Including prior review findings in context and instructing Claude to report only new or still-unaddressed issues is the named skill. Reviewing only the newest commit misses issues introduced by the interaction between commits.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Include the prior findings and ask for only new or still-unaddressed issues",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Delete the previous comments before each run so only the latest set remains",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Run the review only on the newest commit's diff rather than the full branch",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Deduplicate the findings in the posting step by comparing their text content",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["ci", "review"],
+      "hints": ["The agent does not know what it already said unless you tell it."]
+    },
+    {
+      "id": "ccaf2-quiz-111",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "quiz",
+      "question": "Generated tests keep duplicating scenarios the suite already covers. What is missing from the invocation?",
+      "answer": "Providing existing test files in context is what stops duplicate scenarios, and documenting testing standards, valuable test criteria, and available fixtures in CLAUDE.md is what reduces low-value test output.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The existing test files, plus documented fixtures and test criteria in CLAUDE.md",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A higher turn limit, so the agent can read the suite before writing anything",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A stricter prompt telling the agent not to duplicate any existing test case",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A coverage report, so the agent writes tests only for the uncovered lines",
+          "isCorrect": false
+        }
+      ],
+      "tags": ["ci", "claude-md", "testing"],
+      "hints": ["It cannot avoid what it has not seen."]
+    },
+    {
+      "id": "ccaf2-type-104",
+      "subjectId": "ccaf-2-claude-code",
+      "type": "type-answer",
+      "question": "Which CLI flag pairs with `--output-format json` to enforce the shape of CI output?",
+      "answer": "`--json-schema`. Together they produce machine-parseable structured findings a later pipeline step can post as inline PR comments.",
+      "shortAnswer": "--json-schema",
+      "tags": ["ci", "cli", "structured-output"],
+      "hints": ["Two dashes, then the thing you want the output to obey."]
     }
   ]
 }
