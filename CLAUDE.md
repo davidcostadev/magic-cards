@@ -133,6 +133,30 @@ See `docs/architecture.md` section 13 for detailed phases:
 - **Config**: validated at startup (`@nestjs/config` + Zod, `src/config/env.ts`); prod requires `DATABASE_URL` + `JWT_SECRET`
 - **Key Entities**: User, Subject, Card, CardProgress, ReviewHistory
 
+## Authoring Card Content
+
+### Quiz distractors — length must not leak the answer
+
+When generating or editing the `choices` of a `quiz` card, the wrong alternatives must be
+written at roughly the **same word count** as the correct one. The hard rule: **the correct
+answer must never be the single longest option.** A tie for longest is fine; being strictly
+longest is not.
+
+**Why:** length becomes an unintended answer key. A learner scores by picking the longest
+option without knowing the content, and the card's accuracy signal stops measuring knowledge.
+This is measurable — count words per choice and compare the correct one against the longest
+distractor. Measure *strictly* longest: counting ties as bias wildly overstates the problem,
+since a card whose four options are all one word (`4` / `1` / `2` / `Unlimited`) is perfectly
+balanced.
+
+**How to apply:**
+- Count the words in all four choices after drafting; land them within a word or two.
+- Never pad the correct answer with qualifying clauses the distractors don't get. If the
+  correct answer needs a caveat to be correct, give the distractors comparable detail.
+- Every distractor must be a real position someone might hold — not obviously wrong, and not
+  much terser. The card should discriminate on the idea, not on the shape of the text.
+- The same reasoning applies to `match` card pairs and `type-answer` accepted forms.
+
 ## Notes for Future Sessions
 - `docs/architecture.md` and `CONTEXT.md` are the sources of truth
 - Build features test-first (TDD) — write the failing Vitest test before the implementation; full-stack flows are covered by Playwright E2E in Docker (ADR 0005)
