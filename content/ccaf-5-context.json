@@ -101,17 +101,17 @@
         },
         {
           "id": "b",
-          "text": "Summarize the conversation after every tool call",
+          "text": "Summarize the conversation after every tool call to reclaim the space",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Switch to a model with a bigger context window",
+          "text": "Switch to a model whose context window is large enough to hold the pages",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Raise `max_tokens`",
+          "text": "Cap the number of results the search tool is allowed to return",
           "isCorrect": false
         }
       ],

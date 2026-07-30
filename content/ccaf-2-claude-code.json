@@ -150,17 +150,17 @@
         },
         {
           "id": "b",
-          "text": "The project file replaces the user file entirely",
+          "text": "The project file replaces the user file entirely for work in this repository",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "The user file wins because user scope has higher precedence",
+          "text": "The user file wins, because user-level configuration outranks project scope",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Only the file nearest the working directory is loaded",
+          "text": "Only the file nearest the working directory loads; the other is ignored entirely",
           "isCorrect": false
         }
       ],
@@ -340,17 +340,17 @@
         },
         {
           "id": "b",
-          "text": "`model` - it determines quality",
+          "text": "`model` - it decides the capability tier the subagent will run at",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "`name` - the main agent matches on the name",
+          "text": "`name` - the main agent matches the task against the subagent's name",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "`tools` - without it the subagent cannot run",
+          "text": "`tools` - without an explicit tool list the subagent cannot act on anything at all",
           "isCorrect": false
         }
       ],

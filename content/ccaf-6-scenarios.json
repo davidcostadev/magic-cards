@@ -94,22 +94,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Enforced in the `issue_refund` tool implementation, which routes anything over $500 to approval",
+          "text": "Enforced in the `process_refund` implementation, which routes anything over $500 to approval",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "In the system prompt as a hard rule",
+          "text": "In the system prompt, as a hard rule the agent must always follow",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "As `maximum: 500` in the tool's JSON schema",
+          "text": "As a `maximum: 500` constraint in the refund tool's input schema",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "In a CLAUDE.md file for the project",
+          "text": "In the project CLAUDE.md, so the rule is versioned alongside the code",
           "isCorrect": false
         }
       ],
@@ -156,22 +156,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Have each worker return a compact structured summary with citations",
+          "text": "Have each subagent return a compact structured summary with citations",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Run the workers sequentially so results arrive spread out",
+          "text": "Run the subagents sequentially so their results arrive spread out",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Move to a model with a larger context window",
+          "text": "Move to a model with a larger context window for the coordinator",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Increase the orchestrator's `max_tokens`",
+          "text": "Compact the coordinator's history each time a subagent reports back",
           "isCorrect": false
         }
       ],
@@ -249,22 +249,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Put the conventions in the repository `CLAUDE.md`, and enforce the non-negotiable ones with hooks",
+          "text": "Put the conventions in the repository `CLAUDE.md`, which is how a CI run learns them",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Add the conventions to each workflow step's prompt string",
+          "text": "Add the conventions to each workflow step's prompt string in the YAML",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Raise the model tier for CI runs",
+          "text": "Raise the model tier for CI runs so the agent follows conventions better",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Enable `--dangerously-skip-permissions` so the agent is not interrupted",
+          "text": "Have a second CI job check the conventions and fail the build when they are violated",
           "isCorrect": false
         }
       ],
@@ -280,22 +280,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Chunk with overlap, extract per chunk with the same schema, merge and de-duplicate in code",
+          "text": "Chunk with overlap, extract per chunk, then merge and de-duplicate in code",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Truncate each document to the window size",
+          "text": "Truncate each document to the context window and extract from what remains",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Summarize the document first, then extract from the summary",
+          "text": "Summarize the document first, then run the extraction against the summary",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Split at exact window boundaries with no overlap",
+          "text": "Split at exact window boundaries with no overlap, then concatenate the results",
           "isCorrect": false
         }
       ],
@@ -311,22 +311,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Forced tool schema, business-rule validation in code, and a confidence field that routes uncertain records to review",
+          "text": "A forced tool schema, semantic validation in code, and confidence routing to review",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "A strongly worded instruction to be accurate",
+          "text": "A strongly worded instruction to be accurate and to double-check every field",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Extended thinking with a large budget on every document",
+          "text": "Running each extraction twice and keeping only the fields where both runs agree",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Running each extraction twice and keeping the longer result",
+          "text": "A nightly job that re-extracts every record and flags the ones that changed",
           "isCorrect": false
         }
       ],
@@ -373,22 +373,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "State it is out of scope and call the escalation tool with the context gathered so far",
+          "text": "Say it is out of scope and call the escalation tool with context",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Answer as best it can from general knowledge",
+          "text": "Answer from general knowledge, flagging that it falls outside the domain",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Return an empty response",
+          "text": "Return an empty response, so the customer knows the agent cannot help",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Loop until it finds a tool that seems related",
+          "text": "Keep trying tools until one of them returns something related to the question asked",
           "isCorrect": false
         }
       ],

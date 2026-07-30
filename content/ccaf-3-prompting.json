@@ -72,17 +72,17 @@
         },
         {
           "id": "b",
-          "text": "Instruct in the system prompt to output only valid JSON",
+          "text": "Instruct in the system prompt to output only valid JSON, then parse it",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Set temperature to 0 and parse the text block",
+          "text": "Validate the parsed text and retry the request whenever validation fails",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Use a stop sequence after the closing brace",
+          "text": "Ask for JSON inside a fenced code block and extract the fence contents",
           "isCorrect": false
         }
       ],
@@ -98,17 +98,17 @@
       "choices": [
         {
           "id": "a",
-          "text": "Contract first inside XML tags, then the instructions and question at the end",
+          "text": "Contract first, then the instructions and the question at the very end",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Question first, then the contract",
+          "text": "Question first, then the contract, so the model knows what to look for",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Question first and repeated again after the contract",
+          "text": "Question first and then repeated after the contract, for emphasis",
           "isCorrect": false
         },
         {
@@ -131,22 +131,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Add an `unknown` value to the enum and state when to use it",
+          "text": "Add an `unclear` value to the enum and state when to use it",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Lower the temperature to 0",
+          "text": "Instruct the classifier never to guess when the ticket is ambiguous",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Instruct it to never guess",
+          "text": "Route the ambiguous tickets to a second classification pass",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Increase `max_tokens` so it can deliberate longer",
+          "text": "Add more categories to the enum so every ticket has somewhere it fits",
           "isCorrect": false
         }
       ],
@@ -162,22 +162,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Four diverse input/output examples of the desired tone, wrapped in XML tags",
+          "text": "Three or four diverse examples of the tone, including one borderline case",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Three paragraphs describing the tone in detail",
+          "text": "Three paragraphs describing the tone, its register, and what to avoid",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "A single example repeated for emphasis",
+          "text": "A single carefully written example, repeated so the pattern is unmistakable",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "A high temperature so the model can find the right voice",
+          "text": "A detailed style guide that the model reads before drafting each reply",
           "isCorrect": false
         }
       ],
@@ -198,17 +198,17 @@
         },
         {
           "id": "b",
-          "text": "One JSON object containing both the reply text and the ticket fields",
+          "text": "One JSON object holding both the reply text and all the ticket fields",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Two separate API calls with the same conversation history",
+          "text": "Two separate API calls that share the same conversation history",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Prose reply with the ticket fields appended as a markdown table",
+          "text": "A prose reply with the ticket fields appended as a markdown table",
           "isCorrect": false
         }
       ],
@@ -224,22 +224,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Allow `null` in the schema, instruct that missing fields must be null, and require source quotes",
+          "text": "Allow `null` in the schema, require null for missing fields, and require source quotes",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Increase the model's thinking budget",
+          "text": "Instruct the model to be accurate and never invent a value it cannot find",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Ask it to be accurate and not hallucinate",
+          "text": "Mark every field required, so a missing value fails validation instead of passing",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Add more required fields to the schema",
+          "text": "Re-run each extraction twice and keep only the fields where both runs agree",
           "isCorrect": false
         }
       ],

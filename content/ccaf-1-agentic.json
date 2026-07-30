@@ -327,22 +327,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Hitting the cap is a failure, but it is reported as a successful answer",
+          "text": "Hitting the cap is a failure, but it is reported as success",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Ten iterations is too few for any real agent",
+          "text": "Ten iterations is too few for the multi-step tickets this agent handles",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Iteration caps are forbidden in agentic systems",
+          "text": "The accumulated text may include a tool call that never received its result",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "The loop should count tool calls instead of iterations",
+          "text": "Counting iterations misses turns where the model emitted several tool calls",
           "isCorrect": false
         }
       ],
@@ -422,22 +422,22 @@
       "choices": [
         {
           "id": "a",
-          "text": "Define a `submit_result` tool whose input schema is the verdict, and treat its call as completion",
+          "text": "Define a `submit_result` tool whose input schema is the verdict",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Ask in the system prompt for JSON only and parse the final text block",
+          "text": "Ask in the system prompt for JSON only, then parse the final text block",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Instruct the model to end with the sentinel `<<<JSON>>>` and split on it",
+          "text": "Instruct the model to end with a sentinel line, then split the response on it",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Lower the temperature to 0 so the JSON is always valid",
+          "text": "Validate the final text against the schema and re-run the whole agent on failure",
           "isCorrect": false
         }
       ],
@@ -489,17 +489,17 @@
         },
         {
           "id": "b",
-          "text": "Increase the orchestrator's `max_tokens`",
+          "text": "Run the workers sequentially so their outputs arrive spread across turns",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Run the workers sequentially instead of in parallel",
+          "text": "Give the orchestrator a model whose context window holds every worker's output",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Move the worker outputs into the system prompt",
+          "text": "Compact the orchestrator's history each time a worker's results come back",
           "isCorrect": false
         }
       ],
@@ -520,17 +520,17 @@
         },
         {
           "id": "b",
-          "text": "Add 'never refund more than $500 without approval' to the system prompt",
+          "text": "Add a system prompt rule forbidding any refund above $500 without approval",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Put a `max: 500` constraint in the tool's JSON schema and rely on it",
+          "text": "Put a `maximum: 500` constraint in the tool's input schema and rely on the model to honour it",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Use a lower temperature so the model is more conservative with amounts",
+          "text": "Describe the approval requirement in the tool description so the model asks first",
           "isCorrect": false
         }
       ],

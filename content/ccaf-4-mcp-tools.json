@@ -114,17 +114,17 @@
         },
         {
           "id": "b",
-          "text": "Add examples to the system prompt showing which to pick",
+          "text": "Add examples to the system prompt showing which of the two to pick",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Lower the temperature",
+          "text": "Merge them into a single tool with a `mode` argument that selects the intended behaviour",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Merge them into one tool with a `mode` argument",
+          "text": "Reorder the tool list so the more frequently correct one is declared first",
           "isCorrect": false
         }
       ],
@@ -145,17 +145,17 @@
         },
         {
           "id": "b",
-          "text": "Move to a model with a larger context window",
+          "text": "Summarize the conversation after each tool call so the rows get compressed",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "Summarize the conversation after every tool call",
+          "text": "Move to a model whose context window can hold the full result set",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Lower `max_tokens` so responses are shorter",
+          "text": "Store the rows in a file and give the agent the path to read",
           "isCorrect": false
         }
       ],
@@ -750,7 +750,7 @@
       "choices": [
         {
           "id": "a",
-          "text": "Grep for entry points, then Read to follow imports and trace the flows that matter",
+          "text": "Grep for entry points, then Read to follow imports and trace the flows",
           "isCorrect": true
         },
         {
