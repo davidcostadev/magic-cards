@@ -13,7 +13,7 @@ import {
   sql,
 } from 'drizzle-orm';
 import { ApiError } from '../../common/errors/api-error';
-import { canSeeSubject } from '../../common/visibility';
+import { canSeeSubject, isSubjectInMyList } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
 import {
   type Card,
@@ -59,6 +59,21 @@ export class LearningService {
   ) {}
 
   /**
+   * Which subjects a session — and every counter behind the "choose what to study" screen — may
+   * draw from. With an explicit `subjectId`: that subject, as long as the learner can see it, so a
+   * catalog subject can be studied straight from its page. Without one: only the subjects in the
+   * learner's list. The public catalog is visible to everyone, so scoping by visibility alone
+   * served cards (and counted mistakes) from subjects the learner never added.
+   */
+  private studyScope(userId: string, subjectId?: string): SQL {
+    return (
+      subjectId
+        ? and(eq(cards.subjectId, subjectId), canSeeSubject(userId))
+        : and(canSeeSubject(userId), isSubjectInMyList(userId))
+    ) as SQL;
+  }
+
+  /**
    * Builds the study batch for one session: seen cards ordered by **recall probability** (the ones
    * you're most likely to have forgotten first, capped at {@link SESSION_SIZE}), then new
    * (never-reviewed) cards to top the session up to that size. So a session holds at most
@@ -87,7 +102,7 @@ export class LearningService {
     if (mistakes) return this.getMistakeCards(userId, subjectId);
 
     const now = new Date().toISOString();
-    const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
+    const scope = this.studyScope(userId, subjectId);
     const typeFilter = type ? eq(cards.type, type) : undefined;
     // Weakest-first score: seconds overdue ÷ interval. Higher = more likely forgotten. Computed
     // from the NOT-NULL nextReviewDate (= lastReview + interval), so it needs no lastReviewDate.
@@ -101,10 +116,9 @@ export class LearningService {
       .where(
         and(
           eq(cardProgress.userId, userId),
-          canSeeSubject(userId),
+          scope,
           // Normal sessions only serve due/overdue cards; ahead mode drops this gate.
           ahead ? undefined : lte(cardProgress.nextReviewDate, now),
-          subjectFilter,
           typeFilter
         )
       )
@@ -124,7 +138,7 @@ export class LearningService {
               cardProgress,
               and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
             )
-            .where(and(canSeeSubject(userId), isNull(cardProgress.id), subjectFilter, typeFilter))
+            .where(and(scope, isNull(cardProgress.id), typeFilter))
             .orderBy(asc(cards.id))
             .limit(maxNew)
         : [];
@@ -145,9 +159,11 @@ export class LearningService {
    * card only *checks* the answer without recording a review, so a mistake survives the session it
    * was made in and is cleared by the next session that gets it right.
    *
-   * Shared by the practice session and its counter so both read the same rule.
+   * Shared by the practice session and its counter so both read the same rule. `scope` (from
+   * {@link studyScope}) keeps a mistake made in a subject the learner has since dropped from their
+   * list out of the count — the review history stays, it just isn't part of today's pool.
    */
-  private pendingMistakes(userId: string, subjectFilter?: SQL) {
+  private pendingMistakes(userId: string, scope: SQL) {
     return (
       this.db
         .select({
@@ -164,14 +180,7 @@ export class LearningService {
           cardProgress,
           and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, userId))
         )
-        .where(
-          and(
-            eq(reviewHistory.userId, userId),
-            canSeeSubject(userId),
-            ne(cardProgress.status, 'mastered'),
-            subjectFilter
-          )
-        )
+        .where(and(eq(reviewHistory.userId, userId), scope, ne(cardProgress.status, 'mastered')))
         .groupBy(cards.id)
         // The latest review's quality. Ids are UUIDv7 (monotonic), so they break same-millisecond ties.
         .having(
@@ -188,8 +197,7 @@ export class LearningService {
    * are returned in the `due` bucket so the session builds them like any other batch.
    */
   private async getMistakeCards(userId: string, subjectId?: string): Promise<SessionCards> {
-    const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
-    const pending = this.pendingMistakes(userId, subjectFilter).as('pending');
+    const pending = this.pendingMistakes(userId, this.studyScope(userId, subjectId)).as('pending');
 
     const rows = await this.db
       .select(getTableColumns(cards))
@@ -220,7 +228,7 @@ export class LearningService {
     mistakesTotal: number;
   }> {
     const now = new Date().toISOString();
-    const subjectFilter = subjectId ? eq(cards.subjectId, subjectId) : undefined;
+    const scope = this.studyScope(userId, subjectId);
     const dueRows = await this.db
       .select({ type: cards.type, count: sql<number>`count(*)::int` })
       .from(cards)
@@ -231,8 +239,7 @@ export class LearningService {
       )
       .where(
         and(
-          canSeeSubject(userId),
-          subjectFilter,
+          scope,
           // Never reviewed (no progress row) OR overdue — the same gate as the study queue.
           or(isNull(cardProgress.id), lte(cardProgress.nextReviewDate, now))
         )
@@ -244,13 +251,13 @@ export class LearningService {
       .select({ type: cards.type, count: sql<number>`count(*)::int` })
       .from(cards)
       .innerJoin(subjects, eq(cards.subjectId, subjects.id))
-      .where(and(canSeeSubject(userId), subjectFilter))
+      .where(scope)
       .groupBy(cards.type);
 
     // Pending mistakes — drives the "practice mistakes" tile, and drops as the learner clears them.
     const [mistakeRow] = await this.db
       .select({ count: sql<number>`count(*)::int` })
-      .from(this.pendingMistakes(userId, subjectFilter).as('pending'));
+      .from(this.pendingMistakes(userId, scope).as('pending'));
 
     const zero = (): Record<Card['type'], number> => ({
       open: 0,

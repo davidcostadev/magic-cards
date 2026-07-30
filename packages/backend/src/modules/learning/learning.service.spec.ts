@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDatabase, type DatabaseHandle, type DrizzleDB } from '../../db/client';
-import { cardProgress, cards, reviewHistory, subjects, users } from '../../db/schema';
+import { cardProgress, cards, reviewHistory, subjects, userSubjects, users } from '../../db/schema';
 import { GradingService } from './grading.service';
 import { LearningService } from './learning.service';
 import { Sm2Service } from './sm2.service';
@@ -46,6 +46,8 @@ beforeEach(async () => {
   db = handle.db;
   await db.insert(users).values({ id: 'u1', email: 'u1@t.com', passwordHash: 'x', username: 'u1' });
   await db.insert(subjects).values({ id: 's1', userId: 'u1', title: 'S' });
+  // Creating a subject adds it to the owner's list, so every study query sees it.
+  await db.insert(userSubjects).values({ userId: 'u1', subjectId: 's1' });
 });
 
 afterEach(async () => {
@@ -313,6 +315,94 @@ describe('LearningService.getTypeCounts — reviewable pool', () => {
 
     const counts = await service().getTypeCounts('u1');
     expect(counts.mistakesTotal).toBe(2); // only a and b
+  });
+});
+
+describe("LearningService — subject scope (only the learner's own list)", () => {
+  /** A public catalog subject the learner can SEE but has not added to their list. */
+  async function addUnlistedPublicSubject() {
+    await db.insert(subjects).values({ id: 's2', userId: 'sys', title: 'Catalog', isPublic: true });
+    await db.insert(cards).values({ id: 'x1', subjectId: 's2', question: 'x1', answer: 'a' });
+    await db
+      .insert(cards)
+      .values({ id: 'x2', subjectId: 's2', type: 'quiz', question: 'x2', answer: 'a' });
+  }
+
+  beforeEach(async () => {
+    await db
+      .insert(users)
+      .values({ id: 'sys', email: 'sys@t.com', passwordHash: 'x', username: 'sys' });
+  });
+
+  it('leaves cards from a visible-but-not-added subject out of an unscoped session', async () => {
+    await addCard('mine');
+    await addUnlistedPublicSubject();
+
+    const { due, new: newCards } = await service().getSessionCards('u1');
+    expect([...due, ...newCards].map((c) => c.id)).toEqual(['mine']);
+  });
+
+  it('leaves them out of an unscoped review-ahead session too', async () => {
+    await addCard('mine');
+    await addFutureProgress('mine', 3);
+    await addUnlistedPublicSubject();
+    await db.insert(cardProgress).values({
+      userId: 'u1',
+      cardId: 'x1',
+      interval: 10,
+      easeFactor: 2.5,
+      repetitions: 3,
+      nextReviewDate: new Date(Date.now() + DAY_MS).toISOString(),
+      status: 'reviewing',
+    });
+
+    const { due, new: newCards } = await service().getSessionCards(
+      'u1',
+      undefined,
+      undefined,
+      true
+    );
+    expect([...due, ...newCards].map((c) => c.id)).toEqual(['mine']);
+  });
+
+  it('leaves them out of the type counts (due and reviewable alike)', async () => {
+    await addCard('mine');
+    await addUnlistedPublicSubject();
+
+    const counts = await service().getTypeCounts('u1');
+    expect(counts.total).toBe(1);
+    expect(counts.reviewableTotal).toBe(1);
+    expect(counts.byType.quiz).toBe(0);
+    expect(counts.reviewableByType.quiz).toBe(0);
+  });
+
+  it('drops past mistakes made in a subject the learner has since removed from their list', async () => {
+    await addUnlistedPublicSubject();
+    await db.insert(cardProgress).values({
+      userId: 'u1',
+      cardId: 'x1',
+      interval: 5,
+      easeFactor: 2.5,
+      repetitions: 2,
+      nextReviewDate: new Date(Date.now() - DAY_MS).toISOString(),
+      lastReviewDate: new Date().toISOString(),
+      status: 'reviewing',
+    });
+    await db
+      .insert(reviewHistory)
+      .values({ userId: 'u1', cardId: 'x1', subjectId: 's2', quality: 1, timeSpent: 1 });
+
+    expect((await service().getTypeCounts('u1')).mistakesTotal).toBe(0);
+    const { due } = await service().getSessionCards('u1', undefined, undefined, false, true);
+    expect(due).toHaveLength(0);
+  });
+
+  it('still studies a not-added subject when the learner picks it explicitly', async () => {
+    await addUnlistedPublicSubject();
+
+    const { new: newCards } = await service().getSessionCards('u1', 's2');
+    expect(newCards.map((c) => c.id)).toEqual(['x1', 'x2']);
+    expect((await service().getTypeCounts('u1', 's2')).reviewableTotal).toBe(2);
   });
 });
 

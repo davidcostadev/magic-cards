@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDatabase, type DatabaseHandle, type DrizzleDB } from '../../db/client';
-import { cardProgress, cards, reviewHistory, subjects, users } from '../../db/schema';
+import { cardProgress, cards, reviewHistory, subjects, userSubjects, users } from '../../db/schema';
 import { Sm2Service } from '../learning/sm2.service';
 import { DashboardService } from './dashboard.service';
 
@@ -54,6 +54,8 @@ beforeEach(async () => {
     .insert(users)
     .values({ id: 'u1', email: 'u1@t.com', passwordHash: 'x', username: 'u1', dailyGoal: 2 });
   await db.insert(subjects).values({ id: 's1', userId: 'u1', title: 'S' });
+  // Creating a subject adds it to the owner's list, which is what the card pool counts.
+  await db.insert(userSubjects).values({ userId: 'u1', subjectId: 's1' });
   for (const id of ['c1', 'c2', 'c3', 'c4']) {
     await db.insert(cards).values({ id, subjectId: 's1', question: id, answer: 'a' });
   }
@@ -122,6 +124,25 @@ describe('DashboardService.getStats', () => {
       learning: 1,
       reviewing: 1,
       mastered: 1,
+    });
+  });
+
+  it("leaves cards from subjects outside the learner's list out of the breakdown", async () => {
+    await db
+      .insert(users)
+      .values({ id: 'sys', email: 'sys@t.com', passwordHash: 'x', username: 'sys' });
+    await db.insert(subjects).values({ id: 's2', userId: 'sys', title: 'Catalog', isPublic: true });
+    // Visible in the catalog, never added: neither its untouched cards nor a stale progress row
+    // from back when it was on the list should show up.
+    await db.insert(cards).values({ id: 'x1', subjectId: 's2', question: 'x1', answer: 'a' });
+    await db.insert(cards).values({ id: 'x2', subjectId: 's2', question: 'x2', answer: 'a' });
+    await addProgress('x1', { status: 'mastered' });
+
+    expect((await service().getStats('u1')).cardsByStatus).toEqual({
+      new: 4,
+      learning: 0,
+      reviewing: 0,
+      mastered: 0,
     });
   });
 });

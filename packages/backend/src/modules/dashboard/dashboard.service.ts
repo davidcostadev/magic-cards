@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gte, lt, type SQL, sql } from 'drizzle-orm';
-import { canSeeSubject } from '../../common/visibility';
+import { canSeeSubject, isSubjectInMyList } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
 import { cardProgress, cards, reviewHistory, subjects, users } from '../../db/schema';
 import { Sm2Service } from '../learning/sm2.service';
@@ -169,26 +169,38 @@ export class DashboardService {
     return streak;
   }
 
+  /**
+   * The learner's card pool broken down by status. Scoped to the subjects on their list — the
+   * public catalog is visible to everyone, so counting it here reported thousands of "new" cards
+   * the learner never chose to study. Progress rows are scoped the same way, so dropping a subject
+   * from the list takes its cards out of both sides of the breakdown at once.
+   */
   private async cardsByStatus(userId: string): Promise<DashboardStats['cardsByStatus']> {
-    const [rows, totalCards, withProgress] = await Promise.all([
+    const inMyList = and(canSeeSubject(userId), isSubjectInMyList(userId));
+    const [rows, totalCards] = await Promise.all([
       this.db
         .select({ status: cardProgress.status, count: countInt })
         .from(cardProgress)
-        .where(eq(cardProgress.userId, userId))
+        .innerJoin(cards, eq(cardProgress.cardId, cards.id))
+        .innerJoin(subjects, eq(cards.subjectId, subjects.id))
+        .where(and(eq(cardProgress.userId, userId), inMyList))
         .groupBy(cardProgress.status),
       this.db
         .select({ count: countInt })
         .from(cards)
         .innerJoin(subjects, eq(cards.subjectId, subjects.id))
-        .where(canSeeSubject(userId)),
-      this.db.select({ count: countInt }).from(cardProgress).where(eq(cardProgress.userId, userId)),
+        .where(inMyList),
     ]);
 
     const result = { new: 0, learning: 0, reviewing: 0, mastered: 0 };
-    for (const row of rows) result[row.status] += row.count;
+    let withProgress = 0;
+    for (const row of rows) {
+      result[row.status] += row.count;
+      withProgress += row.count;
+    }
 
     // Never-reviewed cards (no progress row) are new.
-    result.new += (totalCards[0]?.count ?? 0) - (withProgress[0]?.count ?? 0);
+    result.new += (totalCards[0]?.count ?? 0) - withProgress;
     return result;
   }
 }

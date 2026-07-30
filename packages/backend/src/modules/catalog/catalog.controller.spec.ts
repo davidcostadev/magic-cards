@@ -853,7 +853,13 @@ describe('public content is visible + studyable by any user', () => {
     const list = await auth(request(app.getHttpServer()).get('/v1/subjects'));
     expect(list.body.data.some((s: { id: string }) => s.id === subject.id)).toBe(true);
 
-    // ...studyable (the public card is in the queue)...
+    // ...but not in the study queue until it's added to the learner's list (onboarding does this):
+    // seeing the whole catalog is not the same as studying it.
+    const before = await auth(request(app.getHttpServer()).get('/v1/review_queue'));
+    expect(before.body.new.some((c: { question: string }) => c.question === 'Big-O?')).toBe(false);
+
+    // ...studyable once added (the public card is in the queue)...
+    await auth(request(app.getHttpServer()).post(`/v1/subjects/${subject.id}/selection`));
     const queue = await auth(request(app.getHttpServer()).get('/v1/review_queue'));
     expect(queue.body.new.some((c: { question: string }) => c.question === 'Big-O?')).toBe(true);
 
@@ -941,6 +947,10 @@ describe('browsing public cards reveals full answers (but stays read-only)', () 
     );
 
     const token = await signupAndToken(app, 'studier@test.com', 'studier');
+    // The queue only serves subjects on the learner's list, so add this one first.
+    await request(app.getHttpServer())
+      .post(`/v1/subjects/${subject.id}/selection`)
+      .set('Authorization', `Bearer ${token}`);
     const queue = await request(app.getHttpServer())
       .get('/v1/review_queue')
       .set('Authorization', `Bearer ${token}`);
