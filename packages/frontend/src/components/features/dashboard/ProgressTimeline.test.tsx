@@ -27,6 +27,24 @@ const SESSIONS: StudySession[] = [
   },
 ];
 
+/** jsdom has no ResizeObserver; this one records what it was asked to watch. */
+class FakeResizeObserver {
+  static observed: Element[] = [];
+  private callback: ResizeObserverCallback;
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+  }
+  observe(element: Element) {
+    FakeResizeObserver.observed.push(element);
+    this.callback(
+      [{ contentRect: { width: 900 } } as unknown as ResizeObserverEntry],
+      this as unknown as ResizeObserver
+    );
+  }
+  unobserve() {}
+  disconnect() {}
+}
+
 describe('ProgressTimeline', () => {
   it('tells the learner what to do when there is no history yet', () => {
     render(<ProgressTimeline sessions={[]} />);
@@ -63,6 +81,21 @@ describe('ProgressTimeline', () => {
     expect(within(rows[2]).getByText('85%')).toBeInTheDocument();
     expect(within(rows[2]).getByText('20')).toBeInTheDocument();
     expect(within(rows[2]).getByText('4')).toBeInTheDocument();
+  });
+
+  it('measures the chart box when the sessions only arrive after the first render', () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+    FakeResizeObserver.observed = [];
+
+    // The dashboard mounts this card empty and fills it when the query resolves; the chart
+    // has to be measured then, or it stays at its fallback width instead of filling the card.
+    const { rerender } = render(<ProgressTimeline sessions={[]} />);
+    expect(FakeResizeObserver.observed).toHaveLength(0);
+
+    rerender(<ProgressTimeline sessions={SESSIONS} />);
+    expect(FakeResizeObserver.observed).toHaveLength(1);
+
+    vi.unstubAllGlobals();
   });
 
   it('reveals the detail of a turn on keyboard focus', async () => {

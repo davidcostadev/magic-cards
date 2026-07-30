@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { StudySession } from '@/api/queries/dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,27 +85,34 @@ function barPath(x: number, y: number, width: number, height: number, radius = 4
   return `M${x},${bottom} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + width - r},${y} Q${x + width},${y} ${x + width},${y + r} L${x + width},${bottom} Z`;
 }
 
-/** Live width of the chart box, so 1 SVG unit stays 1 CSS pixel and the text never distorts. */
-function useElementWidth<T extends HTMLElement>(ref: RefObject<T | null>): number {
+/**
+ * Live width of the chart box, so 1 SVG unit stays 1 CSS pixel and the text never distorts.
+ *
+ * A callback ref, not an effect over a `useRef`: the chart box only mounts once the sessions
+ * arrive (before that the card shows the empty state), and an effect that already ran with a
+ * null ref would never come back — leaving the chart stuck at its fallback width.
+ */
+function useElementWidth<T extends HTMLElement>(): [number, (node: T | null) => void] {
   const [width, setWidth] = useState(0);
+  const observer = useRef<ResizeObserver | null>(null);
 
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [ref]);
+  const measure = useCallback((node: T | null) => {
+    observer.current?.disconnect();
+    observer.current = null;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    setWidth(node.getBoundingClientRect().width);
+    observer.current = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    observer.current.observe(node);
+  }, []);
 
-  return width;
+  return [width, measure];
 }
 
 export function ProgressTimeline({ sessions, subtitle, className }: ProgressTimelineProps) {
   const { t, i18n } = useTranslation();
   const [metric, setMetric] = useState<Metric>('accuracy');
   const [active, setActive] = useState<number | null>(null);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const measured = useElementWidth(boxRef);
+  const [measured, boxRef] = useElementWidth<HTMLDivElement>();
   const width = measured || FALLBACK_WIDTH;
 
   // A turn that scrolls out of the data (subject switch, reset) shouldn't keep a stale tooltip.
