@@ -17,6 +17,7 @@ import {
   useDeleteCard,
   useUpdateCard,
 } from '@/api/queries/cards';
+import { useProgressTimeline } from '@/api/queries/dashboard';
 import { useCardReports } from '@/api/queries/reports';
 import { useSubject, useSubjectCardStats, useSubjectStats } from '@/api/queries/subjects';
 import { SortSelect } from '@/components/common/SortSelect';
@@ -25,6 +26,7 @@ import { CardList } from '@/components/features/cards/CardList';
 import { CardView } from '@/components/features/cards/CardView';
 import { filterCards } from '@/components/features/cards/filterCards';
 import { CARD_SORTS, type CardSort, sortCards } from '@/components/features/cards/sortCards';
+import { ProgressTimeline } from '@/components/features/dashboard/ProgressTimeline';
 import { getSubjectIcon } from '@/components/features/subjects/subjectIcons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { CardContent, CardHeader, CardTitle, Card as UiCard } from '@/components/ui/card';
@@ -45,6 +47,7 @@ export function SubjectDetailPage() {
   const { data: reports = [] } = useCardReports(subjectId);
   const { data: stats } = useSubjectStats(subjectId);
   const { data: cardStats } = useSubjectCardStats(subjectId);
+  const { data: timeline = [] } = useProgressTimeline(subjectId);
   const createCard = useCreateCard();
   const updateCard = useUpdateCard();
   const deleteCard = useDeleteCard();
@@ -232,6 +235,15 @@ export function SubjectDetailPage() {
             </div>
           </CardContent>
         </UiCard>
+      )}
+
+      {/* Only once there is history: an empty chart on a never-studied subject is just noise. */}
+      {timeline.length > 0 && (
+        <ProgressTimeline
+          sessions={timeline}
+          subtitle={t('subjects.timelineSubtitle')}
+          className="mb-6"
+        />
       )}
 
       {cards.length > 0 && (

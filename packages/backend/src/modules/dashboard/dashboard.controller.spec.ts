@@ -67,6 +67,21 @@ describe('Dashboard endpoints', () => {
     expect(res.body).toEqual({ today: 0, tomorrow: 0, thisWeek: 0 });
   });
 
+  it('returns the study turns in the list envelope', async () => {
+    await seedReviewedCard();
+
+    const res = await auth(request(app.getHttpServer()).get('/v1/dashboard/timeline'));
+    expect(res.status).toBe(200);
+    expect(res.body.object).toBe('list');
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0]).toMatchObject({ reviews: 1, correct: 1, accuracy: 100, mastered: 0 });
+  });
+
+  it('rejects a timeline limit outside the allowed range', async () => {
+    const res = await auth(request(app.getHttpServer()).get('/v1/dashboard/timeline?limit=500'));
+    expect(res.status).toBe(400);
+  });
+
   it('requires authentication', async () => {
     const res = await request(app.getHttpServer()).get('/v1/dashboard/stats');
     expect(res.status).toBe(401);

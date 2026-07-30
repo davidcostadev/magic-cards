@@ -3,7 +3,9 @@ import { and, asc, desc, eq, gte, lt, type SQL, sql } from 'drizzle-orm';
 import { canSeeSubject } from '../../common/visibility';
 import { DRIZZLE, type DrizzleDB } from '../../db/client';
 import { cardProgress, cards, reviewHistory, subjects, users } from '../../db/schema';
+import { Sm2Service } from '../learning/sm2.service';
 import type { DashboardStats, Upcoming, WeakCard } from './dto/dashboard.dto';
+import { buildTimeline, type StudySession } from './timeline';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_DAILY_GOAL = 20;
@@ -25,7 +27,10 @@ const countInt = sql<number>`count(*)::int`;
 
 @Injectable()
 export class DashboardService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly sm2: Sm2Service
+  ) {}
 
   async getStats(userId: string): Promise<DashboardStats> {
     const [user] = await this.db
@@ -100,6 +105,32 @@ export class DashboardService {
       dueCount(lt(cardProgress.nextReviewDate, endWeek)),
     ]);
     return { today, tomorrow, thisWeek };
+  }
+
+  /**
+   * Progress turn by turn: how each study session went, so the learner sees a trend and not
+   * only today's snapshot. The whole log is read (optionally narrowed to one subject) because
+   * the mastered curve is replayed from it — `limit` then trims the turns actually charted.
+   */
+  async getTimeline(
+    userId: string,
+    options: { subject?: string; limit: number }
+  ): Promise<StudySession[]> {
+    const rows = await this.db
+      .select({
+        cardId: reviewHistory.cardId,
+        quality: reviewHistory.quality,
+        reviewedAt: reviewHistory.reviewedAt,
+      })
+      .from(reviewHistory)
+      .where(
+        and(
+          eq(reviewHistory.userId, userId),
+          options.subject ? eq(reviewHistory.subjectId, options.subject) : undefined
+        )
+      )
+      .orderBy(asc(reviewHistory.reviewedAt), asc(reviewHistory.id));
+    return buildTimeline(rows, this.sm2, { limit: options.limit });
   }
 
   /** Accuracy = % of reviews with quality ≥ 3 in the last `days` days. */

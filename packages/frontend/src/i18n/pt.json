@@ -81,7 +81,15 @@
     "tomorrow": "Amanhã",
     "thisWeek": "Esta Semana",
     "noWeakCards": "Nenhum cartão difícil — continue assim!",
-    "startStudying": "Começar a Estudar"
+    "startStudying": "Começar a Estudar",
+    "timelineTitle": "Progresso ao Longo do Tempo",
+    "timelineSubtitle": "Cada ponto é um turno de estudo",
+    "timelineMetric": "Métrica do gráfico",
+    "timelineAccuracy": "Acerto",
+    "timelineReviews": "Revisões",
+    "timelineMastered": "Dominados",
+    "timelineTurn": "Turno",
+    "timelineEmpty": "Estude um pouco e seu progresso aparece aqui."
   },
   "subjects": {
     "title": "Assuntos",
@@ -127,7 +135,8 @@
     },
     "progressEase": "facilidade {{value}}",
     "easeTooltipLabel": "O que é o fator de facilidade?",
-    "easeTooltip": "Fator de facilidade: o quanto o SM-2 estica o intervalo entre as revisões (próximo intervalo = intervalo atual x facilidade). Todo card começa em 2,50 e nunca cai abaixo de 1,30 - quanto menor, mais o assunto volta pra você."
+    "easeTooltip": "Fator de facilidade: o quanto o SM-2 estica o intervalo entre as revisões (próximo intervalo = intervalo atual x facilidade). Todo card começa em 2,50 e nunca cai abaixo de 1,30 - quanto menor, mais o assunto volta pra você.",
+    "timelineSubtitle": "Cada ponto é um turno de estudo neste assunto"
   },
   "cards": {
     "title": "Cartões",

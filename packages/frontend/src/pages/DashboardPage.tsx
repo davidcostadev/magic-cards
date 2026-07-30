@@ -1,7 +1,13 @@
 import { Link } from '@tanstack/react-router';
 import { GraduationCap, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useDashboardStats, useUpcoming, useWeakCards } from '@/api/queries/dashboard';
+import {
+  useDashboardStats,
+  useProgressTimeline,
+  useUpcoming,
+  useWeakCards,
+} from '@/api/queries/dashboard';
+import { ProgressTimeline } from '@/components/features/dashboard/ProgressTimeline';
 import { StatsCard } from '@/components/features/dashboard/StatsCard';
 import { StreakWidget } from '@/components/features/dashboard/StreakWidget';
 import { UpcomingReviews } from '@/components/features/dashboard/UpcomingReviews';
@@ -18,6 +24,7 @@ export function DashboardPage() {
   const { data: stats } = useDashboardStats();
   const { data: weakCards = [] } = useWeakCards(5);
   const { data: upcoming } = useUpcoming();
+  const { data: timeline = [] } = useProgressTimeline();
 
   const dailyGoal = stats?.dailyGoal ?? user?.dailyGoal ?? 20;
   const reviewedToday = stats?.reviewedToday ?? 0;
@@ -66,6 +73,8 @@ export function DashboardPage() {
           thisWeek={upcoming?.thisWeek ?? 0}
         />
       </div>
+
+      <ProgressTimeline sessions={timeline} />
 
       <Card>
         <CardHeader className="pb-3">

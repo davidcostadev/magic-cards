@@ -26,6 +26,20 @@ export const dashboardStatsSchema = z.object({
   cardsByStatus: cardsByStatusSchema,
 });
 
+export const timelineQuerySchema = z.object({
+  subject: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(90).default(30),
+});
+
+export const studySessionSchema = z.object({
+  startedAt: z.string(),
+  endedAt: z.string(),
+  reviews: z.number(),
+  correct: z.number(),
+  accuracy: z.number(),
+  mastered: z.number(),
+});
+
 export const weakCardSchema = z.object({
   id: z.string(),
   question: z.string(),
@@ -41,6 +55,8 @@ export const upcomingSchema = z.object({
 });
 
 export class StatsQueryDto extends createZodDto(statsQuerySchema) {}
+export class TimelineQueryDto extends createZodDto(timelineQuerySchema) {}
+export class StudySessionListDto extends createZodDto(listResponseSchema(studySessionSchema)) {}
 export class WeakCardsQueryDto extends createZodDto(weakCardsQuerySchema) {}
 export class DashboardStatsDto extends createZodDto(dashboardStatsSchema) {}
 export class WeakCardDto extends createZodDto(weakCardSchema) {}

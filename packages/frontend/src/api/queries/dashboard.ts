@@ -5,6 +5,7 @@ import type { components } from '@/api/schema';
 export type DashboardStats = components['schemas']['DashboardStatsDto'];
 export type Upcoming = components['schemas']['UpcomingDto'];
 export type WeakCard = components['schemas']['WeakCardListDto']['data'][number];
+export type StudySession = components['schemas']['StudySessionListDto']['data'][number];
 
 // Stats are read-heavy and tolerate brief staleness (FRD-005); reviews invalidate them.
 const STALE_TIME = 60_000;
@@ -14,6 +15,7 @@ export const dashboardKeys = {
   stats: () => [...dashboardKeys.all, 'stats'] as const,
   weak: (limit: number) => [...dashboardKeys.all, 'weak', limit] as const,
   upcoming: () => [...dashboardKeys.all, 'upcoming'] as const,
+  timeline: (subject?: string) => [...dashboardKeys.all, 'timeline', subject ?? 'all'] as const,
 };
 
 export function useDashboardStats() {
@@ -34,6 +36,21 @@ export function useWeakCards(limit = 5) {
     queryFn: async () => {
       const { data, error } = await apiClient.GET('/v1/dashboard/weak_cards', {
         params: { query: { limit } },
+      });
+      if (error || !data) throw error;
+      return data.data;
+    },
+    staleTime: STALE_TIME,
+  });
+}
+
+/** Progress turn by turn — the whole account, or one subject when `subject` is given. */
+export function useProgressTimeline(subject?: string) {
+  return useQuery({
+    queryKey: dashboardKeys.timeline(subject),
+    queryFn: async () => {
+      const { data, error } = await apiClient.GET('/v1/dashboard/timeline', {
+        params: { query: subject ? { subject } : {} },
       });
       if (error || !data) throw error;
       return data.data;

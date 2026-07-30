@@ -81,7 +81,15 @@
     "tomorrow": "Tomorrow",
     "thisWeek": "This Week",
     "noWeakCards": "No weak cards — keep it up!",
-    "startStudying": "Start Studying"
+    "startStudying": "Start Studying",
+    "timelineTitle": "Progress Over Time",
+    "timelineSubtitle": "Each point is one study turn",
+    "timelineMetric": "Chart metric",
+    "timelineAccuracy": "Accuracy",
+    "timelineReviews": "Reviews",
+    "timelineMastered": "Mastered",
+    "timelineTurn": "Turn",
+    "timelineEmpty": "Study a little and your progress shows up here."
   },
   "subjects": {
     "title": "Subjects",
@@ -127,7 +135,8 @@
     },
     "progressEase": "ease {{value}}",
     "easeTooltipLabel": "What is the ease factor?",
-    "easeTooltip": "Ease factor: how far SM-2 stretches the gap between reviews (next gap = current gap x ease). Every card starts at 2.50 and never drops below 1.30 - the lower it is, the more often the deck comes back."
+    "easeTooltip": "Ease factor: how far SM-2 stretches the gap between reviews (next gap = current gap x ease). Every card starts at 2.50 and never drops below 1.30 - the lower it is, the more often the deck comes back.",
+    "timelineSubtitle": "Each point is one study turn in this subject"
   },
   "cards": {
     "title": "Cards",

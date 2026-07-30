@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDatabase, type DatabaseHandle, type DrizzleDB } from '../../db/client';
 import { cardProgress, cards, reviewHistory, subjects, users } from '../../db/schema';
+import { Sm2Service } from '../learning/sm2.service';
 import { DashboardService } from './dashboard.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -8,7 +9,7 @@ let handle: DatabaseHandle;
 let db: DrizzleDB;
 
 function service() {
-  return new DashboardService(db);
+  return new DashboardService(db, new Sm2Service());
 }
 
 function isoDaysAgo(days: number): string {
@@ -135,6 +136,43 @@ describe('DashboardService.getWeakCards', () => {
     expect(weak.map((c) => c.id)).toEqual(['c3', 'c1']);
     expect(weak[0]).toMatchObject({ subjectTitle: 'S' });
     expect(weak[0].easeFactor).toBeCloseTo(1.3, 5);
+  });
+});
+
+describe('DashboardService.getTimeline', () => {
+  it('returns one entry per study turn, oldest first', async () => {
+    await addReview(3, 5, 'c1');
+    await addReview(3, 2, 'c2'); // same instant-ish → same turn
+    await addReview(1, 4, 'c3');
+
+    const timeline = await service().getTimeline('u1', { limit: 30 });
+    expect(timeline).toHaveLength(2);
+    expect(timeline[0]).toMatchObject({ reviews: 2, correct: 1, accuracy: 50 });
+    expect(timeline[1]).toMatchObject({ reviews: 1, accuracy: 100 });
+    expect(Date.parse(timeline[0].startedAt)).toBeLessThan(Date.parse(timeline[1].startedAt));
+  });
+
+  it('narrows the timeline to a single subject', async () => {
+    await db.insert(subjects).values({ id: 's2', userId: 'u1', title: 'Other' });
+    await db.insert(cards).values({ id: 'c9', subjectId: 's2', question: 'q', answer: 'a' });
+    await addReview(2, 5, 'c1');
+    await db.insert(reviewHistory).values({
+      userId: 'u1',
+      cardId: 'c9',
+      subjectId: 's2',
+      quality: 1,
+      reviewedAt: isoDaysAgo(1),
+      timeSpent: 500,
+      wasHintUsed: false,
+    });
+
+    const timeline = await service().getTimeline('u1', { subject: 's2', limit: 30 });
+    expect(timeline).toHaveLength(1);
+    expect(timeline[0]).toMatchObject({ reviews: 1, correct: 0 });
+  });
+
+  it('is empty for a learner who has never reviewed', async () => {
+    expect(await service().getTimeline('u1', { limit: 30 })).toEqual([]);
   });
 });
 

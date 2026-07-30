@@ -1071,6 +1071,52 @@
         ]
       }
     },
+    "/v1/dashboard/timeline": {
+      "get": {
+        "operationId": "DashboardController_timeline",
+        "parameters": [
+          {
+            "name": "subject",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 90,
+              "default": 30,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudySessionListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
     "/v1/dashboard/upcoming": {
       "get": {
         "operationId": "DashboardController_upcoming",
@@ -3998,6 +4044,61 @@
                 "easeFactor",
                 "subjectId",
                 "subjectTitle"
+              ]
+            }
+          }
+        },
+        "required": [
+          "object",
+          "url",
+          "has_more",
+          "data"
+        ]
+      },
+      "StudySessionListDto": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "list"
+          },
+          "url": {
+            "type": "string"
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "startedAt": {
+                  "type": "string"
+                },
+                "endedAt": {
+                  "type": "string"
+                },
+                "reviews": {
+                  "type": "number"
+                },
+                "correct": {
+                  "type": "number"
+                },
+                "accuracy": {
+                  "type": "number"
+                },
+                "mastered": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "startedAt",
+                "endedAt",
+                "reviews",
+                "correct",
+                "accuracy",
+                "mastered"
               ]
             }
           }

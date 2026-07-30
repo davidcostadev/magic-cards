@@ -8,12 +8,15 @@ import { DashboardService } from './dashboard.service';
 import {
   type DashboardStats,
   DashboardStatsDto,
+  StudySessionListDto,
+  TimelineQueryDto,
   type Upcoming,
   UpcomingDto,
   type WeakCard,
   WeakCardListDto,
   WeakCardsQueryDto,
 } from './dto/dashboard.dto';
+import type { StudySession } from './timeline';
 
 @ApiTags('dashboard')
 @ApiBearerAuth()
@@ -35,6 +38,18 @@ export class DashboardController {
   ): Promise<ListResponse<WeakCard>> {
     const rows = await this.dashboard.getWeakCards(user.id, query.limit);
     return toListResponse(rows, query.limit);
+  }
+
+  // Chronological, oldest first — the chart reads left to right. Not cursor-paginated:
+  // `limit` picks how many recent turns to plot, so there is never a further page.
+  @Get('timeline')
+  @ApiOkResponse({ type: StudySessionListDto })
+  async timeline(
+    @CurrentUser() user: AuthUser,
+    @Query() query: TimelineQueryDto
+  ): Promise<ListResponse<StudySession>> {
+    const sessions = await this.dashboard.getTimeline(user.id, query);
+    return toListResponse(sessions, query.limit);
   }
 
   @Get('upcoming')
