@@ -14,7 +14,7 @@ import { MarkdownContent } from './MarkdownContent';
 import type { CardReviewProps } from './reviewTypes';
 import { useReviewSession } from './useReviewSession';
 
-const TIMER_SECONDS = 30;
+const TIMER_SECONDS = 60;
 
 function shuffle<T>(arr: readonly T[]): T[] {
   const copy = [...arr];
