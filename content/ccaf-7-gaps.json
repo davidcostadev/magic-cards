@@ -1,0 +1,1581 @@
+{
+  "subjects": [
+    {
+      "id": "ccaf-7-gaps",
+      "title": "CCAF 7 - Score Report Gaps",
+      "description": "The objectives the 11 Aug 2026 CCA-F score report scored below 70% on, nine of them at zero. Weighted toward building configurations from memory, because recognizing them already scored 100%.",
+      "color": "#BE123C",
+      "icon": "alert-triangle"
+    }
+  ],
+  "cards": [
+    {
+      "id": "ccaf7-quiz-001",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A coordinator has three independent research subtasks: read the pricing page, read the changelog, and summarize the support tickets. None of them depends on the others, and total latency is the complaint. How should the coordinator issue the work?",
+      "answer": "Parallelism between subagents is a matter of **how many Task calls fit in one turn**, not of a special setting. Several Task calls in a single assistant response run as one round trip; one call per turn serializes them and the latencies add up. Nothing here needs a concurrency knob, and nesting the spawn under one child only hides the same serialization one level down.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Emit all three Task tool calls inside a single assistant response, so the subtasks execute in parallel over one round trip.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Emit one Task tool call per assistant turn, inspecting each subagent result before deciding whether the following subtask is still worth running at all.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Emit one Task call for a single subagent and let that subagent spawn the other two itself, so the coordinator only tracks one direct child.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Emit all three Task calls and raise the concurrency limit in the coordinator configuration, because the runtime serializes calls by default.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["The unit of parallelism is the response turn, not a configuration flag."],
+      "tags": ["score-report", "gap-zero", "d1", "task-1.3", "subagents", "parallelism"]
+    },
+    {
+      "id": "ccaf7-quiz-002",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A coordinator agent produces plans and narration but never actually spawns a subagent. The AgentDefinition entries look right and the prompt asks for delegation explicitly. What do you check first?",
+      "answer": "`allowedTools` must include `\"Task\"` for a coordinator to invoke subagents at all. When nothing spawns, that is the first hypothesis - before anything about prompt wording. The exam pairs this with the sibling failure modes: wrong `AgentDefinition` parameters, or missing wiring between coordinator and subagent.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Whether the coordinator's `allowedTools` includes `\"Task\"`, since without it the coordinator cannot invoke a subagent.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Whether the coordinator's system prompt states the delegation rule strongly enough, since a soft instruction often reads as optional to the model.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Whether the subagents declare `allowedTools` of their own, since a child with no tools is skipped silently by the runtime at spawn time.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Whether the conversation has enough turns left, since delegation is dropped once the coordinator approaches its configured turn budget.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["Spawning is itself a tool call, and tool calls need permission."],
+      "tags": ["score-report", "gap-zero", "d1", "task-1.3", "subagents", "allowed-tools"]
+    },
+    {
+      "id": "ccaf7-quiz-003",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Which set of levers does the exam guide name for keeping each subagent inside its assigned role?",
+      "answer": "The objective is literal: configure subagent invocations with **tool restrictions, context scope, and system prompts** that confine each agent to its designated role. Retries, temperature and token caps are real controls, but none of them is about role confinement.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Tool restrictions, context scope, and the role's system prompt.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Retry policy, timeout per invocation, and the role's system prompt.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Temperature, max tokens, and the coordinator's own routing prompt.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Tool restrictions, output schema, and a per-role rate limit.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d1", "task-1.3", "subagents", "configuration"]
+    },
+    {
+      "id": "ccaf7-quiz-004",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "During the main conversation the engineer stated two architectural constraints. A subagent is then spawned and produces work that violates both. The coordinator's own context still contains them. What went wrong?",
+      "answer": "**Subagents run with isolated context and do not inherit the coordinator's conversation history**, nor do they share memory between invocations. A constraint that was only ever said in the main conversation does not exist for the subagent. If it must be honored, it goes in the subagent's prompt.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The constraints were never in the subagent's prompt, and a subagent inherits none of the coordinator's conversation history.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The constraints were stated as prose rather than as a numbered list, so the subagent ranked them below its own task instructions.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "The subagent read the constraints but its narrower system prompt took precedence over anything inherited from the parent conversation.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The coordinator's context was compacted before the spawn, which dropped the constraints from the history the subagent receives.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["Ask what the subagent actually receives, not what it decided to do with it."],
+      "tags": ["score-report", "d1", "task-1.3", "subagents", "context-isolation"]
+    },
+    {
+      "id": "ccaf7-quiz-005",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "In a multi-agent research system, a search subagent needs a clarification that only the analysis subagent's output can answer. What is the correct routing?",
+      "answer": "The reference architecture is **hub-and-spoke**: the coordinator manages all inter-subagent communication, all error handling, and all information routing. The reason is observability, consistent error handling and controlled information flow. Subagent talking straight to subagent is the named anti-pattern.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The request goes back to the coordinator, which routes the analysis output into a new search invocation.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The search subagent calls the analysis subagent directly, which keeps the coordinator free of routing work.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Both subagents write to a shared scratchpad and poll it, so neither has to wait on the coordinator's turn.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The search subagent re-derives the answer itself, since crossing agent boundaries mid-task breaks the isolation model.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["Why would you route everything through one place, even when it is slower?"],
+      "tags": ["score-report", "gap-zero", "d1", "task-1.4", "orchestration", "hub-and-spoke"]
+    },
+    {
+      "id": "ccaf7-quiz-006",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Two research subagents were given the same generic instruction and came back with nearly identical reports, at double the cost. What is the fix the exam guide names?",
+      "answer": "**Partition the scope across subagents** to minimize duplication: assign distinct subtopics, or distinct source types, to each agent. Two agents with the same generic instruction produce the same report and cost twice. Deduplicating afterwards pays for the waste instead of preventing it.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Partition the scope so each subagent gets a distinct subtopic or a distinct source type.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Have the coordinator deduplicate the two reports afterwards and keep whichever findings appear in both of them.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Raise the temperature on one of the two subagents so their exploration paths diverge from each other.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Drop to a single subagent and give it more turns, since the second one adds no coverage anyway.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d1", "task-1.4", "orchestration", "scope-partitioning"]
+    },
+    {
+      "id": "ccaf7-quiz-007",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "The synthesis step comes back with visible coverage gaps on a broad research topic. What does the coordinator do?",
+      "answer": "**Iterative refinement loop:** the coordinator evaluates the synthesis output for gaps, re-delegates to the search and analysis subagents with *targeted* queries, and re-invokes synthesis until coverage is sufficient. The named risk behind the gap is a coordinator decomposition that was too narrow for a broad research topic.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Re-delegate to the search and analysis subagents with targeted queries for the gaps, then re-invoke synthesis.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Re-run the entire pipeline from the start with a higher subagent count so the broader fan-out covers more ground.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Ask the synthesis subagent to expand its own draft, since it already holds every finding the pipeline produced.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Return the partial synthesis and flag the gaps to the user, since the coordinator cannot know what was never found.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["Which agent produced the gap, and which one can actually close it?"],
+      "tags": [
+        "score-report",
+        "gap-zero",
+        "d1",
+        "task-1.4",
+        "orchestration",
+        "iterative-refinement"
+      ]
+    },
+    {
+      "id": "ccaf7-quiz-008",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A coordinator runs its full five-subagent pipeline on every incoming query, including one-line factual questions. What does the exam guide say the coordinator should do instead?",
+      "answer": "**The coordinator decides which subagents to invoke based on query complexity**, rather than always running the whole pipeline. A fixed route for every question is waste. Note this is a routing decision the coordinator makes - not a cache, and not a cheaper model.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Decide which subagents to invoke based on the complexity of the query instead of always running every stage.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Keep the fixed pipeline but cache subagent results, so repeated simple queries skip the expensive stages entirely.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Keep the fixed pipeline and give simple queries a smaller model at each stage to bring the cost back down.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Keep the fixed pipeline and let each subagent return early when it judges the query too simple for its stage.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d1", "task-1.4", "orchestration", "routing"]
+    },
+    {
+      "id": "ccaf7-quiz-009",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "You want subagents to adapt to whatever they find, while the coordinator keeps visibility and control. How should the coordinator write the subagent prompts?",
+      "answer": "Specify **research goals and quality criteria** rather than step-by-step instructions. The trade-off the exam explores: procedural instructions give predictability and remove adaptability; goal-oriented instructions give adaptability and require the quality criteria to be explicit, or the coordinator loses control. The answer is never plain \"goal-oriented\" - it is goal plus declared quality bar.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "State the research goal and the quality criteria a good result must meet, leaving the method to the subagent.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "State the exact sequence of steps to follow, then allow the subagent to skip any step it judges unnecessary.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "State the research goal alone and review the output afterwards, since criteria stated up front narrow the exploration.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "State the exact sequence of steps and require a short justification from the subagent for each one it performs.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [
+        "Adaptability comes from the goal. Control comes from something you must also write down."
+      ],
+      "tags": ["score-report", "d1", "task-1.5", "delegation"]
+    },
+    {
+      "id": "ccaf7-quiz-010",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "An agent that used to work with four tools now has eighteen, after other teams added theirs to the shared definition. Tool selection accuracy dropped. What is the mechanism?",
+      "answer": "Giving an agent **18 tools instead of 4 or 5** degrades selection reliability because it enlarges the decision space. Tool count is a cost, not a capability. The fix is scoped access: each agent gets the tools of its role, plus the occasional cross-role tool where frequency justifies it.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The decision space grew, and selection reliability degrades as the number of candidate tools rises.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The tool definitions now exceed the context budget, so the later ones are truncated before the model reads them.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "The added tools have longer descriptions, which biases selection toward whichever definition is most detailed.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The tools arrived in an order that puts the original four last, and position in the array drives selection.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d1", "task-1.6", "tool-scoping"]
+    },
+    {
+      "id": "ccaf7-quiz-011",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A synthesis agent keeps attempting web searches instead of synthesizing what it was given. Which principle does this violate?",
+      "answer": "Agents holding tools outside their specialty tend to use them badly - the guide's own example is the synthesis agent trying to do web search. Each subagent gets **only the tools its role needs**, which reduces decision complexity and prevents out-of-role invocation.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Each subagent should hold only the tools its role needs, so out-of-role invocation is impossible rather than discouraged.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Each subagent should hold every tool but rank them in its system prompt, so out-of-role choices become unattractive.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Each subagent should hold every tool, since removing one blocks the recovery path when an upstream agent returns nothing.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Each subagent should hold read-only tools by default and request write access from the coordinator when a task needs it.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d1", "task-1.6", "tool-scoping"]
+    },
+    {
+      "id": "ccaf7-quiz-012",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "An agent has a generic `fetch_url` tool and keeps pulling non-document pages with it. What does the exam guide prescribe?",
+      "answer": "**Replace the generic tool with a restricted alternative** instead of prohibiting it by prompt: swap `fetch_url` for a `load_document` that validates the URL is a document. A prompt-level ban leaves the capability selectable; a narrower tool removes it.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Replace `fetch_url` with a narrower `load_document` tool that validates the URL points at a document.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Keep `fetch_url` and add a system prompt rule listing the URL patterns the agent is not allowed to fetch.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Keep `fetch_url` and have the coordinator reject any result that did not come from a document URL.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Keep `fetch_url` and set `tool_choice` to the named form so the agent commits to it deliberately each time.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["Design the capability away rather than asking the model not to use it."],
+      "tags": ["score-report", "d1", "task-1.6", "tool-scoping", "tool-design"]
+    },
+    {
+      "id": "ccaf7-quiz-013",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "The task is \"add comprehensive tests to this legacy codebase\". Which decomposition approach fits, and why?",
+      "answer": "**Dynamic decomposition.** You cannot list the test cases before knowing the structure and the risk areas, so the plan has to form while exploring. The single axis for this whole objective: **is the decomposition known before you start, or discovered along the way?** Known in advance is prompt chaining; discovered is dynamic decomposition.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Dynamic decomposition, because the subtasks only become visible after the code has been explored.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Prompt chaining with a fixed sequence, because test writing always follows the same read-then-write shape.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Prompt chaining with one link per test framework feature, since the framework bounds what the tests can be.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A single large prompt, because splitting the work loses the cross-file view that coverage decisions require.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["Could you write the list of subtasks before opening the repo?"],
+      "tags": ["score-report", "gap-zero", "d1", "task-1.2", "decomposition"]
+    },
+    {
+      "id": "ccaf7-quiz-014",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A review always covers the same four aspects in the same order, regardless of what any earlier step finds. Which pattern is this?",
+      "answer": "**Prompt chaining.** The steps are fixed and known before starting, nothing depends on an intermediate discovery, so each link gets one focus and you can validate between links. Dynamic decomposition is for when the subtasks only appear after seeing the input.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Prompt chaining, since the steps are fixed in advance and no step depends on what an earlier one found.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Dynamic decomposition, since each aspect still needs its own plan built against whatever the specific code under review happens to contain.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Coordinator-worker, since four distinct aspects means four distinct roles that need routing and aggregation.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Parallel execution, since four aspects of the same diff are independent and should be issued in one turn.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d1", "task-1.2", "decomposition"]
+    },
+    {
+      "id": "ccaf7-quiz-015",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A library migration touches more than 45 files, and two integration approaches are viable with different infrastructure requirements. Which review architecture applies?",
+      "answer": "**Plan mode.** It is for large-scale changes, several valid approaches, architectural decisions and multi-file modifications - the guide's own examples are microservice restructuring, a 45-file library migration, and choosing between integration approaches with different infrastructure requirements. It lets you explore the codebase and design before committing, avoiding expensive rework.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Plan mode, to explore and design before committing, because several architectures are still viable.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Direct execution file by file, because the migration is mechanical once the target library is chosen.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Direct execution behind a feature flag, so the wrong approach can be reverted without a planning phase.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A fixed multi-phase workflow, because the number of files is what drives the choice of architecture here.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d2", "task-3.4", "plan-mode"]
+    },
+    {
+      "id": "ccaf7-quiz-016",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A single-file bug with a clear stack trace, and separately a one-line date validation to add. Which mode does the exam guide assign to these?",
+      "answer": "**Direct execution.** It is for simple, well-scoped changes, and those two are literally the guide's examples: a single-file bug fix with a clear stack trace, and adding a date validation conditional. Plan mode on work like this is overhead with nothing to decide.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Direct execution, because both are simple and well scoped with nothing architectural to decide.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Plan mode, because even a small change should be designed before it is written into a shared codebase.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Plan mode for the bug and direct execution for the validation, since a stack trace still needs investigation.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A multi-phase workflow, so the fix, the test and the regression check each get their own reviewable phase.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d2", "task-3.4", "plan-mode"]
+    },
+    {
+      "id": "ccaf7-quiz-017",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "The plan for a large refactor has been explored, designed and approved. What happens during implementation?",
+      "answer": "**The combination is the most tested pattern:** plan mode for the investigation and the design, direct execution to implement the agreed plan. You do not re-enter plan mode for each individual edit once the plan is approved, and you do not start executing and then plan the repair of what broke.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Direct execution against the approved plan, without re-entering plan mode for each individual edit.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Plan mode again per file, so each edit is designed against the state the previous edit left behind.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Direct execution, then plan mode at the end to design the repair for whatever the implementation broke.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A fresh plan mode session per phase, since an approved plan expires once the codebase starts changing.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d2", "task-3.4", "plan-mode"]
+    },
+    {
+      "id": "ccaf7-quiz-018",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A discovery phase reads dozens of files and prints thousands of lines before the real work begins, filling the main conversation. What is the answer?",
+      "answer": "**The Explore subagent.** It isolates the verbose output of the discovery phase and returns a summary, preserving the main conversation's context. This is the fourth element of the plan-mode objective, and it is the specific answer whenever discovery output floods the session before the work starts.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Delegate discovery to the Explore subagent, which returns a summary and keeps the verbose output out of the session.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Run the discovery phase first and compact the session once it finishes, before the implementation phase begins.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Read fewer files during discovery and accept a partial map, since the implementation phase will reveal whatever the map is missing anyway.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Move the discovery output to a scratchpad file and keep only the file paths in the main conversation.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["The fix is a named subagent, not a technique."],
+      "tags": ["score-report", "gap-zero", "d2", "task-3.4", "plan-mode", "explore-subagent"]
+    },
+    {
+      "id": "ccaf7-quiz-019",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A CI review workflow pastes the team's review criteria into the prompt string inside the workflow YAML. Why is that wrong?",
+      "answer": "`CLAUDE.md` is the named mechanism for supplying project context - testing patterns, fixture conventions, review criteria - to Claude Code invoked in CI. Inlining that context in the workflow file hides it from the repository and lets it drift from the standards the team actually maintains.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Project standards belong in `CLAUDE.md`, where the repository maintains them, instead of in the workflow file.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Prompt strings in YAML have a length limit, so long review criteria get truncated before the invocation runs.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Criteria in the prompt are treated as user input, which the model weights below its own system instructions.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Workflow files are evaluated per job, so the criteria would be re-sent on every matrix entry and inflate cost.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d2", "task-3.4", "cicd", "claude-md"]
+    },
+    {
+      "id": "ccaf7-quiz-020",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Long support conversations are summarized progressively. Refund amounts, dates and the percentage the customer was promised keep coming out wrong. What is the fix?",
+      "answer": "**A structured state object.** Pull the transactional facts - amounts, dates, order numbers, status - into a persistent \"case facts\" block that is included in every prompt, **outside the summarized history**. This is the most important technique of the four in this objective: what cannot be lost leaves the history and becomes state. Summarization always costs precision, and numbers are the first thing it costs.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Extract the transactional facts into a persistent state block included in every prompt, outside the summarized history.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Summarize less often and keep more raw turns, so the numbers survive further into the conversation before condensing.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Instruct the summarizer to preserve all numeric values verbatim whenever it condenses a stretch of the conversation.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Re-read the original transcript whenever a number is needed, instead of trusting whatever the running summary holds.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["The answer takes the numbers out of the thing that summarizes them."],
+      "tags": ["score-report", "gap-zero", "d5", "task-5.1", "context-window", "structured-state"]
+    },
+    {
+      "id": "ccaf7-quiz-021",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "An analysis over a long document keeps omitting findings that came from the middle sections. What is the mitigation?",
+      "answer": "The model handles the beginning and the end of long inputs reliably and can omit the middle. The mitigation is to **put a summary of the key findings at the start** and organize the details under explicit section headers - a structural fix, not a bigger model or a stronger instruction.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Lead with a summary of the key findings and give the detail explicit section headers.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Instruct the model to read the whole document twice before answering, so the middle gets a second pass.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Split the document at the midpoint and send each half as its own request, then join the two answers.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Move the entire document to the end of the prompt, since the final position is the one processed most reliably.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d5", "task-5.1", "context-window", "lost-in-the-middle"]
+    },
+    {
+      "id": "ccaf7-quiz-022",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "An order lookup tool returns more than 40 fields per call; the agent uses 5 of them. Over a long session these results dominate the context. What do you do?",
+      "answer": "**Trim the tool output to the relevant fields before it accumulates in the context.** Tool results accumulate disproportionately, and the cheapest place to fix that is at the source - not after the fact with summarization, which costs precision, and not by hoping the model ignores the noise.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Trim the tool output to the five relevant fields before it ever accumulates in the context.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Keep the full payloads and summarize them once the conversation approaches the context limit.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Keep the full payloads and instruct the model in the system prompt to read only the five fields it needs.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Keep the full payloads and drop the oldest tool results with a sliding window over the conversation.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d5", "task-5.1", "context-window", "tool-output"]
+    },
+    {
+      "id": "ccaf7-quiz-023",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A downstream agent has a limited context budget and the upstream agents return verbose prose and reasoning chains. What is the upstream change?",
+      "answer": "**Selective retention upstream:** modify the earlier agents to return structured data - key facts, quotations, relevance scores - instead of verbose content and chains of reasoning. You fix the producer, not just the consumer.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Have the upstream agents return structured key facts, quotations and relevance scores instead of verbose prose.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Have the downstream agent summarize each upstream payload as it arrives, before appending it to its own context.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Have the coordinator forward only the most recent upstream payload, dropping the earlier ones from the prompt.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Have the downstream agent request the upstream detail on demand, one section at a time, as its task requires it.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": [
+        "score-report",
+        "gap-zero",
+        "d5",
+        "task-5.1",
+        "context-window",
+        "selective-retention"
+      ]
+    },
+    {
+      "id": "ccaf7-quiz-024",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "After hours of exploration the agent starts answering with \"typically, services like this use the repository pattern\" instead of naming the classes it read earlier. What is happening, and what fixes it?",
+      "answer": "Generality replacing specificity is **context degradation**, not a limit of the model's knowledge. The answer is a **scratchpad file**: the agent records key findings there and references them in later questions. That is the named antidote for degradation over a long exploration.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Context degradation - have the agent record key findings in a scratchpad file and reference it in later questions.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "A knowledge limit - the model never learned this codebase, so it falls back on the general pattern it does know.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Temperature drift - lower the sampling temperature so the answers stay anchored to the specifics it was given.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Tool starvation - re-grant the read tools so the agent can look the class names up again instead of generalizing.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["The symptom is vagueness where there used to be class names."],
+      "tags": ["score-report", "d5", "task-5.4", "context-degradation", "scratchpad"]
+    },
+    {
+      "id": "ccaf7-quiz-025",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Mid-session, the context is full of discovery output and the real work has not started. Which instrument does the exam guide name?",
+      "answer": "**`/compact`** - it reduces context usage during long exploration sessions. Distinguish it from the neighbours: **subagent delegation** isolates verbose output *before* it lands, a **scratchpad** preserves findings that must survive, and **state export plus a manifest** is for crash recovery.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "`/compact`, which reduces context usage during a long exploration session.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "`/clear`, which drops the session history so the real work starts from an empty context.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "`/resume`, which reloads the session with only the turns relevant to the current task.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "`/export`, which writes the discovery output to disk and removes it from the conversation.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d5", "task-5.4", "compact"]
+    },
+    {
+      "id": "ccaf7-quiz-026",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A multi-agent pipeline crashes halfway through a long run. What design makes the restart cheap?",
+      "answer": "**Structured state persistence for crash recovery:** each agent exports its state to a known location, and on resume the coordinator loads a manifest and injects that state into the agents' prompts. Restarting from scratch throws away completed work; relying on the conversation history does not survive a crash at all.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Each agent exports its state to a known location, and the coordinator loads a manifest on resume and injects it.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The coordinator keeps every subagent result inside its own conversation history and replays that entire history whenever the pipeline resumes.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Each agent retries its own last step on failure, so the pipeline heals without the coordinator being involved.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The coordinator restarts the pipeline from the beginning with a larger turn budget so the run completes next time.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d5", "task-5.4", "state-persistence", "crash-recovery"]
+    },
+    {
+      "id": "ccaf7-quiz-027",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Phase one of an exploration is finished and phase two's subagents are about to be spawned. What is the transition technique the exam guide names?",
+      "answer": "**Summarize the phase-one findings and inject that summary into the initial context of the phase-two subagents.** They inherit nothing, so the summary is the only way the earlier work reaches them - and a summary rather than the raw output is what keeps their context budget usable.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Summarize phase one's findings and inject the summary into the phase-two subagents' initial context.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Pass the full phase-one transcripts through, so the phase-two subagents lose no detail from the earlier work.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Let the phase-two subagents query the phase-one subagents directly whenever they need an earlier finding.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Store phase one's output in the coordinator's context only, since the coordinator interprets the results anyway.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d5", "task-5.4", "context-strategies", "subagents"]
+    },
+    {
+      "id": "ccaf7-quiz-028",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A skill brainstorms alternative designs. Its exploratory reasoning is not wrong, but it sticks to the main session and colors everything that follows. Which frontmatter option applies?",
+      "answer": "**`context: fork`** runs the skill in an isolated subagent context, so its output cannot pollute the main conversation. The two named use cases are skills producing **verbose output** (code analysis) and skills producing **exploratory context** (brainstorming alternatives). The second is the less obvious one, and it is exactly what \"preventing cross-contamination of session state\" points at.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "`context: fork`, which runs the skill in an isolated subagent context so its output stays out of the session.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "`allowed-tools`, which narrows what the skill can touch and therefore how much output it can end up adding to the main session.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "`argument-hint`, which forces the caller to scope the brainstorm before the skill is allowed to run at all.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "`model`, which routes the skill to a cheaper model so its exploratory output carries less weight downstream.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["It is not only about volume. Exploratory reasoning contaminates too."],
+      "tags": ["score-report", "gap-zero", "d2", "task-3.2", "skills", "context-fork"]
+    },
+    {
+      "id": "ccaf7-quiz-029",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A skill marked `context: fork` deleted files it should not have touched. Does forking prevent that?",
+      "answer": "**No. `context: fork` isolates context, not permission.** A forked skill can still delete a file. The field that reduces the tool surface is **`allowed-tools`**. Keeping the two apart is exactly where this objective is lost: fork solves verbose or exploratory output contaminating the session; `allowed-tools` solves destructive action.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "No - `context: fork` isolates context only; restricting destructive action is what `allowed-tools` is for.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Yes - a forked skill runs in a subagent sandbox, so its file writes are discarded with the forked context.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Yes - forking implies the default read-only tool set unless the skill declares otherwise in its frontmatter.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "No - but only because the fork inherits the caller's permissions, which can be narrowed at invocation time.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": [
+        "score-report",
+        "gap-zero",
+        "d2",
+        "task-3.2",
+        "skills",
+        "context-fork",
+        "allowed-tools"
+      ]
+    },
+    {
+      "id": "ccaf7-quiz-030",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "The `context: fork` option is documented for Skills. Where else does the objective say it applies?",
+      "answer": "**To slash commands as well.** The objective is worded \"Skill and slash command configurations\", and this widening is the likely reason the topic was missed again after being studied: the July mock only tested it on skills. Commands follow the same scope pair as skills - `.claude/commands/` for the team via version control, `~/.claude/commands/` for personal use.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To slash command configurations too, which follow the same frontmatter and the same scope pair as skills.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "To MCP server definitions, which run out of process and therefore need the same isolation guarantee.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "To hooks, which fire around tool calls and would otherwise write their output into the main conversation.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "To `CLAUDE.md` imports, so a large imported file is loaded into a forked context instead of the session.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": [
+        "score-report",
+        "gap-zero",
+        "d2",
+        "task-3.2",
+        "skills",
+        "slash-commands",
+        "context-fork"
+      ]
+    },
+    {
+      "id": "ccaf7-quiz-031",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A CI job invoking the Claude Code CLI hangs until the runner times out, with no error. What is missing?",
+      "answer": "**`-p` (or `--print`)** runs the CLI non-interactively. Without it the job waits for input that will never come. The general principle: in CI, anything that would be a question to a human in a terminal has to become explicit configuration up front.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The `-p` (`--print`) flag, which runs the CLI non-interactively instead of waiting for input.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The `--max-turns` ceiling, without which the agent keeps working until the runner's own timeout fires.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "The `--output-format json` flag, without which the CLI holds the stream open waiting for a terminal to render.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "An API key in the environment, without which the CLI blocks on its interactive login prompt until timeout.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d2", "task-3.6", "cicd", "headless"]
+    },
+    {
+      "id": "ccaf7-quiz-032",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A pipeline needs to track how much each Claude Code invocation cost, without depending on a dashboard. Where does that number come from?",
+      "answer": "**The `--output-format json` payload carries the total cost in dollars for the invocation**, alongside the result and the session identifier. That is how a pipeline tracks spend per invocation on its own.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The `--output-format json` payload, which reports the invocation's total cost along with the result and session id.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The exit code of the invocation, which encodes a cost bucket the pipeline can map back to a dollar range.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "The `--max-turns` value multiplied by the model's per-turn price, which bounds the invocation from above.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "A separate usage endpoint queried with the session id that the CLI writes to stderr at the end of the run.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d2", "task-3.6", "cicd", "cost"]
+    },
+    {
+      "id": "ccaf7-quiz-033",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "An Edit fails because its text anchor is not unique in the file. What is the documented fallback?",
+      "answer": "**Read followed by Write.** Read the whole file, then write it back with the change. It is not `sed` by line number, and it is not refactoring the file so the anchor becomes unique - the fallback is a whole-file operation.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Read the whole file and then Write it back with the change applied.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Use Bash with `sed` targeting the line number where the intended occurrence sits.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Rename the surrounding symbol first so the anchor becomes unique, then retry the Edit.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Retry the Edit with more surrounding lines until the anchor happens to match one occurrence.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d1", "task-2.5", "built-in-tools", "edit"]
+    },
+    {
+      "id": "ccaf7-quiz-034",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "You must understand how a request flows through an unfamiliar service. What is the systematic exploration strategy?",
+      "answer": "**Grep for the entry points, then Read following the imports** to trace the flow, adapting as the dependencies appear. Understanding is built incrementally. Reading every file in the output is the anti-pattern the guide names explicitly.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Grep to locate the entry points, then Read along the imports, adapting as dependencies surface.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Glob the whole source tree and Read every file it returns, so nothing in the flow is missed.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Read the largest files first, since the request flow tends to live where most of the code is.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Grep for every framework keyword at once and rank the hits by how often each file appears.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["Start narrow and let the code tell you where to go next."],
+      "tags": ["score-report", "d1", "task-2.5", "exploration", "incremental"]
+    },
+    {
+      "id": "ccaf7-quiz-035",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A function is re-exported through several wrapper modules. A single Grep for its original name misses most call sites. What is the procedure?",
+      "answer": "**First identify every exported name, then search the codebase for each name.** The call sites that go through a wrapper never mention the original identifier, so one Grep for it cannot find them.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Identify every name the function is exported under, then search the codebase for each of those names.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Grep for the function body's first line, which survives re-export and appears wherever the wrapper is used.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Glob for every file importing the defining module, then read those files to see which ones re-export it.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Grep for the original name with a case-insensitive match, which catches the renamed re-exports as well.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d1", "task-2.5", "exploration", "grep"]
+    },
+    {
+      "id": "ccaf7-quiz-036",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A downstream system rejects any payload that does not conform to its schema. Which structured-output method do you choose?",
+      "answer": "**Tool use with a JSON schema** is the most reliable approach for guaranteed schema-conformant output, and it eliminates JSON syntax errors: the schema is the tool's input definition and the answer arrives in the tool-use block. The other two are requests to the model - prompt formatting guarantees nothing, and prefill only shapes the opening.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Tool use with a JSON schema, where the schema is the tool's input definition and the answer is the tool call.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Prompt formatting that lists the required fields and asks for JSON only, with an example of the exact shape.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Prefilling the assistant turn with an opening brace so the response has to start as a JSON object.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Prompt formatting plus a validation retry loop that re-asks the model each time the parsed output fails to satisfy the declared schema.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["Two of the options are ways of asking. One is a mechanism."],
+      "tags": ["score-report", "gap-zero", "d3", "task-4.3", "structured-output"]
+    },
+    {
+      "id": "ccaf7-quiz-037",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Extraction runs under a strict JSON schema via tool use. The invoice line items still do not add up to the stated total. What does this show?",
+      "answer": "A strict schema eliminates **syntax** errors, not **semantic** ones. It cannot guarantee the numbers are consistent or that a value went into the right field. Arithmetic consistency is a separate validation layer, written in code, after the extraction.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Schema conformance is not semantic correctness - arithmetic consistency needs its own validation layer in code.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The schema is under-specified - adding a computed total field with a sum constraint would enforce the check.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Tool use was the wrong method here - prompt formatting with worked examples handles arithmetic more reliably.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "The extraction ran out of tokens mid-object, so the schema validated a payload that was silently truncated.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "gap-zero", "d3", "task-4.3", "structured-output", "validation"]
+    },
+    {
+      "id": "ccaf7-quiz-038",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Several extraction schemas exist and the document type is unknown at request time. A conversational reply would break the downstream job. What do you set?",
+      "answer": "**`tool_choice: \"any\"`** - the model is forced to call some tool but chooses the one that matches the document. The named form would pin the wrong schema when the type is unknown, and `\"auto\"` allows a text-only answer, which is the failure being prevented.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "`tool_choice: \"any\"`, forcing a tool call while leaving the model free to pick the schema that matches.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "`tool_choice` in the named form pointing at the most common document type, as a safe default for the batch.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "`tool_choice: \"auto\"` with a prompt instruction that a tool call is mandatory for every document.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "One merged schema covering every document type, with the irrelevant fields left null for each document.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d3", "task-4.3", "tool-choice"]
+    },
+    {
+      "id": "ccaf7-quiz-039",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "`extract_metadata` must run before any enrichment step. How do you guarantee it?",
+      "answer": "**`tool_choice` in the named form** forces that specific tool on this request. What it forces is the **first** call - the enrichment steps come in later turns. You do not force a whole sequence with `tool_choice`; you force the first call and let the loop continue.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Set `tool_choice` to the named form for `extract_metadata`, forcing the first call and leaving the rest to later turns.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Set `tool_choice` to `\"any\"` and place `extract_metadata` first in the tools array so it is chosen first.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Set `tool_choice` to the named form and list the enrichment tools after it, so the sequence is fixed for the turn.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Set `tool_choice` to `\"auto\"` and state the required ordering in the system prompt with an explicit example.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["It forces one call, not a sequence."],
+      "tags": ["score-report", "d3", "task-4.3", "tool-choice", "sequencing"]
+    },
+    {
+      "id": "ccaf7-quiz-040",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "An extraction schema marks `contract_end_date` as required. Many source documents simply do not state one, and the field comes back populated with plausible dates. Why?",
+      "answer": "**The model invents when the schema gives it no way to tell the truth.** A required field the document does not contain is a hallucination machine: something has to go in, so something plausible does. A field that may be absent must be optional or nullable.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A required field the document lacks leaves no way to express absence, so the model fills it with something plausible.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "The date parser normalizes any near-miss string it finds anywhere in the document into a complete date well before any validation runs.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "The model is copying the date from the nearest similar document in the same batch request as a default.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Required fields are filled first, before the document has been fully read, so early guesses are never revised.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d3", "task-4.4", "schema-design", "hallucination"]
+    },
+    {
+      "id": "ccaf7-quiz-041",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A closed enum covers most document categories, but real documents keep arriving with categories nobody planned for. What is the schema fix?",
+      "answer": "**An `other` value plus a free-text detail field.** It keeps the closed vocabulary the downstream consumers depend on, and still represents what was not foreseen. The same reasoning gives ambiguous cases an `unclear` value instead of forcing a category.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Add an `other` value plus a free-text detail field, keeping the closed vocabulary intact for consumers.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Replace the enum with a free-text string, so any category the source uses can be recorded exactly as written.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Keep the enum and map each unforeseen category to the nearest existing value, logging the substitution.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Keep the enum and extend it whenever a new category appears, redeploying the schema with each addition.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d3", "task-4.4", "schema-design", "enum"]
+    },
+    {
+      "id": "ccaf7-quiz-042",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A pre-merge check runs while the developer waits for it. Sync Messages API or Message Batches?",
+      "answer": "**Synchronous.** Batches offer 50% cost savings and a processing window of up to **24 hours** with **no latency SLA**, which suits non-blocking, latency-tolerant work - nightly reports, weekly audits. The canonical wrong use is exactly this: a blocking pre-merge check somebody is waiting on.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Synchronous, because the workflow is blocking and batches carry no latency guarantee at all.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Batches, because a pre-merge check is a well-defined bounded job and the 50% saving is worth the wait.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Batches, submitting on every push so a result is usually ready by the time the review actually starts.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Either one, since the batch window only matters when the submitted volume is large enough to queue.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d3", "task-4.5", "batches"]
+    },
+    {
+      "id": "ccaf7-quiz-043",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A workflow needs the model to call tools, read the results, and call more tools within one job. Can it run on the Batches API?",
+      "answer": "**No.** The batch API does **not support multi-turn tool calling inside one request** - it does not execute tools mid-flight and hand back results. Any genuinely agentic flow is out, regardless of how latency-tolerant it is.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "No - the batch API does not support multi-turn tool calling within a single request.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Yes - each tool round trip becomes its own batch entry, correlated back through the `custom_id` field.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Yes - as long as the tools are declared up front, the batch runtime executes them between the turns.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "No - unless the workflow stays under the 24-hour window, which multi-turn tool calling normally exceeds.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["It is a hard capability limit, not a latency question."],
+      "tags": ["score-report", "d3", "task-4.5", "batches", "tool-use"]
+    },
+    {
+      "id": "ccaf7-quiz-044",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Batch processing takes up to 24 hours. You need an end-to-end SLA of 30 hours. How often do you submit?",
+      "answer": "**Every 4 hours.** Worst case an item arrives just after a submission and waits 4 hours for the next one, then up to 24 hours of processing: 4 + 24 = 28, inside a 30-hour SLA with margin. The exam asks you to derive the submission cadence from the SLA and the processing window.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Every 4 hours - the worst case is a 4-hour wait plus the 24-hour window, which fits inside 30 hours.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Every 6 hours - the worst case is a 6-hour wait plus the 24-hour window, which exactly meets the SLA.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Every 24 hours - the window is what dominates, so a daily submission is what the SLA is really measuring.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Every 30 minutes - frequent small batches shorten the queue, which pulls the processing window down with it.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d3", "task-4.5", "batches", "sla"]
+    },
+    {
+      "id": "ccaf7-quiz-045",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "A batch comes back with 40 of 5000 documents failed, all of them over the context limit. What do you do?",
+      "answer": "**Resubmit only the failed items, identified by `custom_id`, with the change that addresses the cause** - here, chunking the oversized documents. Resending the whole batch pays for 4960 successes again, and retrying a deterministic failure unchanged fails again in exactly the same way.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Resubmit only those 40, found by `custom_id`, after chunking them so they fit inside the context limit.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Resubmit the whole batch once the chunking is in place, so every document is processed by the same code path.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Resubmit only those 40 unchanged, since batch failures are usually transient capacity problems on retry.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Move those 40 to the synchronous API unchanged, since the per-request limit there is applied more leniently.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d3", "task-4.5", "batches", "error-handling"]
+    },
+    {
+      "id": "ccaf7-quiz-046",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Extraction accuracy is reported at 97% overall and the team wants to drop human review. What must be measured first?",
+      "answer": "**Accuracy per segment - by document type and by field.** An aggregate number hides a bad segment: 97% overall can be 99% on invoices and 60% on contracts. Enlarging the sample only narrows the confidence interval around the same misleading number.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Accuracy broken out by document type and by field, because an aggregate number hides the weak segments.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Accuracy on a larger sample, so the 97% figure comes with a confidence interval tight enough to act on.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Accuracy over the most recent period only, so the number reflects the current model rather than old runs.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Accuracy against a second model's extractions, so disagreements mark the cases a human should still see.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d5", "task-5.5", "human-review", "segmentation"]
+    },
+    {
+      "id": "ccaf7-quiz-047",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Human review has been reduced and most extractions are now auto-approved. What keeps the auto-approved population honest?",
+      "answer": "**Continuous stratified random sampling of the auto-approved population.** Random sampling is excellent at **measuring** an error rate - which is exactly what you need over the population nobody looks at any more. It is poor at **catching** errors, which is the other half of the cycle and belongs to calibrated confidence routing.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Continuous stratified random sampling of the auto-approved population, to keep measuring the real error rate.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Routing the auto-approved population by confidence score, so the weakest of them still reach a reviewer.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "A second extraction pass on the auto-approved population, escalating any document where the two disagree.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Customer-reported errors, since anything that matters enough to be wrong will eventually be complained about.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["Measuring and catching are different jobs with different instruments."],
+      "tags": ["score-report", "d5", "task-5.5", "human-review", "sampling"]
+    },
+    {
+      "id": "ccaf7-quiz-048",
+      "subjectId": "ccaf-7-gaps",
+      "type": "quiz",
+      "language": "en",
+      "question": "Review capacity is limited and the goal is to catch as many real errors as possible. Random sampling or confidence-based routing?",
+      "answer": "**Field-level confidence, calibrated on a labeled validation set.** Random sampling **measures** the error rate well and **catches** errors badly. To catch the most real errors with limited capacity, route by calibrated confidence, plus the documents that are ambiguous or internally contradictory. A raw, uncalibrated score means nothing, and a threshold over it is an arbitrary number.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Route by field-level confidence calibrated on a labeled validation set, plus ambiguous or contradictory documents.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Route by raw model confidence with a threshold tuned until the reviewer queue matches the available capacity.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Sample randomly but at a higher rate, since random sampling is the only unbiased view of the whole population.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Route by document length and complexity, which correlate with error rate and need no labeled data to compute.",
+          "isCorrect": false
+        }
+      ],
+      "hints": [],
+      "tags": ["score-report", "d5", "task-5.5", "human-review", "calibration"]
+    }
+  ]
+}

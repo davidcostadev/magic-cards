@@ -10,64 +10,16 @@
   ],
   "cards": [
     {
-      "id": "ccaf3-open-004",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "What is the most reliable way to get structured output from Claude in production?",
-      "answer": "**Tool use.** Define a tool whose `input_schema` is the JSON Schema you want, and the model returns a `tool_use` block whose `input` already conforms to it:\n\n```json\n{\n  \"name\": \"record_ticket\",\n  \"description\": \"Record the extracted support ticket.\",\n  \"input_schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"category\": { \"type\": \"string\", \"enum\": [\"billing\",\"technical\",\"account\"] },\n      \"severity\": { \"type\": \"integer\", \"minimum\": 1, \"maximum\": 5 },\n      \"summary\":  { \"type\": \"string\" }\n    },\n    \"required\": [\"category\", \"severity\", \"summary\"]\n  }\n}\n```\n\nAdd `tool_choice: {\"type\": \"tool\", \"name\": \"record_ticket\"}` to force it, so the model cannot answer in prose.\n\nWhy this beats \"reply with JSON only\": the schema is a machine-checked contract rather than an instruction, enums constrain the value space, and you get a typed object instead of text you have to find, strip of markdown fences, and parse. The fallback technique - ask for JSON and **prefill `{`** - is fine for a quick job but has no schema enforcement.",
-      "tags": ["structured-output", "tool-use", "json-schema"],
-      "hints": ["Stop asking for a format and start defining a contract the API can validate."]
-    },
-    {
-      "id": "ccaf3-open-005",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "When should output come back as `tool_use` versus plain text?",
-      "answer": "**`tool_use`** when the output is **consumed by code**: extraction results, classifications, routing decisions, actions to perform, anything you will validate or store. You get schema conformance, enums, and required fields.\n\n**Text** when the output is **read by a human**: explanations, summaries, drafted replies, anything where phrasing is the product.\n\nTwo hybrid cases worth knowing:\n- A support agent that must both **reply to the user** and **file a structured ticket** should emit prose for the reply and call a `create_ticket` tool for the record - not stuff the reply inside a JSON string field.\n- An agent that must return a final structured verdict should call a `submit_result` tool, which doubles as an unambiguous completion signal.",
-      "tags": ["structured-output", "tool-use", "architecture"],
-      "hints": ["Ask who reads the output: your code, or a person?"]
-    },
-    {
-      "id": "ccaf3-open-006",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "How do you use few-shot (multishot) prompting well, and when does it beat instructions?",
-      "answer": "Give 3-5 **diverse, relevant** input/output pairs wrapped in XML tags:\n\n```xml\n<examples>\n  <example>\n    <input>Charged twice for May</input>\n    <output>{\"category\":\"billing\",\"severity\":3}</output>\n  </example>\n  ...\n</examples>\n```\n\nExamples beat prose when the rule is **easier to show than to state** - tone, formatting, edge-case handling, a classification boundary. \"Match this style\" in three examples outperforms two paragraphs describing the style.\n\nRules that matter:\n- **Cover the edge cases**, not just the happy path. Include the ambiguous input and show the desired handling (e.g. returning `\"unknown\"`), or the model will guess.\n- **Keep them consistent** - a single example that violates your format teaches the exception.\n- **Diversity over volume** - near-duplicate examples add tokens and nothing else.\n- Put them in the **stable prefix** so prompt caching covers them.",
-      "tags": ["few-shot", "best-practices"],
-      "hints": [
-        "Some rules are far easier to show than to describe. And the happy path is not the interesting part."
-      ]
-    },
-    {
-      "id": "ccaf3-open-010",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "Design a prompt for extracting structured data from a long document. What is the layout?",
-      "answer": "```xml\n<documents>\n  <document index=\"1\">\n    <source>invoice_2026_04.pdf</source>\n    <document_content>...the full text...</document_content>\n  </document>\n</documents>\n\n<instructions>\n  Extract each line item. If a field is absent, use null - never guess.\n  Quote the source text you relied on before extracting.\n</instructions>\n```\n\nThe rules that matter:\n1. **Long input near the top, the query at the end.** For long-context prompts this ordering measurably improves quality; a question buried above 50 pages of text gets worse answers.\n2. **XML-structure multiple documents** with an index and a source, so citations can point at one.\n3. **Ground before extracting** - have the model quote the relevant passages first; it reduces invention on long inputs.\n4. **Return the result through a tool schema**, with an explicit `null` policy for missing fields. Without that instruction the model fills gaps plausibly.\n5. **Include a confidence or `needs_review` field** so low-certainty extractions can be routed to a human instead of silently entering your database.",
-      "tags": ["document-extraction", "long-context", "structured-output"],
-      "hints": [
-        "Long data first, question last. Then think about what stops it inventing missing fields."
-      ]
-    },
-    {
-      "id": "ccaf3-open-011",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "How do you handle ambiguity and edge cases in a production prompt?",
-      "answer": "Make the uncertain path **explicit and representable**, instead of hoping the model handles it:\n\n1. **Give uncertainty a legal value.** If the schema has no `\"unknown\"`, an unsure model must still pick one of your enum values - so it guesses. Add `unknown` / `null` / `needs_review` and say when to use them.\n2. **State the tie-break rule.** \"If a ticket is both billing and technical, classify as billing.\" Any rule beats leaving it to chance, because at least it is consistent.\n3. **Show edge cases in the examples** - the empty document, the contradictory field, the out-of-scope request.\n4. **Prefer positive instructions.** \"Respond in plain prose\" works better than \"do not use markdown.\"\n5. **Define the out-of-scope behavior**: what the agent says when a question is outside its domain, and when it escalates.\n6. **Ask for confidence** and route low-confidence outputs to review.\n\nThe underlying principle: an ambiguous prompt does not fail loudly - it produces a confident wrong answer, which is much more expensive to detect.",
-      "tags": ["edge-cases", "reliability", "best-practices"],
-      "hints": ["An ambiguous prompt does not fail loudly. Give uncertainty somewhere legal to go."]
-    },
-    {
       "id": "ccaf3-quiz-001",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "A document-extraction pipeline must return records that always validate against a fixed schema. What is the most reliable approach?",
-      "answer": "Define a tool whose `input_schema` is the target schema and force it with `tool_choice`. The model returns a structured `tool_use.input` object, which is a machine-checked contract rather than an instruction it may drift from.",
+      "answer": "Define a tool whose `input_schema` is the target schema and set `strict: true` (or use structured outputs). Strict mode limits sampling to schema-valid output, so `tool_use.input` always matches the schema. A plain instruction is something the model can drift from. Note: the exam guide pairs the schema tool with a forced `tool_choice`. That still works on models that support it, but Claude Opus 5.5, Claude Fable 5.1, and Claude Mythos 5.1 reject forced `tool_choice` with a 400, so `strict: true` is the portable guarantee.",
       "choices": [
         {
           "id": "a",
-          "text": "Define a tool with the schema as `input_schema` and force it with `tool_choice`",
+          "text": "Define a tool with `strict: true` and the schema as its `input_schema`",
           "isCorrect": true
         },
         {
@@ -86,15 +38,16 @@
           "isCorrect": false
         }
       ],
-      "tags": ["structured-output", "tool-use"],
-      "hints": ["\"Always validate\" means you want a contract, not an instruction."]
+      "hints": ["\"Always validate\" means you want a contract, not an instruction."],
+      "tags": ["structured-output", "tool-use"]
     },
     {
       "id": "ccaf3-quiz-004",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "You have a 40-page contract and one question about it. How should the prompt be ordered?",
-      "answer": "Long-form data at the top, the query at the end. This ordering measurably improves quality on long-context prompts; putting the question first and burying it under 40 pages does the opposite.",
+      "answer": "Long-form data at the top, the query at the end. Anthropic's long-context tips report that a query at the end can improve quality by up to 30%; putting the question first and burying it under 40 pages does the opposite.",
       "choices": [
         {
           "id": "a",
@@ -108,26 +61,27 @@
         },
         {
           "id": "c",
-          "text": "Question first and then repeated after the contract, for emphasis",
+          "text": "Contract split into chunks, with the question asked after each chunk",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "Contract in the system prompt, question in the user message",
+          "text": "Contract in the system prompt, question in the user message instead",
           "isCorrect": false
         }
       ],
-      "tags": ["long-context", "document-extraction"],
       "hints": [
         "For long-context prompts there is a documented ordering. Which end does the question go?"
-      ]
+      ],
+      "tags": ["long-context", "document-extraction"]
     },
     {
       "id": "ccaf3-quiz-008",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "A classifier sometimes gets a ticket it cannot categorize with confidence and picks a category anyway. What is the best prompt-side fix?",
-      "answer": "Give uncertainty a representable value. If the enum has no escape hatch, an unsure model is forced to guess. Adding `unknown` plus a rule for when to use it turns a silent wrong answer into a routable signal.",
+      "answer": "Give uncertainty a representable value. If the enum has no escape hatch, an unsure model is forced to guess. Adding `unclear` plus a rule for when to use it turns a silent wrong answer into a routable signal.",
       "choices": [
         {
           "id": "a",
@@ -141,7 +95,7 @@
         },
         {
           "id": "c",
-          "text": "Route the ambiguous tickets to a second classification pass",
+          "text": "Send tickets that look ambiguous to a second, stricter classification pass",
           "isCorrect": false
         },
         {
@@ -150,13 +104,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["edge-cases", "structured-output"],
-      "hints": ["If the enum has no escape hatch, an unsure model is forced to pick something."]
+      "hints": ["If the enum has no escape hatch, an unsure model is forced to pick something."],
+      "tags": ["edge-cases", "structured-output"]
     },
     {
       "id": "ccaf3-quiz-009",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "Which prompt would you expect to be most reliable for a nuanced tone requirement?",
       "answer": "Tone is easier to show than to describe. Diverse examples in XML tags outperform paragraphs of adjectives, and they also teach the edge cases.",
       "choices": [
@@ -181,13 +136,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["few-shot"],
-      "hints": ["Tone is one of those things that is easier to show than to describe."]
+      "hints": ["Tone is one of those things that is easier to show than to describe."],
+      "tags": ["few-shot"]
     },
     {
       "id": "ccaf3-quiz-013",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "A support agent must both reply to the customer in natural language and record a structured ticket. What is the cleanest design?",
       "answer": "Use the right channel for each: prose text block for the human-facing reply, and a `create_ticket` tool call for the structured record. Forcing the reply into a JSON string field makes both worse.",
       "choices": [
@@ -212,13 +168,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["structured-output", "tool-use", "scenario-support"],
-      "hints": ["Two different audiences, so two different channels."]
+      "hints": ["Two different audiences, so two different channels."],
+      "tags": ["structured-output", "tool-use", "scenario-support"]
     },
     {
       "id": "ccaf3-quiz-015",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "An extraction prompt keeps inventing values for fields that are missing from the source document. What fixes it?",
       "answer": "State the missing-field policy explicitly and make `null` a legal value in the schema, plus require the model to quote its source. Without an allowed representation for 'absent', the model fills the gap plausibly.",
       "choices": [
@@ -243,83 +200,20 @@
           "isCorrect": false
         }
       ],
-      "tags": ["document-extraction", "edge-cases"],
-      "hints": ["The model has no legal way to say \"this field was not there\"."]
-    },
-    {
-      "id": "ccaf3-type-001",
-      "subjectId": "ccaf-3-prompting",
-      "type": "type-answer",
-      "question": "Which request parameter forces the model to call one specific tool?",
-      "answer": "`tool_choice` - e.g. `{\"type\": \"tool\", \"name\": \"record_ticket\"}`. It is how you turn tool use into guaranteed structured output.",
-      "shortAnswer": "tool_choice",
-      "tags": ["tool-use", "structured-output"],
-      "hints": ["Two words with an underscore; it sits next to `tools` in the request."]
-    },
-    {
-      "id": "ccaf3-type-002",
-      "subjectId": "ccaf-3-prompting",
-      "type": "type-answer",
-      "question": "Which tool field carries the JSON Schema describing the tool's arguments?",
-      "answer": "`input_schema`. Making it precise is the main lever on whether the model calls the tool correctly.",
-      "shortAnswer": "input_schema",
-      "tags": ["tool-use", "json-schema"],
-      "hints": ["Two words with an underscore, and it lives inside the tool definition."]
-    },
-    {
-      "id": "ccaf3-match-001",
-      "subjectId": "ccaf-3-prompting",
-      "type": "match",
-      "question": "Match each symptom to the technique that addresses it.",
-      "answer": "Each maps to a distinct mechanism. Note the last two: a nullable field is what lets the model say \"not present\", while retry-with-error-feedback fixes format and structural mistakes - it cannot conjure information that is simply absent from the document.",
-      "matchPairs": [
-        {
-          "left": "Output format varies run to run despite detailed instructions",
-          "right": "2-4 targeted few-shot examples"
-        },
-        {
-          "left": "Developers ignore findings because too many are false alarms",
-          "right": "Explicit categorical review criteria"
-        },
-        {
-          "left": "JSON occasionally fails to parse and breaks the pipeline",
-          "right": "tool_use with a JSON schema"
-        },
-        {
-          "left": "The model invents values for fields absent from the source",
-          "right": "Nullable/optional schema fields"
-        },
-        {
-          "left": "Extraction returns the right data in the wrong field",
-          "right": "Retry with the validation error appended"
-        }
-      ],
-      "tags": ["prompting", "structured-output"],
-      "hints": [
-        "One of these five is about what the schema permits, not about what the prompt says."
-      ]
-    },
-    {
-      "id": "ccaf3-open-101",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "How do you actually reduce false positives in a review prompt?",
-      "answer": "With **explicit categorical criteria**, not with instructions about attitude.\n\nWhat does **not** work, and the guide says so directly: \"be conservative\", \"only report\nhigh-confidence findings\", \"use judgement\". These read like precision controls and change nothing,\nbecause they do not tell the model **which classes of thing to report**.\n\nWhat works:\n\n- **Name what to report and what to skip.** Report bugs and security issues; skip minor style and\n  local patterns. The list is the instrument.\n- **Make each criterion checkable.** \"Flag a comment only when the claimed behaviour contradicts\n  the actual code behaviour\" beats \"check that comments are accurate\" - one is a test, the other\n  is a wish.\n- **Define severity with concrete code examples per level**, so classification is consistent\n  between runs instead of being re-invented each time.\n\n**Why it is worth this much attention**: a high false-positive **category** undermines confidence\nin the accurate ones. Developers do not discount that one category - they start ignoring the whole\ntool. So the sanctioned interim move is **temporarily disabling** the noisy category to restore\ntrust while you fix its prompt, rather than leaving it on and hoping people filter it themselves.\n\nThe instrumentation that makes this a loop: attach a **`detected_pattern`** field to each finding,\nrecording which code construct triggered it. When developers dismiss findings, you can analyse\n**which patterns** produce false positives instead of guessing.",
-      "tags": ["false-positives", "explicit-criteria"],
-      "hints": [
-        "Two of the most natural instructions to write are the ones that provably do nothing."
-      ]
+      "hints": ["The model has no legal way to say \"this field was not there\"."],
+      "tags": ["document-extraction", "edge-cases"]
     },
     {
       "id": "ccaf3-quiz-101",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "Which instruction actually improves a review's precision?",
       "answer": "Explicit, checkable criteria improve precision; general instructions about confidence or conservatism do not. The correct option states a test the model can apply; the others describe a disposition.",
       "choices": [
         {
           "id": "a",
-          "text": "\"Flag a comment only when its claim contradicts the code's behaviour\"",
+          "text": "\"Flag a comment only when its claim contradicts the code's behavior\"",
           "isCorrect": true
         },
         {
@@ -338,19 +232,20 @@
           "isCorrect": false
         }
       ],
-      "tags": ["false-positives", "explicit-criteria"],
-      "hints": ["One of these can be checked. Three describe an attitude."]
+      "hints": ["One of these can be checked. Three describe an attitude."],
+      "tags": ["false-positives", "explicit-criteria"]
     },
     {
       "id": "ccaf3-quiz-102",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "One review category produces mostly false alarms, and developers are now ignoring accurate findings too. What is the recommended interim move?",
       "answer": "High false-positive categories undermine confidence in the accurate ones, so the named move is temporarily disabling the category to restore developer trust while improving its prompt. The other options keep the noise in front of the same audience.",
       "choices": [
         {
           "id": "a",
-          "text": "Disable that category temporarily while its prompt is improved",
+          "text": "Disable that category for now, while its prompt is being improved",
           "isCorrect": true
         },
         {
@@ -360,7 +255,7 @@
         },
         {
           "id": "c",
-          "text": "Keep it enabled and add a note that this category is noisier than the rest",
+          "text": "Keep it enabled but label that category as noisier than the rest",
           "isCorrect": false
         },
         {
@@ -369,43 +264,25 @@
           "isCorrect": false
         }
       ],
-      "tags": ["false-positives"],
-      "hints": ["The damage is to trust in everything else, so the noise has to leave the report."]
-    },
-    {
-      "id": "ccaf3-type-101",
-      "subjectId": "ccaf-3-prompting",
-      "type": "type-answer",
-      "question": "Which field on a structured finding records the code construct that triggered it, so dismissal patterns can be analysed?",
-      "answer": "`detected_pattern`. It turns \"developers keep dismissing these\" into a specific list of constructs whose criteria need work.",
-      "shortAnswer": "detected_pattern",
-      "tags": ["false-positives", "feedback-loop"],
-      "hints": ["Two words, snake_case: what was spotted."]
-    },
-    {
-      "id": "ccaf3-open-102",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "When are few-shot examples the right tool, and how many do you write?",
-      "answer": "Few-shot examples are **the most effective technique** when detailed instructions alone still\nproduce inconsistent output. Four jobs they do:\n\n1. **Format consistency.** Demonstrate the exact output shape - location, issue, severity,\n   suggested fix - and you get it back reliably.\n2. **Ambiguous-case handling.** Show the boundary cases: which tool to pick for an ambiguous\n   request, what counts as a branch-level coverage gap.\n3. **Generalization.** Well-chosen examples let the model extend **judgement** to novel patterns,\n   rather than matching only the cases you enumerated. This is the difference between examples and\n   a rule list.\n4. **Hallucination reduction in extraction.** Informal measurements, varied document structures -\n   inline citations versus bibliographies, narrative prose versus tables - are learned far better\n   from examples than described.\n\n**How many: 2-4 targeted examples.** Targeted is the operative word - each should cover a case\nthat is genuinely ambiguous, not an easy one.\n\n**The detail that raises their value**: show the **reasoning for why one action was chosen over a\nplausible alternative**. An example that only shows input and output teaches the shape; an example\nthat shows why *this* rather than *that* teaches the discrimination, which is what generalizes.\n\nFor precision work, include examples that distinguish **acceptable patterns from genuine\nissues** - that is what reduces false positives while keeping the ability to catch new ones.",
-      "tags": ["few-shot", "prompting"],
-      "hints": ["The count is small, and one qualifier in front of it does all the work."]
+      "hints": ["The damage is to trust in everything else, so the noise has to leave the report."],
+      "tags": ["false-positives"]
     },
     {
       "id": "ccaf3-quiz-103",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "Extraction of a required field returns empty for documents that use narrative prose rather than tables. What fixes it?",
       "answer": "Adding few-shot examples that show correct extraction from varied formats is the named remedy for empty or null extraction of required fields. A retry cannot help when the model does not recognize the pattern, and it will fail identically.",
       "choices": [
         {
           "id": "a",
-          "text": "Few-shot examples showing correct extraction from both document structures",
+          "text": "Few-shot examples showing correct extraction from both prose and table documents",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "A schema description explaining that the value may appear in prose or in a table",
+          "text": "A schema description saying the value may appear in prose or a table",
           "isCorrect": false
         },
         {
@@ -419,24 +296,25 @@
           "isCorrect": false
         }
       ],
-      "tags": ["few-shot", "extraction"],
-      "hints": ["The model is not refusing. It does not recognize the shape."]
+      "hints": ["The model is not refusing. It does not recognize the shape."],
+      "tags": ["few-shot", "extraction"]
     },
     {
       "id": "ccaf3-quiz-104",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "What makes a few-shot example teach judgement rather than pattern-matching?",
       "answer": "2-4 targeted examples for ambiguous scenarios that show the reasoning for why one action was chosen over plausible alternatives - that reasoning is what lets the model generalize to novel patterns instead of matching only the enumerated cases.",
       "choices": [
         {
           "id": "a",
-          "text": "Showing why the chosen action beat a plausible alternative",
+          "text": "Showing the reasoning for why the chosen action beat a plausible alternative",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Covering every category the model will encounter in production data",
+          "text": "Covering every category the model will meet in real production data",
           "isCorrect": false
         },
         {
@@ -450,22 +328,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["few-shot"],
-      "hints": ["The alternative you rejected is part of the lesson."]
-    },
-    {
-      "id": "ccaf3-open-103",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "What does a JSON schema on a tool guarantee, and what is still your problem?",
-      "answer": "**Guaranteed**: schema-compliant structured output. `tool_use` with a JSON schema is the most\nreliable approach, and it **eliminates JSON syntax errors** - no more truncated braces or stray\nprose wrapping the object.\n\n**Not guaranteed - and this is the tested distinction**: semantic correctness. A strict schema\nhappily accepts:\n\n- line items that **do not sum** to the stated total\n- a value in the **wrong field** (the ship date landing in `order_date`)\n- a date that parses fine and is **not the date on the document**\n\nSo validation splits in two. The schema covers **syntax and shape**; **semantics is yours**.\n\nTwo self-correction patterns worth memorizing, because they let the model surface its own errors:\n\n- Extract **`calculated_total` alongside `stated_total`** and flag the discrepancy, rather than\n  trusting either.\n- Add a **`conflict_detected`** boolean for source data that contradicts itself, so an\n  inconsistent document is visible rather than silently resolved.\n\nAnd the schema-design rules that prevent errors instead of catching them:\n\n- **Optional/nullable** for anything the source may not contain - a required field forces\n  fabrication.\n- **Enums with an `\"unclear\"` value** for ambiguous cases, and **`\"other\"` plus a detail string**\n  for categories that will keep growing.\n- **Format normalization rules in the prompt** alongside the schema, so inconsistent source\n  formatting is handled rather than passed through.",
-      "tags": ["structured-output", "schema-design", "validation"],
-      "hints": ["It removes one entire class of error and none of the others."]
+      "hints": ["The alternative you rejected is part of the lesson."],
+      "tags": ["few-shot"]
     },
     {
       "id": "ccaf3-quiz-105",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "Invoice extraction validates against the schema every time, yet finance keeps finding totals that do not match the line items. What is happening?",
       "answer": "The guide states it directly: strict JSON schemas via tool use eliminate syntax errors but do not prevent semantic errors - line items that do not sum to the total, values in the wrong field. Semantic validation is yours to add.",
       "choices": [
@@ -490,13 +360,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["structured-output", "validation"],
-      "hints": ["The JSON is perfect. The arithmetic is not."]
+      "hints": ["The JSON is perfect. The arithmetic is not."],
+      "tags": ["structured-output", "validation"]
     },
     {
       "id": "ccaf3-quiz-106",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "A contract may or may not state an end date, and the schema marks `end_date` as required. What happens and what fixes it?",
       "answer": "When a schema does not permit absence, there is no valid output that means \"not present\", so the model emits something plausible and wrong - and the pipeline accepts it. Nullable/optional fields are the named fix; a prompt rule cannot override what the schema demands.",
       "choices": [
@@ -521,13 +392,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["schema-design", "hallucination"],
-      "hints": ["There is no valid way to say \"not in the document\". So it says something else."]
+      "hints": ["There is no valid way to say \"not in the document\". So it says something else."],
+      "tags": ["schema-design", "hallucination"]
     },
     {
       "id": "ccaf3-quiz-107",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "A classification enum keeps meeting categories nobody anticipated. What is the recommended schema pattern?",
       "answer": "The named pattern for extensible categorization is `\"other\"` plus a detail string. It keeps the enum's benefits for known cases while capturing the specifics of the unknown one - null would discard the information entirely.",
       "choices": [
@@ -552,24 +424,25 @@
           "isCorrect": false
         }
       ],
-      "tags": ["schema-design", "enums"],
-      "hints": ["Keep the enum, and give the leftovers somewhere to say what they were."]
+      "hints": ["Keep the enum, and give the leftovers somewhere to say what they were."],
+      "tags": ["schema-design", "enums"]
     },
     {
       "id": "ccaf3-quiz-108",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "An extraction must run `extract_metadata` before any enrichment tool. How do you guarantee the order?",
-      "answer": "Forced tool selection ensures a specific tool is called first, with the subsequent steps handled in follow-up turns. `\"any\"` guarantees a call but not which one, and ordering by prompt is a request rather than a guarantee.",
+      "answer": "Forced tool selection ensures a specific tool is called first, with the subsequent steps handled in follow-up turns. `\"any\"` guarantees a call but not which one, and ordering by prompt is a request rather than a guarantee. Note: on Claude Opus 5.5, Claude Fable 5.1 and Claude Mythos 5.1, forced `tool` and `\"any\"` return a 400; there you use `\"auto\"` plus a prompt that names the tool.",
       "choices": [
         {
           "id": "a",
-          "text": "Force that tool with `tool_choice: {\"type\": \"tool\", \"name\": \"extract_metadata\"}`",
+          "text": "Force that tool on the first turn with `tool_choice: {\"type\": \"tool\", \"name\": \"extract_metadata\"}`",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "Set `tool_choice: \"any\"` and list `extract_metadata` first among the tools",
+          "text": "Set `tool_choice: \"any\"` and list `extract_metadata` first among the available tools",
           "isCorrect": false
         },
         {
@@ -579,67 +452,18 @@
         },
         {
           "id": "d",
-          "text": "Give the enrichment tools a prerequisite field that metadata extraction populates",
+          "text": "Give each enrichment tool a prerequisite field that only metadata extraction can fill",
           "isCorrect": false
         }
       ],
-      "tags": ["tool-choice", "structured-output"],
-      "hints": ["You need a specific tool, not just any tool."]
-    },
-    {
-      "id": "ccaf3-type-102",
-      "subjectId": "ccaf-3-prompting",
-      "type": "type-answer",
-      "question": "Which enum value does the guide suggest adding so a model can mark an ambiguous case rather than guessing?",
-      "answer": "`\"unclear\"`. Together with `\"other\"` plus a detail string for extensible categories, it gives the model somewhere honest to put a case that does not fit.",
-      "shortAnswer": "unclear",
-      "tags": ["schema-design", "enums"],
-      "hints": ["One word, and it is what the model is when the document is vague."]
-    },
-    {
-      "id": "ccaf3-match-101",
-      "subjectId": "ccaf-3-prompting",
-      "type": "match",
-      "question": "Match each schema-design decision to the failure it prevents.",
-      "answer": "Every row is a design decision made **before** the extraction runs. The alternative to each is catching the problem downstream, if you catch it at all.",
-      "matchPairs": [
-        {
-          "left": "Nullable/optional field",
-          "right": "Fabricating a value the document never contained"
-        },
-        {
-          "left": "\"other\" plus a detail string",
-          "right": "Losing information for an unanticipated category"
-        },
-        {
-          "left": "calculated_total beside stated_total",
-          "right": "Accepting a total that the line items contradict"
-        },
-        {
-          "left": "conflict_detected boolean",
-          "right": "Silently resolving a self-contradicting source"
-        },
-        {
-          "left": "Format normalization rules in the prompt",
-          "right": "Passing inconsistent source formatting straight through"
-        }
-      ],
-      "tags": ["schema-design", "structured-output"],
-      "hints": ["All five prevent something rather than detecting it."]
-    },
-    {
-      "id": "ccaf3-open-104",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "How should a validation-retry loop work, and when will retrying never help?",
-      "answer": "**The loop.** When validation fails, send a follow-up request containing three things:\n\n1. the **original document**,\n2. the **failed extraction**, and\n3. the **specific validation errors**.\n\nAppending the concrete error is what guides the model toward a correction - \"field `total` must be\na number, received `'R$ 1.250,00'`\" is actionable in a way that \"invalid output\" is not.\n\n**When retrying works**: format mismatches and structural output errors. The information was\nthere; the shape was wrong.\n\n**When retrying is futile**: when the required information is **simply absent from the source**.\nIf the invoice has no due date, or the value lives in an external document you did not provide,\nevery retry produces either the same failure or - worse - a fabricated value that finally\nvalidates. Recognizing this difference is explicitly tested.\n\nThat is why retry pairs with schema design: make the field **nullable** and the model can report\nabsence on the first pass, no retry needed.\n\n**The instrumentation.** Track which errors are resolvable by retry and which are not. Without\nthat, a pipeline reprocesses the same impossible documents nightly and pays for it every time -\nand a \"reprocess until the JSON validates\" strategy eventually gets a valid, invented answer.",
-      "tags": ["validation-retry", "extraction"],
-      "hints": ["One class of failure gets worse with retries, not better."]
+      "hints": ["You need a specific tool, not just any tool."],
+      "tags": ["tool-choice", "structured-output"]
     },
     {
       "id": "ccaf3-quiz-109",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "Extraction fails validation because the due date is not in the document at all. What should the pipeline do?",
       "answer": "Retries are effective for format and structural errors and ineffective when the required information is simply absent from the source. Continuing to retry burns budget and risks a fabricated value that finally passes validation.",
       "choices": [
@@ -664,29 +488,30 @@
           "isCorrect": false
         }
       ],
-      "tags": ["validation-retry"],
-      "hints": ["No amount of asking again puts the date into the document."]
+      "hints": ["No amount of asking again puts the date into the document."],
+      "tags": ["validation-retry"]
     },
     {
       "id": "ccaf3-quiz-110",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "What must a validation-retry request include to guide self-correction?",
       "answer": "The named skill is a follow-up request including the original document, the failed extraction, and the specific validation errors. The error is the part that makes it a correction rather than another attempt.",
       "choices": [
         {
           "id": "a",
-          "text": "The document, the failed extraction, and the specific validation errors",
+          "text": "The original document, the failed extraction, and the specific validation errors",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "The document and a stricter instruction to follow the schema exactly this time",
+          "text": "The document plus a stricter instruction to follow the schema exactly",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "The failed extraction and the schema, so the model can compare them itself",
+          "text": "The failed extraction and the schema, so the model compares them",
           "isCorrect": false
         },
         {
@@ -695,22 +520,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["validation-retry"],
-      "hints": ["Three things, and the third is what makes it a correction."]
-    },
-    {
-      "id": "ccaf3-open-105",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "What are the Message Batches API's properties, and what can it not do?",
-      "answer": "**Properties**: 50% cost saving, a processing window of **up to 24 hours**, and **no\nguaranteed latency SLA**. `custom_id` on each request correlates it with its response; you poll\nfor completion.\n\n**Appropriate for** non-blocking, latency-tolerant work: overnight reports, weekly audits,\nnightly test generation.\n\n**Inappropriate for** blocking workflows - a pre-merge check cannot wait on a window that might\ntake hours.\n\n**The limitation that catches people**: the batch API **does not support multi-turn tool calling\nwithin a single request**. You cannot execute a tool mid-request and feed the result back. Any\ndesign that wanted an agentic loop per document has to be restructured or stay synchronous.\n\n**Two operational skills:**\n\n- **Failure handling by `custom_id`.** Resubmit only the failed ids, with the fix applied - chunk\n  the documents that exceeded the context limit rather than re-running the whole batch.\n- **Submission frequency from the SLA.** Work backwards: with a 24-hour worst-case window, a\n  30-hour SLA means submitting every 4 hours, not once a day. The batch window is a worst case, so\n  the schedule has to absorb it.\n\nAnd **refine the prompt on a small sample first**. Maximizing first-pass success on a 40,000\ndocument batch is worth more than any per-request optimization, because every failure costs a\nsecond round trip through a 24-hour window.",
-      "tags": ["batch-api", "cost"],
-      "hints": ["One thing it cannot do at all, and it is the thing agents do constantly."]
+      "hints": ["A correction needs to know exactly what was wrong the first time."],
+      "tags": ["validation-retry"]
     },
     {
       "id": "ccaf3-quiz-111",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "Which workload is inappropriate for the Message Batches API?",
       "answer": "Batch fits non-blocking, latency-tolerant workloads. A pre-merge check blocks a developer, and the batch window can run to 24 hours with no latency SLA.",
       "choices": [
@@ -735,19 +552,20 @@
           "isCorrect": false
         }
       ],
-      "tags": ["batch-api"],
-      "hints": ["Three of these run while everyone is asleep."]
+      "hints": ["Three of these run while everyone is asleep."],
+      "tags": ["batch-api"]
     },
     {
       "id": "ccaf3-quiz-112",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "Your per-document design calls a lookup tool mid-extraction and feeds the result back. Can it run on the batch API?",
-      "answer": "The batch API does not support multi-turn tool calling within a single request: it cannot execute tools mid-request and return results. The design has to be restructured or stay synchronous.",
+      "answer": "The batch API does not support multi-turn tool calling within a single request: it cannot execute your tools mid-request and return the results. The design has to be restructured or stay synchronous. Note: current batch requests can declare tools, and server tools such as web search do run inside a batch request; what is missing is your own code running a tool mid-request.",
       "choices": [
         {
           "id": "a",
-          "text": "No - batch does not support multi-turn tool calling inside a single request",
+          "text": "No - batch cannot run your lookup tool mid-request and return its result",
           "isCorrect": true
         },
         {
@@ -757,7 +575,7 @@
         },
         {
           "id": "c",
-          "text": "Yes, but only if the tool calls are all issued in the first assistant turn",
+          "text": "Yes, but only if every tool call happens in the first assistant turn",
           "isCorrect": false
         },
         {
@@ -766,32 +584,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["batch-api", "tool-use"],
-      "hints": ["It is not about limits or schemas. The capability is absent."]
-    },
-    {
-      "id": "ccaf3-type-103",
-      "subjectId": "ccaf-3-prompting",
-      "type": "type-answer",
-      "question": "Which field correlates a batch request with its response?",
-      "answer": "`custom_id`. It is also what makes selective resubmission possible - you resend only the ids that failed.",
-      "shortAnswer": "custom_id",
-      "tags": ["batch-api"],
-      "hints": ["Two words, snake_case, and you choose the value yourself."]
-    },
-    {
-      "id": "ccaf3-open-106",
-      "subjectId": "ccaf-3-prompting",
-      "type": "open",
-      "question": "Why is self-review weak, and what architecture replaces it?",
-      "answer": "**Why it is weak**: the model that generated the code **retains its reasoning context**, which\nmakes it less likely to question its own decisions. It already concluded that the approach was\nright; asking it to check tends to reconfirm rather than re-examine.\n\nThe guide is specific that this is not fixed by trying harder: **independent review instances -\nwithout the generator's prior reasoning context - are more effective at catching subtle issues\nthan self-review instructions or extended thinking**.\n\n**The replacement**: a **second, independent instance** reviews the generated code. Same model is\nfine; what matters is that it arrives without the reasoning that produced the work.\n\n**And for large reviews, a second axis - multi-pass:**\n\n- **Per-file local passes** for issues contained within a file.\n- **A separate cross-file integration pass** for data flow between them.\n\nSplitting this way avoids **attention dilution** and the contradictory findings you get when one\npass tries to hold twenty files at once.\n\n**The calibration layer**: run verification passes where the model **self-reports confidence\nalongside each finding**, so review attention can be routed by confidence rather than spread\nevenly.",
-      "tags": ["multi-pass-review", "self-review"],
-      "hints": ["The problem is not effort. It is that it already knows what it decided."]
+      "hints": ["It is not about limits or schemas. The capability is absent."],
+      "tags": ["batch-api", "tool-use"]
     },
     {
       "id": "ccaf3-quiz-113",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "Generated code is reviewed in the same session that produced it, and subtle bugs survive. What is the fix?",
       "answer": "A model retains reasoning context from generation, making it less likely to question its decisions. Independent review instances beat self-review instructions and extended thinking - the guide names both of those as insufficient.",
       "choices": [
@@ -816,13 +616,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["self-review", "multi-pass-review"],
-      "hints": ["Two options ask the same session to think harder about itself."]
+      "hints": ["Two options ask the same session to think harder about itself."],
+      "tags": ["self-review", "multi-pass-review"]
     },
     {
       "id": "ccaf3-quiz-114",
       "subjectId": "ccaf-3-prompting",
       "type": "quiz",
+      "language": "en",
       "question": "A review spans thirty changed files and produces shallow, sometimes contradictory findings. How should it be structured?",
       "answer": "Splitting large reviews into per-file local analysis plus separate cross-file integration passes avoids attention dilution and contradictory findings. A single pass over everything is the arrangement that caused the symptom.",
       "choices": [
@@ -833,12 +634,12 @@
         },
         {
           "id": "b",
-          "text": "One pass per severity level, so each run looks for a single class of issue",
+          "text": "One pass per severity level, each hunting a single class of issue",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "One pass over the full diff on a larger context window to hold every file",
+          "text": "One pass over the full diff, using a larger context window",
           "isCorrect": false
         },
         {
@@ -847,39 +648,90 @@
           "isCorrect": false
         }
       ],
-      "tags": ["multi-pass-review"],
-      "hints": ["Local issues and cross-file issues are different searches."]
+      "hints": ["Local issues and cross-file issues are different searches."],
+      "tags": ["multi-pass-review"]
     },
     {
-      "id": "ccaf3-match-102",
+      "id": "ccaf3-quiz-sim1-01",
       "subjectId": "ccaf-3-prompting",
-      "type": "match",
-      "question": "Match each structured-output requirement to its mechanism.",
-      "answer": "The first four are platform mechanisms. The fifth is the one the platform will never do for you, and it is where extraction pipelines break in production.",
-      "matchPairs": [
+      "type": "quiz",
+      "language": "en",
+      "question": "Your document_type enum lists invoice, receipt, purchase_order, and contract. Roughly 8% of incoming documents are none of these, and the model forces them into the closest match. Which schema design handles this best?",
+      "answer": "An `other` value paired with a detail string keeps the enum usable downstream while staying extensible for the cases nobody enumerated. Free text loses the constrained vocabulary consumers depend on. Adding every type observed so far is a chase that never ends. Routing unmatched documents to a human sends away work the schema could absorb.",
+      "choices": [
         {
-          "left": "Never receive malformed JSON again",
-          "right": "tool_use with a JSON schema"
+          "id": "a",
+          "text": "Add an \"other\" enum value paired with a detail string that captures the actual document type.",
+          "isCorrect": true
         },
         {
-          "left": "Guarantee a tool call when the schema is unknown",
-          "right": "tool_choice \"any\""
+          "id": "b",
+          "text": "Add every additional document type observed so far as its own enum value.",
+          "isCorrect": false
         },
         {
-          "left": "Run one specific extraction first",
-          "right": "Forced tool selection by name"
+          "id": "c",
+          "text": "Remove the enum and let the field accept any free-text document type the model chooses.",
+          "isCorrect": false
         },
         {
-          "left": "Let the model report a missing value",
-          "right": "A nullable field in the schema"
-        },
-        {
-          "left": "Catch a total the line items contradict",
-          "right": "Semantic validation you write"
+          "id": "d",
+          "text": "Keep the enum and route documents that do not match any value to a human before extraction.",
+          "isCorrect": false
         }
       ],
-      "tags": ["structured-output", "tool-choice"],
-      "hints": ["Four of these the platform gives you. One it never will."]
+      "hints": [
+        "Keep the closed vocabulary and give the model a legal way to say \"none of these\"."
+      ],
+      "tags": [
+        "structured-output",
+        "json-schema",
+        "enum",
+        "edge-cases",
+        "d4",
+        "task-4.3",
+        "simulado-2026-07-30"
+      ]
+    },
+    {
+      "id": "ccaf3-quiz-sim1-02",
+      "subjectId": "ccaf-3-prompting",
+      "type": "quiz",
+      "language": "en",
+      "question": "Findings are split into four categories. Three are accurate, but the performance category is wrong most of the time, and developers have started dismissing all four without reading them. You need to keep improving the performance prompt. What do you do meanwhile?",
+      "answer": "A high false-positive category undermines confidence in the accurate ones, so turning it off while you fix its prompt is what protects the trust the other three still have. Posting it with a note explaining it is unreliable leaves the noise in the feed. Requiring two approvals to dismiss adds process friction to a bad signal. Merging it into security contaminates a category that currently works.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Disable the performance category temporarily so the accurate ones regain developer trust.",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Keep posting all four categories and add a note explaining that performance findings are unreliable.",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Keep posting all four and require two approvals before a performance finding can be dismissed.",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Merge performance findings into the security category so they inherit its credibility.",
+          "isCorrect": false
+        }
+      ],
+      "hints": ["One noisy category is training developers to ignore the three good ones."],
+      "tags": [
+        "false-positives",
+        "explicit-criteria",
+        "feedback-loop",
+        "cicd",
+        "d4",
+        "task-4.1",
+        "simulado-2026-07-30"
+      ]
     }
   ]
 }

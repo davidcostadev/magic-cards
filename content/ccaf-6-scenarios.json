@@ -10,85 +10,10 @@
   ],
   "cards": [
     {
-      "id": "ccaf6-open-001",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "Scenario 1 - Customer Support Resolution Agent. What does the setup tell you, and what does it test?",
-      "answer": "**The official framing**: an agent built with the **Claude Agent SDK** handling\n**high-ambiguity** requests - returns, billing disputes, account issues - reaching your backend\nthrough custom **MCP tools**: `get_customer`, `lookup_order`, `process_refund`,\n`escalate_to_human`. Target: **80%+ first-contact resolution while knowing when to escalate**.\n\n**Primary domains**: Agentic Architecture & Orchestration, Tool Design & MCP Integration,\nContext Management & Reliability.\n\n**The five decisions it tests**\n\n1. **Prerequisite gates.** `process_refund` must be blocked until `get_customer` returned a\n   **verified** customer id. Identity before a financial operation is deterministic compliance,\n   so it is a programmatic gate - a prompt instruction has a non-zero failure rate.\n2. **Tool selection reliability.** The named failure is the agent calling `lookup_order` with\n   only the customer's stated name, skipping `get_customer`. The fix is in the tool\n   descriptions, not the system prompt.\n3. **Escalation criteria.** Escalate when the customer **asks for a human** (immediately, without\n   first investigating), when **policy is silent or ambiguous** on their request, and when the\n   agent **cannot make meaningful progress**. Sentiment and self-reported confidence are\n   explicitly unreliable proxies.\n4. **Handoff structure.** The human agent has no access to the transcript, so the handoff carries\n   customer id, root cause, amount, and recommended action.\n5. **Context over a long conversation.** Trim tool outputs to relevant fields (an order lookup\n   returning 40+ fields when 5 matter), and keep transactional facts - amounts, dates, order\n   numbers - in a persistent **case facts** block *outside* the summarized history, so\n   progressive summarization cannot blur them.\n\n**The trap in the 80% target**: it rewards resolving, and the exam rewards knowing when not to.\nAn agent that insists is worse than one that escalates honestly.",
-      "tags": ["scenario-support", "agent-sdk", "escalation"],
-      "hints": ["The target says resolve. The last five words of the setup say something else."]
-    },
-    {
-      "id": "ccaf6-open-007",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "Scenario 2 - Code Generation with Claude Code. What does the setup tell you, and what does it test?",
-      "answer": "**The official framing**: your team uses Claude Code for **code generation, refactoring,\ndebugging, and documentation**. You must integrate it into the development workflow with custom\n**slash commands**, **CLAUDE.md** configuration, and understand **when to use plan mode vs direct\nexecution**.\n\n**Primary domains**: Claude Code Configuration & Workflows, Context Management & Reliability.\n\n**The four decisions it tests**\n\n1. **Which configuration layer.** User-level `~/.claude/CLAUDE.md` is **not** shared through\n   version control - a rule that a new teammate never receives is a rule in the wrong file.\n   Project level is the team's; `@import` keeps it modular; `.claude/rules/` splits it by topic.\n2. **Conditional loading.** Conventions that follow a **file type** rather than a directory -\n   test files spread across the tree - belong in a `.claude/rules/` file with YAML frontmatter\n   `paths: [\"**/*.test.tsx\"]`, not in a subdirectory `CLAUDE.md`. They load only when matching\n   files are edited, so irrelevant context and tokens stay out.\n3. **Plan mode vs direct execution.** Plan mode for large-scale change, multiple valid\n   approaches, architectural decisions, multi-file work - a library migration touching 45+ files.\n   Direct execution for a single-file fix with a clear stack trace. They compose: plan the\n   migration, then execute the planned approach.\n4. **Iterative refinement.** When prose is interpreted inconsistently, give **2-3 concrete\n   input/output examples**. Write the test suite first and iterate by sharing failures. Use the\n   **interview pattern** - have Claude ask questions before implementing - in unfamiliar domains.\n   Batch **interacting** issues into one message; fix **independent** ones sequentially.\n\n**The context angle**: the **Explore subagent** isolates verbose discovery so a multi-phase task\ndoes not exhaust the window on file listings.",
-      "tags": ["scenario-code-generation", "claude-code", "plan-mode"],
-      "hints": ["Three of the four decisions are about which file an instruction lives in."]
-    },
-    {
-      "id": "ccaf6-open-002",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "Scenario 3 - Multi-Agent Research System. What does the setup tell you, and what does it test?",
-      "answer": "**The official framing**: an Agent SDK system where a **coordinator** delegates to four\nspecialized subagents - one **searches the web**, one **analyzes documents**, one **synthesizes\nfindings**, one **generates reports** - producing comprehensive, **cited** reports.\n\n**Primary domains**: Agentic Architecture & Orchestration, Tool Design & MCP Integration,\nContext Management & Reliability.\n\n**The six decisions it tests**\n\n1. **Spawning.** The **Task tool** spawns subagents, and the coordinator's `allowedTools` must\n   include `\"Task\"`. Parallelism means emitting **multiple Task calls in a single response**, not\n   across separate turns.\n2. **Context passing.** Subagents inherit **nothing** - not the coordinator's history, not each\n   other's memory. Complete prior findings go **into the prompt**: the synthesis subagent needs\n   the search results and document analysis handed to it explicitly.\n3. **Dynamic selection.** Do not route every query through all four. The coordinator analyzes the\n   query and picks the subagents it needs - while watching the opposite failure, decomposition so\n   narrow that a broad topic ends up half covered.\n4. **What comes back.** Structured output separating **content from metadata**: claim, evidence\n   excerpt, source URL or document name, and **publication date**. Verbose reasoning chains from\n   an upstream agent are what blow up a downstream agent's budget.\n5. **Provenance through synthesis.** Attribution is lost in summarization unless the\n   **claim-source mapping** is explicitly preserved and merged. Conflicting statistics from\n   credible sources get **annotated with attribution**, not silently resolved to one value. Dates\n   prevent a temporal difference from reading as a contradiction.\n6. **Error propagation.** A subagent recovers locally from transient failure; what it cannot\n   resolve goes up as structured context - failure type, what was attempted, **partial results**.\n   The report then carries **coverage annotations**: which areas are well-supported and which\n   have gaps from unavailable sources.\n\n**The signature trap**: multi-agent elegance applied to **sequential** work. If step two needs\nstep one's result, isolated parallel subagents cannot establish the relation at all.",
-      "tags": ["scenario-research", "multi-agent", "provenance"],
-      "hints": [
-        "Four subagents, and not one of them can see what the others found unless you hand it over."
-      ]
-    },
-    {
-      "id": "ccaf6-open-008",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "Scenario 4 - Developer Productivity with Claude. What does the setup tell you, and what does it test?",
-      "answer": "**The official framing**: Agent SDK tooling that helps engineers **explore unfamiliar\ncodebases, understand legacy systems, generate boilerplate, and automate repetitive tasks**,\nusing the **built-in tools** (Read, Write, Bash, Grep, Glob) and integrating with **MCP servers**.\n\n**Primary domains**: Tool Design & MCP Integration, Claude Code Configuration & Workflows,\nAgentic Architecture & Orchestration.\n\n**The four decisions it tests**\n\n1. **Built-in tool selection.** `Grep` searches file **contents** (callers of a function, an\n   error message); `Glob` matches **paths** (`**/*.test.tsx`); `Read`/`Write` are whole-file;\n   `Edit` is a targeted change that depends on **unique** anchor text - when the anchor is not\n   unique, fall back to `Read` + `Write`. Build understanding **incrementally**: Grep for entry\n   points, then Read to follow imports, rather than reading everything up front.\n2. **Context degradation over a long exploration.** The symptom is specific: the agent starts\n   giving inconsistent answers and referring to \"typical patterns\" instead of the classes it\n   actually found earlier. Counter it with **scratchpad files** holding key findings, `/compact`\n   when the window fills with discovery output, and **subagent delegation** so verbose\n   exploration happens off to the side.\n3. **Crash recovery.** Each agent exports structured state to a known location, and the\n   coordinator loads a **manifest** on resume and injects it into the agent prompts.\n4. **MCP versus built-in.** MCP for genuine external access, with the reminder that a thin tool\n   description loses selection to `Grep` - and that too many tools (18 rather than 4-5) degrades\n   selection on its own.\n\n**Why this scenario is not a duplicate of scenario 2**: scenario 2 is Claude Code configuration;\nthis one is an **agent you build** with the SDK, so tool selection and context survival dominate.",
-      "tags": ["scenario-developer-productivity", "built-in-tools", "context"],
-      "hints": ["Five built-in tools, and one of them fails in a way that has a named fallback."]
-    },
-    {
-      "id": "ccaf6-open-003",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "Scenario 5 - Claude Code for Continuous Integration. What does the setup tell you, and what does it test?",
-      "answer": "**The official framing**: Claude Code inside the CI/CD pipeline running **automated code\nreviews**, **generating test cases**, and giving **feedback on pull requests**. You must design\nprompts that give **actionable feedback and minimize false positives**.\n\n**Primary domains**: Claude Code Configuration & Workflows, Prompt Engineering & Structured\nOutput.\n\n**The five decisions it tests**\n\n1. **Non-interactive invocation.** `-p` / `--print`, or the job hangs waiting for input that will\n   never come.\n2. **Machine-readable output.** `--output-format json` **with `--json-schema`** produces\n   structured findings a later step can post as inline PR comments. Branching on prose is the\n   distractor.\n3. **False positives are the headline requirement.** Vague instructions do not reduce them and\n   neither does \"be conservative\" or \"only report high-confidence findings\". What works is\n   **explicit categorical criteria**: which issue classes to report (bugs, security) versus skip\n   (minor style, local patterns), with concrete code examples per severity level. A high\n   false-positive category **undermines trust in the accurate ones**, and the sanctioned move is\n   to disable that category temporarily while you fix its prompt.\n4. **Project context.** `CLAUDE.md` is how a CI-invoked run learns testing standards, fixture\n   conventions, and review criteria - no human is there to correct it mid-run. Documenting\n   available fixtures is what stops low-value generated tests.\n5. **Session isolation.** The session that **generated** code is worse at reviewing it, because\n   it carries its own reasoning context and is less likely to question its decisions. Use an\n   **independent** instance.\n\n**Two practical details**: on a re-run after new commits, include the **prior findings** and ask\nfor only new or still-unaddressed issues, or the PR fills with duplicates. And pass the existing\ntest files in, or generated tests duplicate what the suite already covers.",
-      "tags": ["scenario-ci", "false-positives", "structured-output"],
-      "hints": ["The requirement in the setup is not 'find bugs'. It is something harder."]
-    },
-    {
-      "id": "ccaf6-open-004",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "Scenario 6 - Structured Data Extraction. What does the setup tell you, and what does it test?",
-      "answer": "**The official framing**: extracting information from **unstructured documents**,\n**validating output with JSON schemas**, maintaining **high accuracy**, handling **edge cases\ngracefully**, and integrating with **downstream systems**.\n\n**Primary domains**: Prompt Engineering & Structured Output, Context Management & Reliability.\n\n**The six decisions it tests**\n\n1. **The mechanism.** `tool_use` with a JSON schema - the most reliable route to\n   schema-compliant output, and it **eliminates JSON syntax errors**. `tool_choice: \"any\"`\n   guarantees a tool call when the document type is unknown and several schemas exist; forced\n   selection (`{\"type\": \"tool\", \"name\": \"extract_metadata\"}`) pins a specific extraction first.\n2. **Syntax is not semantics.** A strict schema removes malformed JSON. It does **not** stop line\n   items that fail to sum to the total, or a value landing in the wrong field. Semantic\n   validation is yours.\n3. **Nullable fields.** A required field the document does not contain forces the model to\n   fabricate a plausible value. Make it optional, add an `\"unclear\"` enum value for ambiguous\n   cases and `\"other\"` + a detail string for extensible categories.\n4. **Retry, and its limit.** On validation failure, send back the document, the failed\n   extraction, and the **specific validation error**. This fixes format and structural mistakes.\n   It cannot fix **information that is simply absent** from the source - recognizing that\n   difference is a tested judgement.\n5. **Batch.** Latency-tolerant volume goes to the **Message Batches API**: 50% cheaper, up to a\n   24-hour window, no latency SLA, `custom_id` to correlate. Two traps: it does **not** support\n   multi-turn tool calling inside a request, and on failure you resubmit **only** the failed\n   `custom_id`s, chunking any that blew the context limit.\n6. **Human review.** Field-level confidence calibrated against a **labeled validation set**,\n   **stratified random sampling** of the high-confidence bucket to keep measuring error rate, and\n   accuracy checked **by document type and by field** - a 97% aggregate can hide one document\n   type failing badly.\n\n**The self-correction pattern worth memorizing**: extract `calculated_total` alongside\n`stated_total` and flag the discrepancy; add a `conflict_detected` boolean for inconsistent\nsources.",
-      "tags": ["scenario-extraction", "structured-output", "confidence"],
-      "hints": ["One of these six is about what the schema permits the model to say."]
-    },
-    {
-      "id": "ccaf6-open-009",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "Which domains does each of the six scenarios primarily draw from, and why does that matter?",
-      "answer": "The guide publishes a **Primary domains** line under every scenario:\n\n| # | Scenario | Primary domains |\n|---|---|---|\n| 1 | Customer Support Resolution Agent | Agentic Architecture, Tool Design & MCP, Context Management |\n| 2 | Code Generation with Claude Code | Claude Code Configuration, Context Management |\n| 3 | Multi-Agent Research System | Agentic Architecture, Tool Design & MCP, Context Management |\n| 4 | Developer Productivity with Claude | Tool Design & MCP, Claude Code Configuration, Agentic Architecture |\n| 5 | Claude Code for Continuous Integration | Claude Code Configuration, Prompt Engineering & Structured Output |\n| 6 | Structured Data Extraction | Prompt Engineering & Structured Output, Context Management |\n\n**Why it matters.** Scenarios are the **context** dimension; domains are the **knowledge**\ndimension. They do not map one-to-one, so a single scenario pulls items from several domains at\nonce - and an alternative can be perfectly correct **for a different domain than the one the\nquestion is testing**.\n\nTwo structural observations:\n\n- **Context Management & Reliability appears under four of the six**, despite being the lightest\n  domain at 15%. It is the connective tissue, not a corner.\n- **Prompt Engineering & Structured Output appears under only two** (5 and 6) while carrying 20%.\n  If those two scenarios come up in your sitting, that domain concentrates heavily.\n\nSince **4 of the 6 are drawn at random**, you cannot choose which mix you get - which is the\npractical argument for preparing all six rather than the heaviest domain.",
-      "tags": ["exam-structure", "domains"],
-      "hints": [
-        "One domain shows up under four scenarios, and it is the one with the smallest weight."
-      ]
-    },
-    {
-      "id": "ccaf6-open-010",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "open",
-      "question": "What does the official guide state about the exam's format and scoring?",
-      "answer": "From **Exam Details at a Glance** (guide v1.0, effective July 2026):\n\n| | |\n|---|---|\n| Credential | Claude Certified Architect - Foundations |\n| Exam code | **CCAR-F** |\n| Number of items | **60** |\n| Item format | Multiple-choice **and multiple-response**; each item states how many responses to select |\n| Exam structure | **4 scenarios drawn from a bank of 6** |\n| Time limit | **120 minutes** |\n| Passing score | Scaled score of **720** on a scale of 100-1,000 |\n| Validity | **12 months** from the award date |\n| Result reporting | Pass/fail with the scaled score, **plus percent-correct by domain** |\n\nFour things follow from this, in order of practical value:\n\n1. **Multiple-response items exist**, and each one tells you how many to pick. Selecting the\n   wrong number is a self-inflicted zero on an item you might have known.\n2. **The score is scaled, not a raw percentage.** 720/1000 is not \"72% of items correct\" - do not\n   plan around an item count.\n3. **Percent-correct by domain is reported**, so a retake is informed rather than a guess.\n4. **The credential expires in 12 months**, which is short and worth knowing before you schedule.\n\nThe guide also states plainly that it **is subject to change without notice** - so verify these\nvalues against the current version rather than trusting a summary, including this one.",
-      "tags": ["exam-structure", "scoring"],
-      "hints": ["One row of the table can cost you an item you actually knew."]
-    },
-    {
       "id": "ccaf6-quiz-001",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Support agent scenario: the agent must never promise a refund above $500 without approval. Where does the rule belong?",
       "answer": "In the tool implementation. The model proposes; your code decides whether it executes. A prompt instruction or a schema `maximum` shapes behavior but does not enforce policy.",
       "choices": [
@@ -113,13 +38,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-support", "guardrails"],
-      "hints": ["Which of these is enforcement, and which are polite requests?"]
+      "hints": ["Which of these is enforcement, and which are polite requests?"],
+      "tags": ["scenario-support", "guardrails"]
     },
     {
       "id": "ccaf6-quiz-002",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Support scenario: conversations run 30+ turns and the agent starts losing track of the refund amount it already agreed to. What fixes it?",
       "answer": "Progressive summarization is exactly what condenses numerical values, dates, and customer-stated expectations into vague prose. Keeping amounts, dates, and order numbers in a case-facts block **outside** the summarized history is what preserves them.",
       "choices": [
@@ -135,7 +61,7 @@
         },
         {
           "id": "c",
-          "text": "Instruct the model to restate the agreed amount at the end of every reply",
+          "text": "Tell the model to restate the agreed amount in every reply",
           "isCorrect": false
         },
         {
@@ -144,15 +70,16 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-support", "context", "case-facts"],
-      "hints": ["The thing being lost is a number. What does summarizing do to numbers?"]
+      "hints": ["The thing being lost is a number. What does summarizing do to numbers?"],
+      "tags": ["scenario-support", "context", "case-facts"]
     },
     {
       "id": "ccaf6-quiz-003",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
-      "question": "Research pipeline scenario: workers return full page text and the orchestrator hits its context limit. Best fix?",
-      "answer": "Have each worker return a compact structured summary with citations. Context isolation is the reason subagents exist - the worker absorbs the bulk reading and hands back only the distilled result.",
+      "language": "en",
+      "question": "Research pipeline scenario: subagents return full page text and the coordinator hits its context limit. Best fix?",
+      "answer": "Have each subagent return a compact structured summary with citations. Context isolation is the reason subagents exist - the subagent absorbs the bulk reading and hands back only the distilled result.",
       "choices": [
         {
           "id": "a",
@@ -175,13 +102,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-research", "context", "multi-agent"],
-      "hints": ["Why do subagents exist in the first place?"]
+      "hints": ["Why do subagents exist in the first place?"],
+      "tags": ["scenario-research", "context", "multi-agent"]
     },
     {
       "id": "ccaf6-quiz-004",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Research scenario: the final report's claims cannot be traced back to any source. Where did the attribution go?",
       "answer": "Source attribution is lost during summarization steps when findings are compressed without preserving claim-source mappings. The fix is structural: subagents output the mapping - claim, excerpt, source, date - and every downstream agent preserves and merges it through synthesis.",
       "choices": [
@@ -206,24 +134,25 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-research", "provenance"],
-      "hints": ["Nothing stole it. It evaporated at a specific step."]
+      "hints": ["Nothing stole it. It evaporated at a specific step."],
+      "tags": ["scenario-research", "provenance"]
     },
     {
       "id": "ccaf6-quiz-005",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "CI scenario: a later pipeline step must post each finding as an inline PR comment. How should Claude Code be invoked?",
       "answer": "Non-interactive mode prevents the job hanging, and --output-format json with --json-schema produces machine-parseable structured findings. Branching or parsing on prose is the distractor the exam repeats.",
       "choices": [
         {
           "id": "a",
-          "text": "`-p` with `--output-format json` and `--json-schema` for the finding structure",
+          "text": "`-p` with `--output-format json`, plus `--json-schema` describing the fields of each finding",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "`-p` with the prompt asking for markdown that the next step parses with a regex",
+          "text": "`-p` with a prompt asking for markdown, parsed by the next step's regex",
           "isCorrect": false
         },
         {
@@ -237,19 +166,20 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-ci", "structured-output", "cli"],
-      "hints": ["Two flags, and one of them names the shape you want back."]
+      "hints": ["Two flags, and one of them names the shape you want back."],
+      "tags": ["scenario-ci", "structured-output", "cli"]
     },
     {
       "id": "ccaf6-quiz-006",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "CI/CD scenario: the CI agent keeps violating team conventions that a human would normally correct in chat. What fixes it?",
-      "answer": "Commit the conventions to `CLAUDE.md`. In CI there is no human to correct the agent mid-run, so repository instructions are the only channel for project context - and anything that must be guaranteed goes in hooks or permissions instead.",
+      "answer": "Commit the conventions to `CLAUDE.md` (or pass them with `--append-system-prompt-file` if the run uses `--bare`, which skips CLAUDE.md). Nobody corrects a CI agent mid-run, so conventions must live in versioned project instructions, and anything that must be guaranteed goes in hooks or permissions.",
       "choices": [
         {
           "id": "a",
-          "text": "Put the conventions in the repository `CLAUDE.md`, which is how a CI run learns them",
+          "text": "Commit the conventions to the repository `CLAUDE.md`, which CI runs load by default",
           "isCorrect": true
         },
         {
@@ -264,17 +194,18 @@
         },
         {
           "id": "d",
-          "text": "Have a second CI job check the conventions and fail the build when they are violated",
+          "text": "Add a second CI job that checks the conventions and fails the build",
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-cicd", "claude-md"],
-      "hints": ["In CI nobody corrects the agent mid-run. Where do conventions have to live?"]
+      "hints": ["In CI nobody corrects the agent mid-run. Where do conventions have to live?"],
+      "tags": ["scenario-cicd", "claude-md"]
     },
     {
       "id": "ccaf6-quiz-007",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Extraction scenario: documents exceed the context window. What is the correct approach?",
       "answer": "Chunk with overlap, extract per chunk against the same schema, then merge and de-duplicate in code. Overlap and code-side merging are what protect records that straddle a boundary.",
       "choices": [
@@ -299,19 +230,20 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-extraction", "long-context"],
-      "hints": ["What protects a record that straddles a chunk boundary?"]
+      "hints": ["What protects a record that straddles a chunk boundary?"],
+      "tags": ["scenario-extraction", "long-context"]
     },
     {
       "id": "ccaf6-quiz-008",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Extraction scenario: which design most reduces bad records reaching the database?",
-      "answer": "Schema-forced output plus code-side validation plus a confidence field routing uncertain records to human review. Each layer catches what the previous one misses; none of them alone is sufficient.",
+      "answer": "Strict tool-schema output, plus code-side semantic validation, plus a confidence field that routes uncertain records to human review. Each layer catches what the previous one misses; none of them alone is sufficient.",
       "choices": [
         {
           "id": "a",
-          "text": "A forced tool schema, semantic validation in code, and confidence routing to review",
+          "text": "A strict tool schema, semantic validation in code, and confidence routing to review",
           "isCorrect": true
         },
         {
@@ -330,13 +262,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-extraction", "reliability"],
-      "hints": ["No single layer is enough - look for the option that stacks several."]
+      "hints": ["No single layer is enough - look for the option that stacks several."],
+      "tags": ["scenario-extraction", "reliability"]
     },
     {
       "id": "ccaf6-quiz-012",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Research scenario: the document analysis subagent returns full page text, and the synthesis subagent has no room left. What is the fix?",
       "answer": "The named skill is modifying upstream agents to return structured data - key facts, citations, relevance scores - rather than verbose content and reasoning chains, when a downstream agent has a limited context budget. Blind truncation keeps the volume problem and adds a correctness one.",
       "choices": [
@@ -361,13 +294,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-research", "context"],
-      "hints": ["The problem is what is being sent, not who has room for it."]
+      "hints": ["The problem is what is being sent, not who has room for it."],
+      "tags": ["scenario-research", "context"]
     },
     {
       "id": "ccaf6-quiz-014",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Support scenario: the agent must handle a question outside its domain. What is the best-designed behavior?",
       "answer": "Define the out-of-scope path explicitly - say it is out of scope and hand off through the escalation tool. An undefined out-of-scope behavior is where agents improvise confidently and cause harm.",
       "choices": [
@@ -392,13 +326,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-support", "edge-cases", "escalation"],
-      "hints": ["Undefined out-of-scope behavior is where agents improvise confidently."]
+      "hints": ["Undefined out-of-scope behavior is where agents improvise confidently."],
+      "tags": ["scenario-support", "edge-cases", "escalation"]
     },
     {
       "id": "ccaf6-quiz-015",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Across the six scenarios, which question most often separates the correct answer from a plausible one?",
       "answer": "The recurring split: prerequisite gates, tool-call interception, JSON schemas, and tool restrictions guarantee. System prompts, tool descriptions, and few-shot examples request - with a non-zero failure rate the guide names explicitly. Most strong distractors are a request standing in for a guarantee.",
       "choices": [
@@ -423,19 +358,20 @@
           "isCorrect": false
         }
       ],
-      "tags": ["exam-strategy"],
-      "hints": ["Look at what the wrong options in this deck keep having in common."]
+      "hints": ["Look at what the wrong options in this deck keep having in common."],
+      "tags": ["exam-strategy"]
     },
     {
       "id": "ccaf6-quiz-016",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Code generation scenario: test-file conventions are ignored, because test files live beside the code all over the tree. What is the right mechanism?",
       "answer": "Glob-pattern rules apply conventions by file type regardless of directory, which is exactly the case for test files spread throughout a codebase. Directory-level CLAUDE.md files would have to be created and maintained everywhere; a root section loads always and gets diluted; a skill relies on someone remembering.",
       "choices": [
         {
           "id": "a",
-          "text": "A `.claude/rules/` file with frontmatter `paths: [\"**/*.test.tsx\"]`",
+          "text": "A `.claude/rules/` file whose YAML frontmatter sets `paths: [\"**/*.test.tsx\"]` for tests",
           "isCorrect": true
         },
         {
@@ -450,17 +386,18 @@
         },
         {
           "id": "d",
-          "text": "A skill the developer invokes by name before starting work on a test file",
+          "text": "A skill the developer invokes by name before editing any test file",
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-code-generation", "rules", "path-scoping"],
-      "hints": ["The convention follows the file type, not the folder."]
+      "hints": ["The convention follows the file type, not the folder."],
+      "tags": ["scenario-code-generation", "rules", "path-scoping"]
     },
     {
       "id": "ccaf6-quiz-017",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Code generation scenario: a library migration will touch 45+ files and there are two viable integration approaches. Plan mode or direct execution?",
       "answer": "Plan mode is for large-scale changes, multiple valid approaches, architectural decisions, and multi-file work - it lets the codebase be explored and the design settled before committing, preventing costly rework. Plan first, then execute the planned approach directly.",
       "choices": [
@@ -485,15 +422,16 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-code-generation", "plan-mode"],
-      "hints": ["Two viable approaches is the tell."]
+      "hints": ["Two viable approaches is the tell."],
+      "tags": ["scenario-code-generation", "plan-mode"]
     },
     {
       "id": "ccaf6-quiz-018",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Developer productivity scenario: the agent must find every caller of a renamed function across the repository. Which built-in tool?",
-      "answer": "Grep is for content search - function names, error messages, import statements. Glob matches paths, not contents. Reading everything up front is the anti-pattern; the guide's incremental approach is Grep to find entry points, then Read to follow imports.",
+      "answer": "Grep is for content search - function names, error messages, import statements. Glob matches paths, not contents. Reading everything up front is the anti-pattern; the guide's incremental approach is Grep to find entry points, then Read to follow imports. Note: current Claude Code leaves Glob and Grep out of the default tool set on macOS, Linux, and WSL and searches with grep through Bash instead; they can still be enabled explicitly, for example in Agent SDK or subagent tool lists.",
       "choices": [
         {
           "id": "a",
@@ -516,15 +454,16 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-developer-productivity", "built-in-tools"],
-      "hints": ["Contents or paths? That is the whole question."]
+      "hints": ["One tool looks inside files; another only looks at their names."],
+      "tags": ["scenario-developer-productivity", "built-in-tools"]
     },
     {
       "id": "ccaf6-quiz-019",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Developer productivity scenario: `Edit` keeps failing because the anchor text appears several times in the file. What is the sanctioned fallback?",
-      "answer": "Edit depends on unique text matching; when it cannot find a unique anchor, the guide names Read + Write as the reliable fallback for file modification.",
+      "answer": "Edit depends on unique text matching; when it cannot find a unique anchor, the guide names Read + Write as the reliable fallback for file modification. Note: current Claude Code docs say Claude can also give `Edit` a longer `old_string` that is unique, or set `replace_all: true`; the exam's named fallback is Read + Write.",
       "choices": [
         {
           "id": "a",
@@ -533,7 +472,7 @@
         },
         {
           "id": "b",
-          "text": "Retry `Edit` with more surrounding lines until the anchor text becomes unique",
+          "text": "Pass the line number to `Edit` so it changes only that one occurrence",
           "isCorrect": false
         },
         {
@@ -547,24 +486,25 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-developer-productivity", "built-in-tools"],
-      "hints": ["Two tools you already have, used in sequence."]
+      "hints": ["Two tools you already have, used in sequence."],
+      "tags": ["scenario-developer-productivity", "built-in-tools"]
     },
     {
       "id": "ccaf6-quiz-020",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Developer productivity scenario: deep into a long exploration, the agent starts citing \"typical patterns\" instead of the classes it found earlier. What is happening, and what fixes it?",
       "answer": "The named symptom of context degradation in extended sessions is exactly this: inconsistent answers and generic \"typical patterns\" replacing specific discoveries. Scratchpad files persist key findings across context boundaries, and /compact reclaims room.",
       "choices": [
         {
           "id": "a",
-          "text": "Context degradation - persist findings to a scratchpad file and reference it, and `/compact`",
+          "text": "Context degradation; save key findings to a scratchpad file and refer back to it",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "The model tier is too low for the codebase size, so a more capable model is needed",
+          "text": "The model tier is too low for this codebase, so a bigger model is needed",
           "isCorrect": false
         },
         {
@@ -578,52 +518,54 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-developer-productivity", "context", "scratchpad"],
       "hints": [
         "The word \"typical\" is the diagnostic. It means it stopped remembering specifics."
-      ]
+      ],
+      "tags": ["scenario-developer-productivity", "context", "scratchpad"]
     },
     {
       "id": "ccaf6-quiz-021",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
-      "question": "Support scenario: the agent skips `get_customer` and calls `lookup_order` using only the name the customer typed. Where is the root cause?",
-      "answer": "Tool descriptions are the primary mechanism the model uses for selection, and minimal descriptions leave it unable to differentiate similar tools. Note that server-side rejection is a good defensive gate but does not fix the selection behaviour - the agent keeps trying.",
+      "language": "en",
+      "question": "Support scenario: a user writes \"check my order #12345\" and the agent calls `get_customer` instead of `lookup_order`. Both tools have one-line descriptions. Where is the root cause?",
+      "answer": "Tool descriptions are the primary mechanism the model uses to select tools. With one-line descriptions, it cannot tell similar tools apart. The first fix is to expand each description with input formats, example queries, and when to use it versus the other tool. Few-shot examples add tokens without fixing the root cause, and a server-side rejection only blocks the wrong call after it is made. (If the agent skips `get_customer` entirely before a refund, that is an ordering problem, fixed with a programmatic prerequisite, not with descriptions.)",
       "choices": [
         {
           "id": "a",
-          "text": "The tool descriptions, which do not differentiate the two tools or state required inputs",
+          "text": "The tool descriptions, which do not tell the two tools apart or state inputs",
           "isCorrect": true
         },
         {
           "id": "b",
-          "text": "The system prompt, which should list the mandatory call order for every tool",
+          "text": "The system prompt, which lacks few-shot examples that route order questions to `lookup_order`",
           "isCorrect": false
         },
         {
           "id": "c",
-          "text": "The model's reasoning, which needs extended thinking enabled for tool selection",
+          "text": "The model's reasoning, which needs extended thinking enabled to choose between tools",
           "isCorrect": false
         },
         {
           "id": "d",
-          "text": "The MCP server, which should reject a `lookup_order` call that has no customer id",
+          "text": "The MCP server, which should reject any `get_customer` call that carries an order number",
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-support", "tool-design"],
-      "hints": ["It picked a tool. What was supposed to tell it which one to pick?"]
+      "hints": ["It picked a tool. What was supposed to tell it which one to pick?"],
+      "tags": ["scenario-support", "tool-design"]
     },
     {
       "id": "ccaf6-quiz-022",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
-      "question": "Support scenario: `lookup_order` returns two customers matching the name. What should the agent do?",
+      "language": "en",
+      "question": "Support scenario: `get_customer` returns two customers matching the name the user gave. What should the agent do?",
       "answer": "Multiple matches require clarification - requesting additional identifiers - rather than heuristic selection. Escalating is not wrong in spirit, but it burns a human on something one question resolves, and the target is 80% first-contact resolution.",
       "choices": [
         {
           "id": "a",
-          "text": "Ask the customer for an additional identifier before proceeding",
+          "text": "Ask the customer for an additional identifier before choosing an account",
           "isCorrect": true
         },
         {
@@ -642,13 +584,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-support", "ambiguity"],
-      "hints": ["One extra question beats a good guess and beats a handoff."]
+      "hints": ["One extra question beats a good guess and beats a handoff."],
+      "tags": ["scenario-support", "ambiguity"]
     },
     {
       "id": "ccaf6-quiz-023",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "CI scenario: the review posts many low-value style complaints, and developers have started ignoring all of its findings. What is the most effective change?",
       "answer": "General instructions like \"be conservative\" do not improve precision; specific categorical criteria do. A high false-positive category undermines trust in the accurate ones, so the sanctioned interim move is disabling that category while its prompt is fixed - not silencing whole useful categories permanently.",
       "choices": [
@@ -673,13 +616,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-ci", "false-positives"],
-      "hints": ["Two options ask the model to feel more certain. Neither makes it more certain."]
+      "hints": ["Two options ask the model to feel more certain. Neither makes it more certain."],
+      "tags": ["scenario-ci", "false-positives"]
     },
     {
       "id": "ccaf6-quiz-024",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Extraction scenario: the nightly batch resubmits all 40,000 documents whenever any of them fails. What should it do instead?",
       "answer": "custom_id correlates request and response, which is what makes selective resubmission possible. The named handling is resubmitting only the failures, with appropriate modifications such as chunking documents that blew the context limit.",
       "choices": [
@@ -704,13 +648,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-extraction", "batch-api"],
-      "hints": ["You already know which ones failed. Why would you resend the rest?"]
+      "hints": ["You already know exactly which requests went wrong. Why resend the rest?"],
+      "tags": ["scenario-extraction", "batch-api"]
     },
     {
       "id": "ccaf6-quiz-025",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Extraction scenario: overall accuracy is 97%, so the team wants to cut human review. What must be checked first?",
       "answer": "An aggregate figure can mask poor performance on specific document types or fields, so the guide requires validating accuracy by segment before automating the high-confidence path. Confidence scores are only useful once calibrated against a labeled validation set.",
       "choices": [
@@ -735,13 +680,14 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-extraction", "confidence", "human-review"],
-      "hints": ["97% of what, exactly?"]
+      "hints": ["97% of what, exactly?"],
+      "tags": ["scenario-extraction", "confidence", "human-review"]
     },
     {
       "id": "ccaf6-quiz-026",
       "subjectId": "ccaf-6-scenarios",
       "type": "quiz",
+      "language": "en",
       "question": "Research scenario: two credible sources report different figures for the same metric. What should the document analysis subagent do?",
       "answer": "Conflicting statistics get annotated with source attribution rather than arbitrarily resolved, and the coordinator decides how to reconcile before synthesis. Publication or collection dates travel with the values so a temporal difference is not misread as a contradiction.",
       "choices": [
@@ -766,100 +712,10 @@
           "isCorrect": false
         }
       ],
-      "tags": ["scenario-research", "provenance", "conflict"],
       "hints": [
         "The subagent's job is not to decide. It is to preserve enough for someone else to."
-      ]
-    },
-    {
-      "id": "ccaf6-match-001",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "match",
-      "question": "Match each official scenario to the decision it is built around.",
-      "answer": "Naming the scenario is half the work; naming its central decision is the other half. Note that scenarios 2 and 4 are both Claude Code territory but split cleanly: 2 is configuring the tool, 4 is building an agent with the SDK.",
-      "matchPairs": [
-        {
-          "left": "Customer Support Resolution Agent",
-          "right": "Escalate or resolve, and gate the irreversible action"
-        },
-        {
-          "left": "Code Generation with Claude Code",
-          "right": "Which configuration layer an instruction belongs in"
-        },
-        {
-          "left": "Multi-Agent Research System",
-          "right": "What crosses between coordinator and subagents"
-        },
-        {
-          "left": "Developer Productivity with Claude",
-          "right": "Built-in tool selection and surviving a long exploration"
-        },
-        {
-          "left": "Claude Code for Continuous Integration",
-          "right": "Structured output and cutting false positives"
-        },
-        {
-          "left": "Structured Data Extraction",
-          "right": "Schema design and validating what the schema cannot"
-        }
       ],
-      "tags": ["exam-strategy", "scenarios"],
-      "hints": ["Two of the six are Claude Code. What separates them?"]
-    },
-    {
-      "id": "ccaf6-match-002",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "match",
-      "question": "Match each scenario to the anti-pattern it is most likely to test.",
-      "answer": "Each scenario has a signature trap, and none of the six is fixed by better prose. Every one needs something structural: a gate, a different file, an explicit prompt payload, a tool sequence, a second instance, or a nullable field.",
-      "matchPairs": [
-        {
-          "left": "Customer Support Resolution Agent",
-          "right": "A refund limit written into the system prompt"
-        },
-        {
-          "left": "Code Generation with Claude Code",
-          "right": "A team convention sitting in user-level CLAUDE.md"
-        },
-        {
-          "left": "Multi-Agent Research System",
-          "right": "Subagents assumed to inherit the parent's context"
-        },
-        {
-          "left": "Developer Productivity with Claude",
-          "right": "Reading every file up front instead of Grep then Read"
-        },
-        {
-          "left": "Claude Code for Continuous Integration",
-          "right": "The generating session reviewing its own output"
-        },
-        {
-          "left": "Structured Data Extraction",
-          "right": "A required field for data the document may not contain"
-        }
-      ],
-      "tags": ["exam-strategy", "anti-patterns"],
-      "hints": ["Six traps, zero of them fixed by rewording a prompt."]
-    },
-    {
-      "id": "ccaf6-type-001",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "type-answer",
-      "question": "In the support scenario, what should escalation to a human be implemented as, rather than a phrase in the reply?",
-      "answer": "A tool (e.g. `escalate_to_human`) with a schema. Escalation then arrives as a typed `tool_use` block you can route, meter, and test.",
-      "shortAnswer": "a tool",
-      "tags": ["scenario-support", "escalation"],
-      "hints": ["It should be a typed thing you can route, meter, and test."]
-    },
-    {
-      "id": "ccaf6-type-002",
-      "subjectId": "ccaf-6-scenarios",
-      "type": "type-answer",
-      "question": "In the research pipeline, what should each worker return to the orchestrator instead of raw source text?",
-      "answer": "A compact structured summary with citations. That is what preserves the orchestrator's context window.",
-      "shortAnswer": "a compact summary",
-      "tags": ["scenario-research", "context"],
-      "hints": ["Small, structured, and with citations."]
+      "tags": ["scenario-research", "provenance", "conflict"]
     }
   ]
 }
