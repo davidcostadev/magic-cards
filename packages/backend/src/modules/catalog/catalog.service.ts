@@ -523,6 +523,13 @@ export class CatalogService implements OnModuleInit {
   }
 
   /** Removes a public catalog subject (and its cards/progress via cascade). */
+  /** Deletes one public card; its progress, history and reports cascade with it. */
+  async deleteCard(id: string): Promise<void> {
+    // findPublicCard scopes to system-owned content, so the key can never delete a user's card.
+    await this.findPublicCard(id);
+    await this.db.delete(cards).where(eq(cards.id, id));
+  }
+
   async deleteSubject(id: string): Promise<void> {
     // Scoped to public, system-owned content so the key can never delete a user's subject.
     const deleted = await this.db

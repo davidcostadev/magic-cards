@@ -107,6 +107,13 @@ export class CatalogController {
     return this.catalog.export(query.subject);
   }
 
+  @Delete('cards/:id')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  deleteCard(@Param('id') id: string): Promise<void> {
+    return this.catalog.deleteCard(id);
+  }
+
   @Delete('subjects/:id')
   @HttpCode(204)
   @ApiNoContentResponse()

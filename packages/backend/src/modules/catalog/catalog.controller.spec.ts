@@ -569,6 +569,43 @@ describe('PATCH /v1/catalog/cards/:id (improve a card)', () => {
   });
 });
 
+describe('DELETE /v1/catalog/cards/:id (API key)', () => {
+  it('deletes one public card (204) and leaves its siblings', async () => {
+    const subject = await publishSubject();
+    const gone = await publishCard(subject.id, { question: 'Gone Q', answer: 'A' });
+    const kept = await publishCard(subject.id, { question: 'Kept Q', answer: 'A' });
+
+    const del = await withKey(request(app.getHttpServer()).delete(`/v1/catalog/cards/${gone.id}`));
+    expect(del.status).toBe(204);
+
+    const missing = await withKey(request(app.getHttpServer()).get(`/v1/catalog/cards/${gone.id}`));
+    expect(missing.status).toBe(404);
+    const still = await withKey(request(app.getHttpServer()).get(`/v1/catalog/cards/${kept.id}`));
+    expect(still.status).toBe(200);
+  });
+
+  it("refuses to delete a user's private card (404) and leaves it untouched", async () => {
+    const priv = await privateCard();
+    const del = await withKey(request(app.getHttpServer()).delete(`/v1/catalog/cards/${priv.id}`));
+    expect(del.status).toBe(404);
+
+    const still = await request(app.getHttpServer())
+      .get(`/v1/cards/${priv.id}`)
+      .set('Authorization', `Bearer ${priv.token}`);
+    expect(still.status).toBe(200);
+  });
+
+  it('returns 404 for a missing card and 401 without the key', async () => {
+    const missing = await withKey(request(app.getHttpServer()).delete('/v1/catalog/cards/nope'));
+    expect(missing.status).toBe(404);
+
+    const subject = await publishSubject();
+    const card = await publishCard(subject.id, { question: 'Q', answer: 'A' });
+    const noKey = await request(app.getHttpServer()).delete(`/v1/catalog/cards/${card.id}`);
+    expect(noKey.status).toBe(401);
+  });
+});
+
 describe('DELETE /v1/catalog/subjects/:id (API key)', () => {
   it('deletes a public catalog subject (204) and removes it for users', async () => {
     const subject = await publishSubject('Deletable');
