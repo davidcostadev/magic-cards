@@ -23,6 +23,7 @@ import {
   type MatchPair,
   reviewHistory,
   subjects,
+  users,
 } from '../../db/schema';
 import { toCardResponse } from '../cards/card-mapper';
 import type { CardResponse } from '../cards/dto/card.dto';
@@ -39,11 +40,12 @@ import { Sm2Service } from './sm2.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /**
- * How many cards a single learn session serves — distinct from the user's daily goal (the
- * day's target, which drives the dashboard/streak). A learner with a goal of 20 does ~2
- * sessions of this size to hit it. Kept small so a session is a short, completable batch.
+ * How many cards a single learn session serves when the learner hasn't chosen (they pick 5 or 10,
+ * stored as `users.sessionSize`) — distinct from the user's daily goal (the day's target, which
+ * drives the dashboard/streak). A learner with a goal of 20 does ~2 sessions of this size to hit
+ * it. Kept small so a session is a short, completable batch.
  */
-const SESSION_SIZE = 10;
+const DEFAULT_SESSION_SIZE = 10;
 
 export interface SessionCards {
   due: CardResponse[];
@@ -73,11 +75,20 @@ export class LearningService {
     ) as SQL;
   }
 
+  /** The learner's chosen session size ({@link DEFAULT_SESSION_SIZE} if the row is missing). */
+  private async sessionSize(userId: string): Promise<number> {
+    const [row] = await this.db
+      .select({ sessionSize: users.sessionSize })
+      .from(users)
+      .where(eq(users.id, userId));
+    return row?.sessionSize ?? DEFAULT_SESSION_SIZE;
+  }
+
   /**
    * Builds the study batch for one session: seen cards ordered by **recall probability** (the ones
-   * you're most likely to have forgotten first, capped at {@link SESSION_SIZE}), then new
+   * you're most likely to have forgotten first, capped at the learner's session size), then new
    * (never-reviewed) cards to top the session up to that size. So a session holds at most
-   * `SESSION_SIZE` cards — independent of the user's daily goal. An optional `type` restricts the
+   * the learner's chosen session size (5 or 10) — independent of the user's daily goal. An optional `type` restricts the
    * batch to a single card type (e.g. only quizzes).
    *
    * Ordering is by how far past its due date a card is **relative to its own interval** (the SM-2
@@ -99,7 +110,8 @@ export class LearningService {
   ): Promise<SessionCards> {
     if (subjectId) await this.assertSubjectVisible(userId, subjectId);
     // "Practice my mistakes" is its own selection: erred, not-mastered cards, schedule-independent.
-    if (mistakes) return this.getMistakeCards(userId, subjectId);
+    const size = await this.sessionSize(userId);
+    if (mistakes) return this.getMistakeCards(userId, size, subjectId);
 
     const now = new Date().toISOString();
     const scope = this.studyScope(userId, subjectId);
@@ -124,10 +136,10 @@ export class LearningService {
       )
       // Most-forgotten first; nextReviewDate breaks ties for a stable order.
       .orderBy(desc(recallScore), asc(cardProgress.nextReviewDate))
-      .limit(SESSION_SIZE);
+      .limit(size);
 
     // New cards top the session up to the session size after due reviews take their share.
-    const maxNew = Math.max(0, SESSION_SIZE - due.length);
+    const maxNew = Math.max(0, size - due.length);
     const newCards =
       maxNew > 0
         ? await this.db
@@ -193,10 +205,14 @@ export class LearningService {
    * Builds a "practice my mistakes" session from the learner's pending mistakes (see
    * {@link pendingMistakes}), **most-errored first** — regardless of the review schedule, so it
    * stays useful even when nothing is due. Modeled on Duolingo's "practice mistakes". Capped at
-   * {@link SESSION_SIZE}; this mode has no "new" cards (every card here has been seen). The cards
+   * the learner's session size; this mode has no "new" cards (every card here has been seen). The cards
    * are returned in the `due` bucket so the session builds them like any other batch.
    */
-  private async getMistakeCards(userId: string, subjectId?: string): Promise<SessionCards> {
+  private async getMistakeCards(
+    userId: string,
+    size: number,
+    subjectId?: string
+  ): Promise<SessionCards> {
     const pending = this.pendingMistakes(userId, this.studyScope(userId, subjectId)).as('pending');
 
     const rows = await this.db
@@ -204,7 +220,7 @@ export class LearningService {
       .from(pending)
       .innerJoin(cards, eq(cards.id, pending.cardId))
       .orderBy(desc(pending.errorCount), asc(cards.id))
-      .limit(SESSION_SIZE);
+      .limit(size);
 
     return { due: rows.map((card) => toCardResponse(card, false)), new: [] };
   }

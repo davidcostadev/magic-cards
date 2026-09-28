@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "session_size" integer DEFAULT 10 NOT NULL;

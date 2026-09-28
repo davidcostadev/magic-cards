@@ -5,7 +5,7 @@ import type { User } from '@/mocks/types';
 const CARD_LANGUAGE_KEY = 'cardLanguage';
 
 type Preferences = Partial<
-  Pick<User, 'language' | 'cardLanguage' | 'theme' | 'dailyGoal' | 'nerdStats'>
+  Pick<User, 'language' | 'cardLanguage' | 'theme' | 'dailyGoal' | 'nerdStats' | 'sessionSize'>
 >;
 
 interface AuthContextType {
@@ -28,6 +28,7 @@ type ApiUser = {
   theme: string;
   dailyGoal: number;
   nerdStats: boolean;
+  sessionSize: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -111,15 +112,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(CARD_LANGUAGE_KEY, prefs.cardLanguage);
     setUser((prev) => (prev ? { ...prev, ...prefs } : prev));
 
-    const { language, theme, dailyGoal, nerdStats } = prefs;
+    const { language, theme, dailyGoal, nerdStats, sessionSize } = prefs;
     if (
       language !== undefined ||
       theme !== undefined ||
       dailyGoal !== undefined ||
-      nerdStats !== undefined
+      nerdStats !== undefined ||
+      sessionSize !== undefined
     ) {
       void apiClient.PATCH('/v1/me', {
-        body: { language, theme: theme as 'light' | 'dark' | undefined, dailyGoal, nerdStats },
+        body: {
+          language,
+          theme: theme as 'light' | 'dark' | undefined,
+          dailyGoal,
+          nerdStats,
+          sessionSize: sessionSize as 5 | 10 | undefined,
+        },
       });
     }
   };

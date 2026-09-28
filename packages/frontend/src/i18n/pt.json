@@ -292,6 +292,8 @@
     "lightMode": "Claro",
     "dailyGoal": "Meta Diária",
     "dailyGoalDescription": "Número de cartões para revisar por dia",
+    "sessionSize": "Cartões por sessão",
+    "sessionSizeDescription": "Quantos cartões cada sessão de estudo tem",
     "nerdStats": "Estatísticas nerd",
     "nerdStatsDescription": "Mostra seu desempenho por cartão ao estudar e ao visualizar cartões",
     "on": "Ligado",

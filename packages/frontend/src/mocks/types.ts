@@ -7,6 +7,7 @@ export interface User {
   theme: string;
   dailyGoal: number;
   nerdStats: boolean;
+  sessionSize: number;
   createdAt: string;
   updatedAt: string;
 }

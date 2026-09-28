@@ -149,4 +149,30 @@ describe('GET/PATCH /v1/me', () => {
       nerdStats: true,
     });
   });
+
+  it('defaults the session size to 10 and lets the learner switch it to 5', async () => {
+    const token = await authedToken();
+
+    const me = await request(app.getHttpServer())
+      .get('/v1/me')
+      .set('Authorization', `Bearer ${token}`);
+    expect(me.body.sessionSize).toBe(10);
+
+    const res = await request(app.getHttpServer())
+      .patch('/v1/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ sessionSize: 5 });
+    expect(res.status).toBe(200);
+    expect(res.body.sessionSize).toBe(5);
+  });
+
+  it('rejects a session size other than 5 or 10', async () => {
+    const token = await authedToken();
+
+    const res = await request(app.getHttpServer())
+      .patch('/v1/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ sessionSize: 7 });
+    expect(res.status).toBe(400);
+  });
 });

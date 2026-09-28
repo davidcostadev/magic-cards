@@ -74,6 +74,29 @@ describe('LearningService.getSessionCards', () => {
     expect(due.length + newCards.length).toBe(10);
   });
 
+  it("caps the session at the learner's chosen session size (5)", async () => {
+    await db.update(users).set({ sessionSize: 5 });
+    for (let i = 1; i <= 25; i++) await addCard(`c${i}`);
+    await addDueProgress('c1', 1);
+    await addDueProgress('c2', 2);
+
+    const { due, new: newCards } = await service().getSessionCards('u1');
+    expect(due).toHaveLength(2);
+    expect(newCards).toHaveLength(3);
+  });
+
+  it('caps due cards alone at the chosen session size', async () => {
+    await db.update(users).set({ sessionSize: 5 });
+    for (let i = 1; i <= 8; i++) {
+      await addCard(`c${i}`);
+      await addDueProgress(`c${i}`, i);
+    }
+
+    const { due, new: newCards } = await service().getSessionCards('u1');
+    expect(due).toHaveLength(5);
+    expect(newCards).toHaveLength(0);
+  });
+
   it('orders overdue cards most-overdue first', async () => {
     await addCard('c1');
     await addCard('c2');
@@ -198,6 +221,18 @@ describe('LearningService.getSessionCards — practice mistakes', () => {
       status,
     });
   }
+
+  it("caps the mistakes session at the learner's chosen session size", async () => {
+    await db.update(users).set({ sessionSize: 5 });
+    for (let i = 1; i <= 8; i++) {
+      await addCard(`m${i}`);
+      await addProgress(`m${i}`);
+      await addReview(`m${i}`, 1);
+    }
+
+    const { due } = await service().getSessionCards('u1', undefined, undefined, false, true);
+    expect(due).toHaveLength(5);
+  });
 
   it('serves only the cards the learner has gotten wrong, most-errored first', async () => {
     await addCard('worst');

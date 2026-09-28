@@ -292,6 +292,8 @@
     "lightMode": "Light",
     "dailyGoal": "Daily Goal",
     "dailyGoalDescription": "Number of cards to review per day",
+    "sessionSize": "Cards per session",
+    "sessionSizeDescription": "How many cards each study session holds",
     "nerdStats": "Nerd stats",
     "nerdStatsDescription": "Show your per-card performance while learning and previewing cards",
     "on": "On",

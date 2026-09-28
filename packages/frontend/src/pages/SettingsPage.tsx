@@ -7,6 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+
+/** Cards per learn session the learner can pick (mirrors the backend's SESSION_SIZES). */
+const SESSION_SIZES = [5, 10] as const;
+
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { user, updatePreferences } = useAuth();
@@ -32,6 +36,11 @@ export function SettingsPage() {
   const nerdStats = user?.nerdStats ?? false;
   const handleNerdStatsChange = (enabled: boolean) => {
     updatePreferences({ nerdStats: enabled });
+  };
+
+  const sessionSize = user?.sessionSize ?? 10;
+  const handleSessionSizeChange = (size: (typeof SESSION_SIZES)[number]) => {
+    updatePreferences({ sessionSize: size });
   };
 
   const dailyGoalValid = Number.isFinite(dailyGoal) && dailyGoal >= 1 && dailyGoal <= 100;
@@ -141,6 +150,29 @@ export function SettingsPage() {
                 size="lg"
               >
                 {label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">{t('settings.sessionSize')}</CardTitle>
+          <CardDescription>{t('settings.sessionSizeDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            {SESSION_SIZES.map((size) => (
+              <Button
+                key={size}
+                variant={sessionSize === size ? 'default' : 'outline'}
+                onClick={() => handleSessionSizeChange(size)}
+                aria-pressed={sessionSize === size}
+                className="flex-1"
+                size="lg"
+              >
+                {size}
               </Button>
             ))}
           </div>

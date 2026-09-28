@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import type { User } from '../../../db/schema';
+import { SESSION_SIZES, type User } from '../../../db/schema';
 
 export const signupSchema = z.object({
   email: z.email(),
@@ -19,6 +19,7 @@ export const updateMeSchema = z
     theme: z.enum(['light', 'dark']),
     dailyGoal: z.number().int().min(1).max(500),
     nerdStats: z.boolean(),
+    sessionSize: z.union(SESSION_SIZES.map((size) => z.literal(size))),
   })
   .partial();
 
@@ -30,6 +31,7 @@ export const userResponseSchema = z.object({
   theme: z.string(),
   dailyGoal: z.number(),
   nerdStats: z.boolean(),
+  sessionSize: z.number(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -58,6 +60,7 @@ export function toUserResponse(user: User): UserResponse {
     theme: user.theme,
     dailyGoal: user.dailyGoal,
     nerdStats: user.nerdStats,
+    sessionSize: user.sessionSize,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

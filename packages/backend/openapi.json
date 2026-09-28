@@ -1853,6 +1853,9 @@
               "nerdStats": {
                 "type": "boolean"
               },
+              "sessionSize": {
+                "type": "number"
+              },
               "createdAt": {
                 "type": "string"
               },
@@ -1868,6 +1871,7 @@
               "theme",
               "dailyGoal",
               "nerdStats",
+              "sessionSize",
               "createdAt",
               "updatedAt"
             ]
@@ -1923,6 +1927,9 @@
           "nerdStats": {
             "type": "boolean"
           },
+          "sessionSize": {
+            "type": "number"
+          },
           "createdAt": {
             "type": "string"
           },
@@ -1938,6 +1945,7 @@
           "theme",
           "dailyGoal",
           "nerdStats",
+          "sessionSize",
           "createdAt",
           "updatedAt"
         ]
@@ -1964,6 +1972,18 @@
           },
           "nerdStats": {
             "type": "boolean"
+          },
+          "sessionSize": {
+            "anyOf": [
+              {
+                "type": "number",
+                "const": 5
+              },
+              {
+                "type": "number",
+                "const": 10
+              }
+            ]
           }
         }
       },

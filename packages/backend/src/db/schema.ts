@@ -34,9 +34,15 @@ export const users = pgTable('users', {
   dailyGoal: integer('daily_goal').notNull().default(20),
   // "Nerd stats" mode: surfaces per-card performance panels around the app (learn, card preview).
   nerdStats: boolean('nerd_stats').notNull().default(false),
+  // How many cards one learn session serves — the learner picks 5 or 10 (SESSION_SIZES).
+  sessionSize: integer('session_size').notNull().default(10),
   createdAt: text('created_at').notNull().$defaultFn(isoNow),
   updatedAt: text('updated_at').notNull().$defaultFn(isoNow),
 });
+
+/** Allowed learn-session sizes (cards per session). */
+export const SESSION_SIZES = [5, 10] as const;
+export type SessionSize = (typeof SESSION_SIZES)[number];
 
 /** Content language a card is authored in. Defaults to English. */
 export const CARD_LANGUAGES = ['en', 'pt'] as const;

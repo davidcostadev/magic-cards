@@ -535,6 +535,7 @@ export interface components {
                 theme: string;
                 dailyGoal: number;
                 nerdStats: boolean;
+                sessionSize: number;
                 createdAt: string;
                 updatedAt: string;
             };
@@ -553,6 +554,7 @@ export interface components {
             theme: string;
             dailyGoal: number;
             nerdStats: boolean;
+            sessionSize: number;
             createdAt: string;
             updatedAt: string;
         };
@@ -562,6 +564,7 @@ export interface components {
             theme?: "light" | "dark";
             dailyGoal?: number;
             nerdStats?: boolean;
+            sessionSize?: 5 | 10;
         };
         SubjectListDto: {
             /** @constant */
